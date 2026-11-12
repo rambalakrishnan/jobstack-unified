@@ -1,0 +1,463 @@
+NODE: contract_codec | modules/contract_codec | lang: python | tier: 0 | deps: []
+  READS: [seam-mappings/job-hunter-seam-mapping.md#3.1 Missing values, seam-mappings/job-hunter-seam-mapping.md#3.3 Measurement, seam-mappings/job-hunter-seam-mapping.md#3.4 References and hashes]
+  EXPOSES: [def validate_record(data: bytes, schema_id: str) -> bytes, def canonical_digest(data: bytes) -> Digest, def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None]
+  CONSUMES: []
+  TEST_ASSERTIONS: [bare_normalized_null_is_rejected, missing_salary_tokens_timing_preserve_missing_never_zero, native_exact_zero_preserves_the_reported_source_value, cross_clock_or_cross_boot_subtraction_is_rejected]
+  INVARIANTS: [EK-NULL, EK-TIME, EK-TIMING-INTERPRETATION, EK-HASHES, EXT-TIME-NULL]
+  FORBIDDEN:
+    - Do not insert defaults, coerce unknown enums, accept duplicate keys, or discard unknown closed-object properties.
+    - Do not use canonical structured-record hashing for arbitrary artifact bytes.
+    - Do not treat structural validation as authorization, evidence resolution, or behavioral conformance.
+  VERIFICATION: pytest tests/test_conformance.py -k "bare_normalized_null_is_rejected or missing_salary_tokens_timing_preserve_missing_never_zero or native_exact_zero_preserves_the_reported_source_value or cross_clock_or_cross_boot_subtraction_is_rejected"
+
+NODE: access_policy | modules/access_policy | lang: python | tier: 0 | deps: []
+  READS: [seam-mappings/job-hunter-seam-mapping.md#2.3 Write grants, seam-mappings/job-hunter-seam-mapping.md#16.9 `vault`, seam-mappings/job-hunter-seam-mapping.md#18. Privacy, evidence scope, and practice isolation]
+  EXPOSES: [def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor]
+  CONSUMES: []
+  TEST_ASSERTIONS: [spoofed_provenance_or_writer_identity_is_rejected, secrets_in_ordinary_journal_task_or_log_are_rejected_or_quarantined]
+  INVARIANTS: [EK-PROVENANCE, EXT-AUTHORITY, LIFE-AXES, LIFE-SOURCE-CHECKS, OWD-OWNER]
+  FORBIDDEN:
+    - Do not accept caller-selected channel identities; channel_id must resolve an authenticated ingress session.
+    - Do not treat returned ProducerDescriptor fields, evidence references, hashes, or resource IDs as bearer grants.
+    - Do not expose secret bytes through public interfaces, artifacts intended for ordinary evidence, or dashboard projections.
+    - Do not grant the report writer execution or application write authority.
+  VERIFICATION: pytest tests/test_conformance.py -k "spoofed_provenance_or_writer_identity_is_rejected or secrets_in_ordinary_journal_task_or_log_are_rejected_or_quarantined"
+
+NODE: artifact_store | modules/artifact_store | lang: python | tier: 1 | deps: [contract_codec, access_policy]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#3.4 References and hashes, seam-mappings/job-hunter-seam-mapping.md#15.4 Archive and retention, seam-mappings/job-hunter-seam-mapping.md#18. Privacy, evidence scope, and practice isolation]
+  EXPOSES: [def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor]
+  TEST_ASSERTIONS: [missing_artifact_bytes_report_explicit_loss_or_unavailability, redacted_artifacts_receive_new_identity_without_replacing_original_bytes]
+  INVARIANTS: [EK-ARTIFACTS, EK-HASHES, EK-ATOMICITY, OWD-RETENTION, EXT-ARTIFACTS]
+  FORBIDDEN:
+    - Do not acknowledge retained content until exact bytes and access metadata are durable.
+    - Do not substitute mutable URLs, hashes alone, or newly reconstructed bytes for retained content.
+    - Do not grant reads merely because a caller knows a digest.
+    - Do not perform garbage collection independently of retention fencing.
+  VERIFICATION: pytest tests/test_conformance.py -k "missing_artifact_bytes_report_explicit_loss_or_unavailability or redacted_artifacts_receive_new_identity_without_replacing_original_bytes"
+
+NODE: evidence_journal | modules/evidence_journal | lang: python | tier: 2 | deps: [contract_codec, access_policy, artifact_store]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#3.5 Journal and producer rules, seam-mappings/job-hunter-seam-mapping.md#3.2 TimePoint, seam-mappings/job-hunter-seam-mapping.md#10.1 Admission ordering]
+  EXPOSES: [def admit_manifest(channel_id: str, manifest: Manifest) -> JournalEnvelope, def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def canonical_digest(data: bytes) -> Digest, contract_codec: def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes]
+  TEST_ASSERTIONS: [invalid_evidence_pointer_or_hash_is_rejected, same_producer_sequence_same_content_is_deduplicated, same_producer_sequence_different_content_records_integrity_incident, owner_effect_journal_and_idempotency_receipt_commit_before_acknowledgement]
+  INVARIANTS: [EK-JOURNAL, EK-ATOMICITY, EK-HASHES, EK-PROVENANCE, EK-OBSERVATION, EK-NULL, EK-TIME, LIFE-EVIDENCE, OWD-LOCAL-COMMIT]
+  FORBIDDEN:
+    - Do not accept JournalEnvelope as untrusted ingress; derive envelope authority from registration and the authenticated channel.
+    - Do not edit, backdate, delete, or resequence acknowledged events.
+    - Do not implement commit_effect as separate state, journal, and idempotency commits.
+    - Do not make this module a central serialized writer across owner domains; each invocation uses only the selected owner's durability boundary.
+    - Do not include remote employer writes in local transactions or repeat them to repair evidence.
+  VERIFICATION: pytest tests/test_conformance.py -k "invalid_evidence_pointer_or_hash_is_rejected or same_producer_sequence_same_content_is_deduplicated or same_producer_sequence_different_content_records_integrity_incident or owner_effect_journal_and_idempotency_receipt_commit_before_acknowledgement"
+
+NODE: lease_authority | modules/lease_authority | lang: python | tier: 3 | deps: [contract_codec, access_policy, artifact_store, evidence_journal]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#15.5 Product leases, seam-mappings/job-hunter-seam-mapping.md#13.2 Failure recovery]
+  EXPOSES: [def transition_lease(channel_id: str, resource: ResourceReference, operation: str, expected: Union[LeaseRecord, Missing], policy: VersionPin) -> LeaseRecord, def validate_completion(lease: LeaseRecord, current: LeaseRecord, authority_now: TimePoint, entity_revision: int, input_revision: int) -> None]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix]
+  TEST_ASSERTIONS: [lease_expiry_after_possible_submit_preserves_outcome_uncertainty, stale_lease_completion_has_no_effect_and_failed_generation_counts_once, authority_restart_fences_old_epoch_without_cross_boot_time_comparison]
+  INVARIANTS: [EK-LEASE, EK-LEASE-RESTART, EK-TIME, EK-ATOMICITY, LIFE-IDEMPOTENCY, OWD-REVISION]
+  FORBIDDEN:
+    - Do not let workers issue their own fencing tokens or supply the authority's current time.
+    - Do not change pending resource state merely because work is claimed.
+    - Do not validate completion outside the owner-local commit fence; current and authority_now must come from the fenced authority context.
+    - Do not equate expiry, release, or confirmed worker death with employer noncommitment.
+  VERIFICATION: pytest tests/test_conformance.py -k "lease_expiry_after_possible_submit_preserves_outcome_uncertainty or stale_lease_completion_has_no_effect_and_failed_generation_counts_once or authority_restart_fences_old_epoch_without_cross_boot_time_comparison"
+
+NODE: candidate_inputs | modules/candidate_inputs | lang: python | tier: 3 | deps: [contract_codec, access_policy, artifact_store, evidence_journal]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#7.1 Source fidelity, seam-mappings/job-hunter-seam-mapping.md#7.2 CandidateProfileArtifact, seam-mappings/job-hunter-seam-mapping.md#7.3 Eight-playbook catalog]
+  EXPOSES: [def load_candidate_profile(channel_id: str, profile: ArtifactReference) -> CandidateProfileArtifact, def load_playbook_catalog(channel_id: str, catalog: VersionPin) -> PlaybookCatalog]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...]]
+  TEST_ASSERTIONS: [ambiguous_candidate_salary_units_remain_unresolved_without_conversion, all_eight_playbooks_preserve_sources_without_becoming_executor_capabilities, candidate_credentials_and_disclosure_permissions_are_never_inferred_from_analysis]
+  INVARIANTS: [EK-NULL, EK-ARTIFACTS, EK-PROVENANCE, EK-CAPABILITY]
+  FORBIDDEN:
+    - Do not convert analytical capability descriptions into verified credentials or employment facts.
+    - Do not silently reconcile dates, salary units, license possession, or employer contact permissions.
+    - Do not disclose sensitive source history without the pinned disclosure policy.
+    - Do not reinterpret candidate playbooks as browser CapabilityDescriptor entries.
+  VERIFICATION: pytest tests/test_conformance.py -k "ambiguous_candidate_salary_units_remain_unresolved_without_conversion or all_eight_playbooks_preserve_sources_without_becoming_executor_capabilities or candidate_credentials_and_disclosure_permissions_are_never_inferred_from_analysis"
+
+NODE: usage_accounting | modules/usage_accounting | lang: python | tier: 3 | deps: [contract_codec, access_policy, artifact_store, evidence_journal]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#16.11 `costs`, seam-mappings/job-hunter-seam-mapping.md#17.3 Model execution and costs]
+  EXPOSES: [def reserve_cost(channel_id: str, call_id: str, policy: VersionPin) -> ArtifactReference, def record_model_cost(channel_id: str, call_id: str, usage: tuple[Measurement, ...], pricing: Union[VersionPin, Missing], source_refs: tuple[EvidenceRef, ...]) -> ArtifactReference]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix]
+  TEST_ASSERTIONS: [missing_provider_usage_does_not_default_to_zero_cost, cost_reservations_reported_usage_and_invoiced_charges_remain_distinct]
+  INVARIANTS: [EK-NULL, EK-TIME, EK-TIMING-INTERPRETATION, EK-ATOMICITY, EK-OBSERVATION]
+  FORBIDDEN:
+    - Do not treat estimated reservations as observed usage or computed prices as invoice facts.
+    - Do not fabricate model prices, token counts, currency conversions, or missing budget policies.
+    - Do not charge duplicated provider-call evidence twice.
+    - Do not retroactively change a commission's frozen limits.
+  VERIFICATION: pytest tests/test_conformance.py -k "missing_provider_usage_does_not_default_to_zero_cost or cost_reservations_reported_usage_and_invoiced_charges_remain_distinct"
+
+NODE: connector_transport | modules/connector_transport | lang: python | tier: 3 | deps: [contract_codec, access_policy, artifact_store, evidence_journal]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#12.5 Envelope and nine operations, seam-mappings/job-hunter-seam-mapping.md#13.1 Idempotency levels, seam-mappings/job-hunter-seam-mapping.md#13.5 Errors]
+  EXPOSES: [async def call_connector(channel_id: str, request: ConnectorRequest) -> ConnectorResponse]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def canonical_digest(data: bytes) -> Digest, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix]
+  TEST_ASSERTIONS: [changed_request_under_same_command_identity_is_rejected_as_conflict, connector_errors_describe_operations_without_fabricating_task_outcomes]
+  INVARIANTS: [EXT-SURFACE, EXT-AUTHORITY, EXT-IDEMPOTENCY, EXT-BOUNDS, EXT-FAILURE, EK-ATOMICITY]
+  FORBIDDEN:
+    - Do not add browser primitives, native polling routes, arbitrary callback URLs, or undocumented connector verbs.
+    - Do not treat HTTP 200 or a normal connector response as application success.
+    - Do not change request identity, call limits, or payload while retrying the same command.
+    - Do not automatically resend native work after ambiguous delivery; connector retries preserve the original command.
+    - Do not block Start until native execution completes.
+  VERIFICATION: pytest tests/test_conformance.py -k "changed_request_under_same_command_identity_is_rejected_as_conflict or connector_errors_describe_operations_without_fabricating_task_outcomes"
+
+NODE: provider_effects | modules/provider_effects | lang: python | tier: 3 | deps: [contract_codec, access_policy, artifact_store, evidence_journal]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#17.2 Scheduling and outbound communication, seam-mappings/job-hunter-seam-mapping.md#17.4 External service boundaries, seam-mappings/job-hunter-seam-mapping.md#16.9 `vault`]
+  EXPOSES: [async def execute_provider_effect(channel_id: str, command_id: str, operation: str, payload: ArtifactReference, adapter: VersionPin, authorization_refs: tuple[EvidenceRef, ...]) -> Union[ArtifactReference, Missing]]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix]
+  TEST_ASSERTIONS: [uncertain_outbound_send_is_not_blindly_retried, provider_effects_persist_authorized_intent_before_external_dispatch]
+  INVARIANTS: [EK-ATOMICITY, EK-PROVENANCE, EK-CLAIMS, EK-ARTIFACTS]
+  FORBIDDEN:
+    - Do not accept application submission, browser control, arbitrary URLs, or executable commands as provider operations.
+    - Do not infer provider idempotency or receipt semantics from the historical endpoint inventory.
+    - Do not resend uncertain mail, notifications, or calendar writes without evidenced recovery semantics or duplicate-risk review.
+    - Do not expose private provider credentials outside the authorized adapter.
+    - Do not fabricate application attempts for correspondence or calendar effects.
+  VERIFICATION: pytest tests/test_conformance.py -k "uncertain_outbound_send_is_not_blindly_retried or provider_effects_persist_authorized_intent_before_external_dispatch"
+
+NODE: legacy_collections | modules/legacy_collections | lang: python | tier: 3 | deps: [contract_codec, access_policy, artifact_store, evidence_journal]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#16. Localization of all twelve Firestore collections, seam-mappings/job-hunter-seam-mapping.md#4. Identity and duplicate handling, seam-mappings/job-hunter-seam-mapping.md#21. Unresolved inputs and bounded stop conditions]
+  EXPOSES: [def import_legacy_document(channel_id: str, collection: str, source: ArtifactReference, mapping: VersionPin) -> ArtifactReference]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope]
+  TEST_ASSERTIONS: [legacy_company_title_collision_never_automatically_merges_identities, legacy_unknown_status_or_type_preserves_source_and_requires_mapping, all_twelve_legacy_collection_adapters_remain_private_and_evidenced]
+  INVARIANTS: [EK-PROVENANCE, EK-NULL, EK-ARTIFACTS, EK-ATTEMPT-SCOPE, OWD-JOB, LIFE-AXES]
+  FORBIDDEN:
+    - Do not make Firestore, Restate, or any legacy collection a shared authority or required deployment.
+    - Do not promote imported historical documents into current-run observations.
+    - Do not merge source postings or attempts using company/title hashes.
+    - Do not normalize tracker status into an origin fact or infer missing legacy enum semantics.
+    - Do not expose vault contents through ordinary import artifacts; secret migration remains behind the scoped secret-provider boundary.
+  VERIFICATION: pytest tests/test_conformance.py -k "legacy_company_title_collision_never_automatically_merges_identities or legacy_unknown_status_or_type_preserves_source_and_requires_mapping or all_twelve_legacy_collection_adapters_remain_private_and_evidenced"
+
+NODE: owner_revisions | modules/owner_revisions | lang: python | tier: 4 | deps: [contract_codec, access_policy, artifact_store, evidence_journal, lease_authority]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#2.3 Write grants, seam-mappings/job-hunter-seam-mapping.md#6.4 Complete publication, seam-mappings/job-hunter-seam-mapping.md#11. Five-axis lifecycle, seam-mappings/job-hunter-seam-mapping.md#15. Publication, archives, retention, and leases]
+  EXPOSES: [def register_entity(channel_id: str, registration: EntityRegistration) -> ArtifactReference, def commit_domain(channel_id: str, registration: EntityRegistration, revision: Union[DataDomainRevision, AxisRevision], command_id: str, lease: Union[LeaseRecord, Missing]) -> ArtifactReference]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix, lease_authority: def validate_completion(lease: LeaseRecord, current: LeaseRecord, authority_now: TimePoint, entity_revision: int, input_revision: int) -> None]
+  TEST_ASSERTIONS: [downstream_revision_race_rejects_stale_update_without_lost_fields, peer_writer_blocked_other_owner_still_acknowledges_independently, dispatch_and_observation_allow_only_declared_transitions, cumulative_claim_and_fact_histories_never_drop_or_rewrite_prior_entries, report_input_pins_never_regress_between_publications]
+  INVARIANTS: [OWD-OWNER, OWD-LOCAL-COMMIT, OWD-REVISION, OWD-ATTEMPT, LIFE-AXES, LIFE-PUBLICATION, LIFE-CLAIMS, LIFE-ORIGIN, LIFE-CLOSE, EK-ATOMICITY, EK-LEASE]
+  FORBIDDEN:
+    - Do not accept LogicalRow or AttemptSnapshot as a multi-owner write command.
+    - Do not acquire peer write locks, wait for peer acknowledgements, or serialize peer payloads inside an owner commit.
+    - Do not replace existing claim or fact IDs, reopen closed observation, or rewrite close-time knowledge.
+    - Do not bypass lease validation between checking and committing; both occur under the same owner-local fence.
+    - Do not grant ownership through registration fields without authenticated control-plane verification.
+  VERIFICATION: pytest tests/test_conformance.py -k "downstream_revision_race_rejects_stale_update_without_lost_fields or peer_writer_blocked_other_owner_still_acknowledges_independently or dispatch_and_observation_allow_only_declared_transitions or cumulative_claim_and_fact_histories_never_drop_or_rewrite_prior_entries or report_input_pins_never_regress_between_publications"
+
+NODE: read_publications | modules/read_publications | lang: python | tier: 4 | deps: [contract_codec, access_policy, artifact_store, evidence_journal]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#5.1 LogicalRow admission, seam-mappings/job-hunter-seam-mapping.md#15.1 Publication boundary, seam-mappings/job-hunter-seam-mapping.md#15.2 Seals]
+  EXPOSES: [def install_publication(channel_id: str, registration: EntityRegistration, document: ArtifactReference, view_id: str) -> PublicationReceipt, def seal_row(channel_id: str, registration: EntityRegistration, view_id: str, seal_name: str) -> LogicalRow, def load_row(channel_id: str, entity: EntityKey, view_id: str) -> LogicalRow]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def canonical_digest(data: bytes) -> Digest, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix]
+  TEST_ASSERTIONS: [crawler_row_with_partial_publication_is_rejected, publication_reordering_never_rolls_back_installed_revision, seal_vectors_pin_complete_local_publications_without_global_synchronization]
+  INVARIANTS: [OWD-PUBLISH, OWD-VIEW, OWD-SEAL, OWD-TIME-PROVENANCE, LIFE-PUBLICATION, LIFE-LATE-EVIDENCE, EK-HASHES]
+  FORBIDDEN:
+    - Do not advance a publication pointer before complete bytes and dependencies are validated and durable locally.
+    - Do not write source domains while composing, sealing, or importing publications.
+    - Do not replace lost published content with revision zero.
+    - Do not include a row's future registration event in its own derivation prefix.
+    - Do not make owner durability acknowledgements wait for this read-view publisher.
+  VERIFICATION: pytest tests/test_conformance.py -k "crawler_row_with_partial_publication_is_rejected or publication_reordering_never_rolls_back_installed_revision or seal_vectors_pin_complete_local_publications_without_global_synchronization"
+
+NODE: query_policy | modules/query_policy | lang: python | tier: 4 | deps: [contract_codec, artifact_store, evidence_journal, candidate_inputs]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#7.4 Query schema and families, seam-mappings/job-hunter-seam-mapping.md#7.5 Veto policy, seam-mappings/job-hunter-seam-mapping.md#8.1 Eight-stage transformation]
+  EXPOSES: [def build_query(channel_id: str, query_id: str, profile: ArtifactReference, catalog: VersionPin, veto_policy: VersionPin, syntax_mapping: VersionPin, family: str, board: str) -> QueryArtifact]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, candidate_inputs: def load_candidate_profile(channel_id: str, profile: ArtifactReference) -> CandidateProfileArtifact, candidate_inputs: def load_playbook_catalog(channel_id: str, catalog: VersionPin) -> PlaybookCatalog]
+  TEST_ASSERTIONS: [bachelors_requirement_is_flagged_not_automatically_excluded, query_families_preserve_board_syntax_and_explicit_soft_veto_activation]
+  INVARIANTS: [EK-NULL, EK-JOURNAL, EXT-READ-ONLY, EXT-TASK]
+  FORBIDDEN:
+    - Do not silently activate soft exclusions or make titles the primary capability signal.
+    - Do not collapse global query vetoes, crawler relevance vetoes, and product no-go decisions.
+    - Do not claim a generated query was executed or that an empty result proves no opportunities.
+    - Do not invoke acquisition, browser execution, or employer mutations while generating queries.
+  VERIFICATION: pytest tests/test_conformance.py -k "bachelors_requirement_is_flagged_not_automatically_excluded or query_families_preserve_board_syntax_and_explicit_soft_veto_activation"
+
+NODE: model_gateway | modules/model_gateway | lang: python | tier: 4 | deps: [contract_codec, access_policy, artifact_store, evidence_journal, usage_accounting]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#17.3 Model execution and costs, seam-mappings/job-hunter-seam-mapping.md#17.4 External service boundaries, seam-mappings/job-hunter-seam-mapping.md#18. Privacy, evidence scope, and practice isolation]
+  EXPOSES: [async def invoke_model(channel_id: str, call_id: str, policy: VersionPin, prompt: ArtifactReference, inputs: tuple[ArtifactReference, ...], output_schema: VersionPin) -> ArtifactReference]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, usage_accounting: def reserve_cost(channel_id: str, call_id: str, policy: VersionPin) -> ArtifactReference, usage_accounting: def record_model_cost(channel_id: str, call_id: str, usage: tuple[Measurement, ...], pricing: Union[VersionPin, Missing], source_refs: tuple[EvidenceRef, ...]) -> ArtifactReference]
+  TEST_ASSERTIONS: [model_responses_retain_raw_bytes_and_explicit_schema_validation_outcomes, model_disclosure_and_cost_policy_are_checked_before_provider_dispatch]
+  INVARIANTS: [EK-JOURNAL, EK-NULL, EK-ARTIFACTS, EK-TIME, EK-PROVENANCE, EK-ATOMICITY]
+  FORBIDDEN:
+    - Do not turn provider completion into a valid evaluation, material approval, or verified candidate claim.
+    - Do not silently repair malformed model responses or discard their original bytes.
+    - Do not assume historical model preferences establish current availability, prices, or API semantics.
+    - Do not send data outside the provider-specific disclosure grant or resolve credentials through ordinary artifacts.
+    - Do not let model output execute commands or modify active commissions.
+  VERIFICATION: pytest tests/test_conformance.py -k "model_responses_retain_raw_bytes_and_explicit_schema_validation_outcomes or model_disclosure_and_cost_policy_are_checked_before_provider_dispatch"
+
+NODE: connector_artifacts | modules/connector_artifacts | lang: python | tier: 4 | deps: [contract_codec, artifact_store, evidence_journal, connector_transport]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#13.4 Artifact collection, seam-mappings/job-hunter-seam-mapping.md#3.4 References and hashes]
+  EXPOSES: [async def collect_task_artifacts(channel_id: str, request: ConnectorRequest) -> Union[ArtifactInventory, ArtifactChunk, ConnectorError]]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, connector_transport: async def call_connector(channel_id: str, request: ConnectorRequest) -> ConnectorResponse]
+  TEST_ASSERTIONS: [collect_artifacts_arbitrary_path_or_url_is_rejected, artifact_chunk_corruption_is_rejected, named_artifact_inventory_preserves_missing_slots_and_known_digests]
+  INVARIANTS: [EXT-ARTIFACTS, EXT-AUTHORITY, EXT-IDEMPOTENCY, EXT-EVIDENCE, EK-ARTIFACTS, EK-HASHES]
+  FORBIDDEN:
+    - Do not accept operations other than CollectArtifacts through this interface.
+    - Do not fetch arbitrary filesystem paths or caller-selected URLs.
+    - Do not accept malformed base64, nonprogressing non-EOF chunks, mismatched sizes, or invalid assembled digests.
+    - Do not rerun a workflow or create a browser context to manufacture missing artifacts.
+    - Do not downgrade restricted content during transfer.
+  VERIFICATION: pytest tests/test_conformance.py -k "collect_artifacts_arbitrary_path_or_url_is_rejected or artifact_chunk_corruption_is_rejected or named_artifact_inventory_preserves_missing_slots_and_known_digests"
+
+NODE: interview_scheduling | modules/interview_scheduling | lang: python | tier: 4 | deps: [contract_codec, artifact_store, evidence_journal, provider_effects]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#16.7 `schedules`, seam-mappings/job-hunter-seam-mapping.md#17.2 Scheduling and outbound communication]
+  EXPOSES: [async def schedule_interview(channel_id: str, command_id: str, event: ArtifactReference, adapter: VersionPin, authorization_refs: tuple[EvidenceRef, ...]) -> Union[ArtifactReference, Missing]]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, provider_effects: async def execute_provider_effect(channel_id: str, command_id: str, operation: str, payload: ArtifactReference, adapter: VersionPin, authorization_refs: tuple[EvidenceRef, ...]) -> Union[ArtifactReference, Missing]]
+  TEST_ASSERTIONS: [calendar_timezone_missing_does_not_invent_an_instant, calendar_acknowledgement_does_not_prove_interview_attendance_or_confirmation]
+  INVARIANTS: [EK-NULL, EK-TIME, EK-CLAIMS, EK-ATOMICITY, EK-ARTIFACTS]
+  FORBIDDEN:
+    - Do not invent timezone, all-day interpretation, provider event identity, or calendar revision.
+    - Do not convert future interview business times into invented monotonic observations.
+    - Do not conflate free-busy reads, event writes, ACL changes, and employer confirmation.
+    - Do not use a cheat-sheet URL as the document's durable evidence identity.
+  VERIFICATION: pytest tests/test_conformance.py -k "calendar_timezone_missing_does_not_invent_an_instant or calendar_acknowledgement_does_not_prove_interview_attendance_or_confirmation"
+
+NODE: archive_retention | modules/archive_retention | lang: python | tier: 5 | deps: [contract_codec, access_policy, artifact_store, evidence_journal]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#15.3 Crawler replacement obligations observed by Job Hunter, seam-mappings/job-hunter-seam-mapping.md#15.4 Archive and retention, seam-mappings/job-hunter-seam-mapping.md#19.5 Concurrent crawler replacement and product update]
+  EXPOSES: [def verify_replacement(channel_id: str, replacement: FetchKeyReplacement) -> ArchiveRecord, def revise_retention(channel_id: str, pin: RetentionPinRevision) -> ArtifactReference]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def canonical_digest(data: bytes) -> Digest, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix]
+  TEST_ASSERTIONS: [changed_fetch_key_without_complete_archive_rejects_replacement, archive_requiring_mutable_peer_lookup_fails_validation, archive_dependency_reclaimed_while_reachable_fails_retention]
+  INVARIANTS: [OWD-REPLACE, OWD-ARCHIVE, OWD-RETENTION, OWD-SEAL, OWD-LOCAL-COMMIT, EK-ARTIFACTS, EK-HASHES]
+  FORBIDDEN:
+    - Do not implement crawler replacement writes inside Job Hunter; verify received replacement evidence without assuming crawler authority.
+    - Do not replace the complete archived row with a diff, crawler-only record, or hash list.
+    - Do not reconstruct archives from mutable peer state or upgrade their selected revisions.
+    - Do not release dependencies merely because a newer publication exists or a cache TTL expired.
+    - Do not accept retention releases without the registered retention authority and concurrency-safe reachability fencing.
+  VERIFICATION: pytest tests/test_conformance.py -k "changed_fetch_key_without_complete_archive_rejects_replacement or archive_requiring_mutable_peer_lookup_fails_validation or archive_dependency_reclaimed_while_reachable_fails_retention"
+
+NODE: material_generation | modules/material_generation | lang: python | tier: 5 | deps: [contract_codec, artifact_store, evidence_journal, candidate_inputs, model_gateway]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#9. Materials and factual integrity, seam-mappings/job-hunter-seam-mapping.md#6.3 Other downstream records, seam-mappings/job-hunter-seam-mapping.md#7.1 Source fidelity]
+  EXPOSES: [async def generate_materials(channel_id: str, candidate_profile: ArtifactReference, job_snapshot: ArtifactReference, evaluation: Union[ArtifactReference, Missing], policy: VersionPin) -> MaterialPackage]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, candidate_inputs: def load_candidate_profile(channel_id: str, profile: ArtifactReference) -> CandidateProfileArtifact, model_gateway: async def invoke_model(channel_id: str, call_id: str, policy: VersionPin, prompt: ArtifactReference, inputs: tuple[ArtifactReference, ...], output_schema: VersionPin) -> ArtifactReference]
+  TEST_ASSERTIONS: [unsupported_material_claim_blocks_affected_automatic_submission, actual_submitted_material_versions_do_not_rewrite_initial_commission_materials]
+  INVARIANTS: [EK-ARTIFACTS, EK-NULL, EK-PROVENANCE, LIFE-COMMISSION, OWD-JOB]
+  FORBIDDEN:
+    - Do not invent employment facts, credentials, dates, pay units, supervisory counts, or contact permissions.
+    - Do not replace an actual requested employment title with a functional translation.
+    - Do not treat a fabrication log as authorization to fabricate.
+    - Do not mutate existing materials, initial_materials, or submission evidence when generating a new package.
+    - Do not submit applications or directly publish product-domain updates from material generation.
+  VERIFICATION: pytest tests/test_conformance.py -k "unsupported_material_claim_blocks_affected_automatic_submission or actual_submitted_material_versions_do_not_rewrite_initial_commission_materials"
+
+NODE: attempt_commissioning | modules/attempt_commissioning | lang: python | tier: 5 | deps: [contract_codec, access_policy, artifact_store, evidence_journal, owner_revisions]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#4.1 Manual discovery, seam-mappings/job-hunter-seam-mapping.md#10. Commissioning and manual execution, seam-mappings/job-hunter-seam-mapping.md#13.1 Idempotency levels]
+  EXPOSES: [def register_attempt(channel_id: str, commission: AttemptCommission) -> ArtifactReference, def load_commission(channel_id: str, content: ArtifactReference) -> AttemptCommission]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def canonical_digest(data: bytes) -> Digest, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix, owner_revisions: def register_entity(channel_id: str, registration: EntityRegistration) -> ArtifactReference]
+  TEST_ASSERTIONS: [manual_job_without_crawler_commissions_without_fabricated_crawler_evidence, commission_changes_require_new_identity_and_evidenced_duplicate_risk_review, practice_lineage_links_never_promote_commitment_or_authorize_production]
+  INVARIANTS: [LIFE-COMMISSION, LIFE-IDEMPOTENCY, LIFE-LINEAGE, LIFE-MANUAL, LIFE-AXES, EK-ATTEMPT-SCOPE, EK-MANUAL, OWD-ATTEMPT]
+  FORBIDDEN:
+    - Do not register a commission before its manifest admission and authorization evidence exist.
+    - Do not mutate frozen candidate, job, kind, target, task, execution configuration, permissions, or owner bindings.
+    - Do not fabricate crawler identities, coverage, or evaluation pins for manual discovery.
+    - Do not require an executor, laboratory, reranker, or completed origin-verification mapping for manual recording.
+    - Do not make asynchronous downstream linking part of the commission's durability transaction.
+  VERIFICATION: pytest tests/test_conformance.py -k "manual_job_without_crawler_commissions_without_fabricated_crawler_evidence or commission_changes_require_new_identity_and_evidenced_duplicate_risk_review or practice_lineage_links_never_promote_commitment_or_authorize_production"
+
+NODE: correspondence | modules/correspondence | lang: python | tier: 5 | deps: [contract_codec, access_policy, artifact_store, evidence_journal, model_gateway, provider_effects]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#16.6 `emails`, seam-mappings/job-hunter-seam-mapping.md#17.1 Email intake, seam-mappings/job-hunter-seam-mapping.md#17.2 Scheduling and outbound communication]
+  EXPOSES: [async def synchronize_mail(channel_id: str, mailbox_id: str, adapter: VersionPin) -> ArtifactReference, async def send_followup(channel_id: str, command_id: str, payload: ArtifactReference, adapter: VersionPin, authorization_refs: tuple[EvidenceRef, ...]) -> Union[ArtifactReference, Missing]]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, model_gateway: async def invoke_model(channel_id: str, call_id: str, policy: VersionPin, prompt: ArtifactReference, inputs: tuple[ArtifactReference, ...], output_schema: VersionPin) -> ArtifactReference, provider_effects: async def execute_provider_effect(channel_id: str, command_id: str, operation: str, payload: ArtifactReference, adapter: VersionPin, authorization_refs: tuple[EvidenceRef, ...]) -> Union[ArtifactReference, Missing]]
+  TEST_ASSERTIONS: [email_company_title_only_match_creates_no_automatic_attempt_fact, mail_history_gap_is_recorded_as_incomplete_observation, duplicate_mail_notifications_do_not_duplicate_message_evidence]
+  INVARIANTS: [EK-OBSERVATION, EK-CLAIMS, EK-PROVENANCE, EK-ARTIFACTS, LIFE-SOURCE-CHECKS, LIFE-ORIGIN]
+  FORBIDDEN:
+    - Do not treat mailbox authentication, watch notifications, message classification, or company/title similarity as verified origin commitment.
+    - Do not claim complete mailbox history after an unresolved provider-history gap.
+    - Do not write application or report axes.
+    - Do not send follow-ups merely because a model labels a message action_required.
+    - Do not erase a historical commitment when an email reports later employer rejection.
+  VERIFICATION: pytest tests/test_conformance.py -k "email_company_title_only_match_creates_no_automatic_attempt_fact or mail_history_gap_is_recorded_as_incomplete_observation or duplicate_mail_notifications_do_not_duplicate_message_evidence"
+
+NODE: dashboard_gateway | modules/dashboard_gateway | lang: python | tier: 5 | deps: [contract_codec, access_policy, artifact_store, evidence_journal, read_publications]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#17.5 Dashboard, seam-mappings/job-hunter-seam-mapping.md#11.8 Snapshot, seam-mappings/job-hunter-seam-mapping.md#16.1 Storage rule]
+  EXPOSES: [def handle_http(channel_id: str, method: str, path: str, body: bytes) -> bytes]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, read_publications: def load_row(channel_id: str, entity: EntityKey, view_id: str) -> LogicalRow]
+  TEST_ASSERTIONS: [new_facts_with_old_report_are_explicitly_marked_stale, dashboard_scalar_application_status_mutation_is_rejected, dashboard_displays_close_time_knowledge_separately_from_later_facts]
+  INVARIANTS: [OWD-VIEW, OWD-ATTEMPT, OWD-PUBLISH, LIFE-AXES, LIFE-LATE-EVIDENCE, LIFE-REPORT-COVERAGE, EK-NULL]
+  FORBIDDEN:
+    - Do not implement browser UI code in another language inside this Python subsystem.
+    - Do not expose generic set-status, whole-row replacement, or direct owner-domain mutation endpoints.
+    - Do not hide missing axes, report coverage, input-pin staleness, or practice scope behind a success badge.
+    - Do not turn an accepted dashboard command into a claim that its requested external effect occurred.
+    - Do not make dashboard caches authoritative; commands are journaled for separately authorized workflow handling.
+  VERIFICATION: pytest tests/test_conformance.py -k "new_facts_with_old_report_are_explicitly_marked_stale or dashboard_scalar_application_status_mutation_is_rejected or dashboard_displays_close_time_knowledge_separately_from_later_facts"
+
+NODE: crawler_intake | modules/crawler_intake | lang: python | tier: 6 | deps: [contract_codec, artifact_store, evidence_journal, read_publications, archive_retention]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#5. Read-only crawler consumption, seam-mappings/job-hunter-seam-mapping.md#6.2 EvaluationReference and LogicalRow linkage, seam-mappings/job-hunter-seam-mapping.md#15.3 Crawler replacement obligations observed by Job Hunter]
+  EXPOSES: [def accept_job_row(channel_id: str, row: LogicalRow) -> EvaluationJobInput]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, read_publications: def load_row(channel_id: str, entity: EntityKey, view_id: str) -> LogicalRow, archive_retention: def verify_replacement(channel_id: str, replacement: FetchKeyReplacement) -> ArchiveRecord]
+  TEST_ASSERTIONS: [crawler_pass_missing_required_extraction_is_rejected_as_incomplete_extraction, failed_render_presented_as_usable_content_is_rejected, bypass_presented_as_genuine_classifier_pass_is_rejected, empty_unproven_coverage_is_not_presented_as_complete, same_fetch_key_different_response_preserves_acquisition_and_retains_observation]
+  INVARIANTS: [OWD-JOB, OWD-RENDER, OWD-FETCH-IDENTITY, OWD-FETCH-NOOP, OWD-REPLACE, OWD-VIEW, EK-NULL, EK-HASHES]
+  FORBIDDEN:
+    - Do not write crawler acquisition, processing, classification, discovery, lease, or replacement fields.
+    - Do not infer product suitability from ready, SHORTLISTED, or a render Pass.
+    - Do not infer posting closure from a veto or absence in one crawl.
+    - Do not substitute source_url for an unknown direct_apply_url.
+    - Do not force freshness by changing a fetch key, adding a nonce, or installing a same-key response replacement.
+  VERIFICATION: pytest tests/test_conformance.py -k "crawler_pass_missing_required_extraction_is_rejected_as_incomplete_extraction or failed_render_presented_as_usable_content_is_rejected or bypass_presented_as_genuine_classifier_pass_is_rejected or empty_unproven_coverage_is_not_presented_as_complete or same_fetch_key_different_response_preserves_acquisition_and_retains_observation"
+
+NODE: manual_observation | modules/manual_observation | lang: python | tier: 6 | deps: [artifact_store, evidence_journal, owner_revisions, attempt_commissioning]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#10.6 Manual lane, seam-mappings/job-hunter-seam-mapping.md#11.3 Observation, seam-mappings/job-hunter-seam-mapping.md#19.1 Crawler-backed manual production]
+  EXPOSES: [def record_manual_event(channel_id: str, commission: ArtifactReference, submission: EventSubmission) -> JournalEnvelope, def publish_manual_observation(channel_id: str, commission: ArtifactReference, value: ObservationValue, expected_revision: int, command_id: str) -> AxisRevision]
+  CONSUMES: [artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], owner_revisions: def commit_domain(channel_id: str, registration: EntityRegistration, revision: Union[DataDomainRevision, AxisRevision], command_id: str, lease: Union[LeaseRecord, Missing]) -> ArtifactReference, attempt_commissioning: def load_commission(channel_id: str, content: ArtifactReference) -> AttemptCommission]
+  TEST_ASSERTIONS: [manual_dispatch_or_execution_publication_is_rejected, manual_actions_pauses_and_assistance_keep_manual_provenance, manual_observation_closure_is_immutable_when_late_evidence_arrives]
+  INVARIANTS: [EK-MANUAL, EK-PROVENANCE, EK-TIME, LIFE-MANUAL, LIFE-CLOSE, LIFE-LATE-EVIDENCE, LIFE-TIME, OWD-ATTEMPT]
+  FORBIDDEN:
+    - Do not invoke Describe, Prepare, Start, or a browser binding for a manual commission.
+    - Do not fabricate subject identity, execution claims, connector versions, or native run IDs.
+    - Do not publish dispatch or execution revisions; both remain zero and inapplicable.
+    - Do not turn human notes, submit clicks, or screenshots alone into application facts.
+    - Do not reopen a closed window or retroactively change its knowledge snapshot.
+  VERIFICATION: pytest tests/test_conformance.py -k "manual_dispatch_or_execution_publication_is_rejected or manual_actions_pauses_and_assistance_keep_manual_provenance or manual_observation_closure_is_immutable_when_late_evidence_arrives"
+
+NODE: connector_dispatch | modules/connector_dispatch | lang: python | tier: 6 | deps: [contract_codec, access_policy, artifact_store, evidence_journal, connector_transport, attempt_commissioning]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#12. Task construction and connector protocol, seam-mappings/job-hunter-seam-mapping.md#13.1 Idempotency levels, seam-mappings/job-hunter-seam-mapping.md#13.2 Failure recovery]
+  EXPOSES: [async def describe_subject(channel_id: str, request: ConnectorRequest) -> Union[ConnectorDescriptor, ConnectorError], async def prepare_task(channel_id: str, request: ConnectorRequest) -> Union[PrepareResult, ConnectorError], async def start_task(channel_id: str, request: ConnectorRequest) -> Union[StartResult, ConnectorError]]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def canonical_digest(data: bytes) -> Digest, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def commit_effect(channel_id: str, owner_domain: str, entity_id: str, command_id: str, expected_revision: int, state: ArtifactReference, events: tuple[EventSubmission, ...]) -> JournalPrefix, connector_transport: async def call_connector(channel_id: str, request: ConnectorRequest) -> ConnectorResponse, attempt_commissioning: def load_commission(channel_id: str, content: ArtifactReference) -> AttemptCommission]
+  TEST_ASSERTIONS: [prepare_browsing_or_invoking_planning_fails_connector_conformance, start_before_commission_registration_is_rejected, unaccepted_required_preparation_concern_rejects_start, stale_configuration_or_preparation_is_rejected, repeated_start_new_request_id_same_logical_key_returns_same_handle, changed_executor_after_uncertain_delivery_never_automatically_reexecutes, resume_after_draining_or_closure_is_rejected, new_subject_version_starts_unknown_until_own_evidence]
+  INVARIANTS: [EXT-DESCRIBE, EXT-DECLARE-NOT-ASSESS, EXT-TASK, EXT-READ-ONLY, EXT-PREPARE, EXT-PREPARATION-PIN, EXT-START, EXT-IDEMPOTENCY, EXT-RESUME, EXT-STATE-POLICY, EXT-BOUNDS, LIFE-COMMISSION, LIFE-DISPATCH, LIFE-IDEMPOTENCY, EK-CAPABILITY]
+  FORBIDDEN:
+    - Do not accept a request whose operation differs from the selected public function.
+    - Do not dispatch manual commissions or invent application attempts for discovery.
+    - Do not browse, invoke hidden planning, reset state, or improve a plan during Prepare.
+    - Do not silently reprepare changed configurations, accept blocking concerns, or downgrade required bounds.
+    - Do not evade the commission's single-execution fence by changing callers, keys, connectors, or executors.
+    - Do not treat native mappings, local Start receipts, or declared capabilities as independently assessed success.
+  VERIFICATION: pytest tests/test_conformance.py -k "prepare_browsing_or_invoking_planning_fails_connector_conformance or start_before_commission_registration_is_rejected or unaccepted_required_preparation_concern_rejects_start or stale_configuration_or_preparation_is_rejected or repeated_start_new_request_id_same_logical_key_returns_same_handle or changed_executor_after_uncertain_delivery_never_automatically_reexecutes or resume_after_draining_or_closure_is_rejected or new_subject_version_starts_unknown_until_own_evidence"
+
+NODE: connector_observation | modules/connector_observation | lang: python | tier: 6 | deps: [contract_codec, artifact_store, evidence_journal, connector_transport, connector_artifacts, read_publications, attempt_commissioning]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#12.9 Observe, seam-mappings/job-hunter-seam-mapping.md#11.4 Execution claims, seam-mappings/job-hunter-seam-mapping.md#11.6 Source checks]
+  EXPOSES: [async def observe_task(channel_id: str, request: ConnectorRequest) -> Union[ObservationPage, ConnectorError]]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, connector_transport: async def call_connector(channel_id: str, request: ConnectorRequest) -> ConnectorResponse, connector_artifacts: async def collect_task_artifacts(channel_id: str, request: ConnectorRequest) -> Union[ArtifactInventory, ArtifactChunk, ConnectorError], read_publications: def install_publication(channel_id: str, registration: EntityRegistration, document: ArtifactReference, view_id: str) -> PublicationReceipt, attempt_commissioning: def load_commission(channel_id: str, content: ArtifactReference) -> AttemptCommission]
+  TEST_ASSERTIONS: [fixed_cutoff_observe_pagination_preserves_cutoff_and_scanned_cursor, empty_observe_page_does_not_imply_termination, oversized_observation_returns_explicit_error_without_skipping, authenticated_uncorrelated_callback_yields_no_accepted_claim, trace_mismatch_retains_evidenced_alternate_correlation_basis, native_completed_response_remains_execution_claim_only]
+  INVARIANTS: [EXT-OBSERVE, EXT-NORMALIZE, EXT-EVIDENCE, EXT-TIME-NULL, EK-OBSERVATION, EK-PROVENANCE, EK-CLAIMS, LIFE-CLAIMS, LIFE-SOURCE-CHECKS, LIFE-LATE-EVIDENCE]
+  FORBIDDEN:
+    - Do not change a continuation cutoff, skip unavailable history, or advance the cursor past unhandled oversized observations.
+    - Do not infer termination or producer completeness from an empty page or closed connection.
+    - Do not upgrade imported provenance or accept claims solely because serialized source_checks say verified.
+    - Do not overwrite conflicting native responses or normalize completed into origin commitment.
+    - Do not author connector-owned lifecycle revisions while importing them; retain and verify the original writer's immutable publication.
+    - Do not accept application or report publications as connector-owned output.
+  VERIFICATION: pytest tests/test_conformance.py -k "fixed_cutoff_observe_pagination_preserves_cutoff_and_scanned_cursor or empty_observe_page_does_not_imply_termination or oversized_observation_returns_explicit_error_without_skipping or authenticated_uncorrelated_callback_yields_no_accepted_claim or trace_mismatch_retains_evidenced_alternate_correlation_basis or native_completed_response_remains_execution_claim_only"
+
+NODE: connector_controls | modules/connector_controls | lang: python | tier: 6 | deps: [access_policy, artifact_store, evidence_journal, connector_transport, attempt_commissioning]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#13.3 Controls and closure, seam-mappings/job-hunter-seam-mapping.md#10.5 Observation policy, seam-mappings/job-hunter-seam-mapping.md#13.2 Failure recovery]
+  EXPOSES: [async def control_task(channel_id: str, request: ConnectorRequest) -> Union[ControlReceipt, ConnectorError]]
+  CONSUMES: [access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, connector_transport: async def call_connector(channel_id: str, request: ConnectorRequest) -> ConnectorResponse, attempt_commissioning: def load_commission(channel_id: str, content: ArtifactReference) -> AttemptCommission]
+  TEST_ASSERTIONS: [cancel_acknowledgement_does_not_imply_no_commit_fact, process_containment_does_not_certify_native_cancellation, connection_close_and_end_observation_remain_separate_from_native_cancel]
+  INVARIANTS: [EXT-CLOSE, EXT-CONTROLS, EXT-BOUNDS, EXT-AUTHORITY, LIFE-CLOSE, LIFE-CONTROLS, LIFE-TIME, EK-CLAIMS]
+  FORBIDDEN:
+    - Do not accept operations other than RequestNativeCancel, CloseObservationConnection, ReleaseNativeContext, or Contain.
+    - Do not substitute containment for failed release or cancellation without separate explicit authorization.
+    - Do not accept shell commands, guessed PIDs, or unbounded shared-resource cleanup.
+    - Do not seal an employer's mutation authority or claim rollback of committed work.
+    - Do not resume commands after draining or closure, or publish connector-owned closure state from Job Hunter.
+  VERIFICATION: pytest tests/test_conformance.py -k "cancel_acknowledgement_does_not_imply_no_commit_fact or process_containment_does_not_certify_native_cancellation or connection_close_and_end_observation_remain_separate_from_native_cancel"
+
+NODE: origin_receipts | modules/origin_receipts | lang: python | tier: 6 | deps: [contract_codec, access_policy, artifact_store, evidence_journal, owner_revisions, attempt_commissioning]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#14. Origin verification and reconciliation ingress, seam-mappings/job-hunter-seam-mapping.md#11.5 Application facts, seam-mappings/job-hunter-seam-mapping.md#11.6 Source checks]
+  EXPOSES: [def record_origin_receipt(channel_id: str, commission: ArtifactReference, receipt: ArtifactReference, expected_revision: int, command_id: str) -> Union[AxisRevision, Missing]]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, owner_revisions: def commit_domain(channel_id: str, registration: EntityRegistration, revision: Union[DataDomainRevision, AxisRevision], command_id: str, lease: Union[LeaseRecord, Missing]) -> ArtifactReference, attempt_commissioning: def load_commission(channel_id: str, content: ArtifactReference) -> AttemptCommission]
+  TEST_ASSERTIONS: [manual_verified_production_receipt_is_accepted_under_origin_policy, http_200_or_submit_click_does_not_create_origin_fact, employer_rejection_preserves_historical_application_commitment, practice_fact_cited_for_production_commitment_is_rejected]
+  INVARIANTS: [LIFE-ORIGIN, LIFE-SOURCE-CHECKS, LIFE-LATE-EVIDENCE, LIFE-MANUAL, EK-PROVENANCE, EK-CLAIMS, EK-ATTEMPT-SCOPE, OWD-ATTEMPT]
+  FORBIDDEN:
+    - Do not accept facts without independently verified source, semantics, candidate, job, origin, and attempt correlation.
+    - Do not treat local timeout, missing receipt, or observation closure as final noncommitment.
+    - Do not invent native receipt IDs, origin revisions, application IDs, or origin-owned finality.
+    - Do not use fixture, historical, or synthetic commitments as production facts.
+    - Do not erase conflicting facts or historical commitment after withdrawal, rejection, or job closure.
+    - Do not block observation-only recording when the pinned origin policy cannot yet accept facts.
+  VERIFICATION: pytest tests/test_conformance.py -k "manual_verified_production_receipt_is_accepted_under_origin_policy or http_200_or_submit_click_does_not_create_origin_fact or employer_rejection_preserves_historical_application_commitment or practice_fact_cited_for_production_commitment_is_rejected"
+
+NODE: claim_reconciliation | modules/claim_reconciliation | lang: python | tier: 6 | deps: [contract_codec, artifact_store, evidence_journal, owner_revisions, attempt_commissioning]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#11.7 Report, seam-mappings/job-hunter-seam-mapping.md#14. Origin verification and reconciliation ingress, seam-mappings/job-hunter-seam-mapping.md#19.3 Claimed cancellation contradicted]
+  EXPOSES: [def derive_report(channel_id: str, commission: ArtifactReference, inputs: ReportInputPins, evaluator: VersionPin, prefix: JournalPrefix) -> ReportValue, def publish_report(channel_id: str, commission: ArtifactReference, value: ReportValue, expected_revision: int, command_id: str) -> AxisRevision]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], owner_revisions: def commit_domain(channel_id: str, registration: EntityRegistration, revision: Union[DataDomainRevision, AxisRevision], command_id: str, lease: Union[LeaseRecord, Missing]) -> ArtifactReference, attempt_commissioning: def load_commission(channel_id: str, content: ArtifactReference) -> AttemptCommission]
+  TEST_ASSERTIONS: [late_commitment_after_close_time_unknown_preserves_snapshot_and_compatibility, late_commitment_against_entire_attempt_no_commit_claim_is_contradicted, receipt_arrival_order_without_temporal_evidence_keeps_relation_unknown, reconciled_narrow_claim_does_not_imply_application_success]
+  INVARIANTS: [LIFE-RECONCILE, LIFE-REPORT-COVERAGE, LIFE-LATE-EVIDENCE, LIFE-AXES, LIFE-TIME, EK-CLAIMS, EK-DIAGNOSTIC, OWD-ATTEMPT]
+  FORBIDDEN:
+    - Do not write dispatch, observation, execution, or application domains.
+    - Do not replace original claims with corrected interpretations or delete conflicting facts.
+    - Do not use live network lookups, mutable current rows, receipt order, or UTC annotations as unrecorded comparison evidence.
+    - Do not treat stopped as an entire-attempt no-commit assertion.
+    - Do not equate reconciled or not_comparable with independently proved execution or application success.
+    - Do not fabricate subject comparisons for manual attempts.
+  VERIFICATION: pytest tests/test_conformance.py -k "late_commitment_after_close_time_unknown_preserves_snapshot_and_compatibility or late_commitment_against_entire_attempt_no_commit_claim_is_contradicted or receipt_arrival_order_without_temporal_evidence_keeps_relation_unknown or reconciled_narrow_claim_does_not_imply_application_success"
+
+NODE: job_evaluation | modules/job_evaluation | lang: python | tier: 7 | deps: [contract_codec, artifact_store, evidence_journal, candidate_inputs, model_gateway, crawler_intake]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#8. Evaluation pipeline and artifacts, seam-mappings/job-hunter-seam-mapping.md#6.2 EvaluationReference and LogicalRow linkage, seam-mappings/job-hunter-seam-mapping.md#7.3 Eight-playbook catalog]
+  EXPOSES: [async def evaluate_job(channel_id: str, row: LogicalRow, candidate_profile: ArtifactReference, policies: EvaluationPolicyPins, method: str) -> EvaluationArtifact, def rank_evaluations(channel_id: str, evaluations: tuple[EvaluationArtifact, ...], policy: VersionPin) -> RankingArtifact]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, candidate_inputs: def load_candidate_profile(channel_id: str, profile: ArtifactReference) -> CandidateProfileArtifact, candidate_inputs: def load_playbook_catalog(channel_id: str, catalog: VersionPin) -> PlaybookCatalog, model_gateway: async def invoke_model(channel_id: str, call_id: str, policy: VersionPin, prompt: ArtifactReference, inputs: tuple[ArtifactReference, ...], output_schema: VersionPin) -> ArtifactReference, crawler_intake: def accept_job_row(channel_id: str, row: LogicalRow) -> EvaluationJobInput]
+  TEST_ASSERTIONS: [evaluation_pin_differing_from_logical_row_crawler_slot_is_rejected, profile_pin_mismatch_between_reference_and_evaluation_artifact_is_rejected, unknown_playbook_label_retains_raw_response_and_surfaces_issue, unknown_pay_requires_automatic_review, missing_scoring_rubric_prevents_invented_score_semantics, embedding_model_or_dimension_mismatch_invalidates_similarity_comparison]
+  INVARIANTS: [OWD-JOB, EK-JOURNAL, EK-NULL, EK-ARTIFACTS, EK-ASSESSMENT]
+  FORBIDDEN:
+    - Do not invent compensation thresholds, score ranges, weights, eligibility waivers, or tolerance policies.
+    - Do not treat title similarity, embeddings, crawler classification, or model confidence as eligibility.
+    - Do not omit the exact LogicalRow artifact, seal, crawler pin, profile pin, or policy pins.
+    - Do not convert unknown pay or unresolved prerequisites into automatic go.
+    - Do not erase old evaluations when inputs change or make a ranking global outside its pinned included evaluations.
+    - Do not write product selection or commission applications from the evaluator.
+  VERIFICATION: pytest tests/test_conformance.py -k "evaluation_pin_differing_from_logical_row_crawler_slot_is_rejected or profile_pin_mismatch_between_reference_and_evaluation_artifact_is_rejected or unknown_playbook_label_retains_raw_response_and_surfaces_issue or unknown_pay_requires_automatic_review or missing_scoring_rubric_prevents_invented_score_semantics or embedding_model_or_dimension_mismatch_invalidates_similarity_comparison"
+
+NODE: product_domain | modules/product_domain | lang: python | tier: 7 | deps: [contract_codec, access_policy, artifact_store, evidence_journal, owner_revisions, crawler_intake]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#6. Product-owned downstream interface, seam-mappings/job-hunter-seam-mapping.md#15.5 Product leases, seam-mappings/job-hunter-seam-mapping.md#16.13 `noGoList`]
+  EXPOSES: [def publish_product_revision(channel_id: str, registration: EntityRegistration, expected_revision: int, command_id: str, value: JobDownstreamValue, lease: Union[LeaseRecord, Missing]) -> DataDomainRevision]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, access_policy: def authorize(channel_id: str, operation: str, resource_id: str) -> ProducerDescriptor, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], owner_revisions: def commit_domain(channel_id: str, registration: EntityRegistration, revision: Union[DataDomainRevision, AxisRevision], command_id: str, lease: Union[LeaseRecord, Missing]) -> ArtifactReference, crawler_intake: def accept_job_row(channel_id: str, row: LogicalRow) -> EvaluationJobInput]
+  TEST_ASSERTIONS: [job_hunter_writing_crawler_fields_rejects_entire_write, selection_transitions_require_new_authorized_rationale_and_preserve_history, product_attempt_links_require_registered_commissions_without_inheriting_outcomes]
+  INVARIANTS: [OWD-JOB, OWD-OWNER, OWD-REVISION, OWD-LOCAL-COMMIT, EK-LEASE, LIFE-COMMISSION, LIFE-AXES]
+  FORBIDDEN:
+    - Do not write any crawler field or initialize a pretend crawler revision.
+    - Do not overwrite unrelated downstream fields while recording evaluations, materials, selection, ownership, or attempt links.
+    - Do not treat product go, claimed work, or an attempt link as application commitment.
+    - Do not modify existing commissions or stop native work as a side effect of selection changes.
+    - Do not publish unsupported material packages as approved submission inputs.
+    - Do not wait for read-view publication or crawler acknowledgement before acknowledging a durable downstream write.
+  VERIFICATION: pytest tests/test_conformance.py -k "job_hunter_writing_crawler_fields_rejects_entire_write or selection_transitions_require_new_authorized_rationale_and_preserve_history or product_attempt_links_require_registered_commissions_without_inheriting_outcomes"
+
+NODE: attempt_diagnostics | modules/attempt_diagnostics | lang: python | tier: 7 | deps: [contract_codec, artifact_store, evidence_journal, claim_reconciliation]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#3. Shared evidence requirements, seam-mappings/job-hunter-seam-mapping.md#11.7 Report, seam-mappings/job-hunter-seam-mapping.md#18. Privacy, evidence scope, and practice isolation]
+  EXPOSES: [def derive_diagnostic(channel_id: str, manifest: Manifest, prefix: JournalPrefix, request: AnalysisRequest) -> DiagnosticDocument]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], claim_reconciliation: def derive_report(channel_id: str, commission: ArtifactReference, inputs: ReportInputPins, evaluator: VersionPin, prefix: JournalPrefix) -> ReportValue]
+  TEST_ASSERTIONS: [diagnostic_derivation_uses_only_manifest_prefix_and_pinned_classifier, capability_opportunity_and_result_remain_independent_in_diagnostics, disabled_or_unsupported_fix_suggestions_remain_reasoned_missing_values]
+  INVARIANTS: [EK-DIAGNOSTIC, EK-ASSESSMENT, EK-CAPABILITY, EK-CLAIMS, EK-MANUAL, EK-TIME, EK-TIMING-INTERPRETATION, EK-NULL, EK-ATTEMPT-SCOPE]
+  FORBIDDEN:
+    - Do not use current wall time, mutable projections, unrecorded network observations, or evidence beyond analysis_requested.
+    - Do not rewrite copied measurements, source claims, origin facts, provenance, or close-time observations.
+    - Do not produce satisfied or violated without a valid exposed opportunity and supporting controls.
+    - Do not create a subject capability descriptor for manual work.
+    - Do not manufacture fix instances, self-referential recommendations, or registry implementation as an M1 prerequisite.
+    - Do not invoke publish_report while deriving a diagnostic.
+  VERIFICATION: pytest tests/test_conformance.py -k "diagnostic_derivation_uses_only_manifest_prefix_and_pinned_classifier or capability_opportunity_and_result_remain_independent_in_diagnostics or disabled_or_unsupported_fix_suggestions_remain_reasoned_missing_values"
+
+NODE: offline_replay | modules/offline_replay | lang: python | tier: 8 | deps: [contract_codec, artifact_store, evidence_journal, attempt_diagnostics]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#18. Privacy, evidence scope, and practice isolation, seam-mappings/job-hunter-seam-mapping.md#20. Conformance requirements]
+  EXPOSES: [def replay_diagnostic(channel_id: str, manifest: Manifest, source: DiagnosticDocument, input_bundle: ArtifactReference, replay_engine: VersionPin) -> ReplayReceipt]
+  CONSUMES: [contract_codec: def validate_record(data: bytes, schema_id: str) -> bytes, contract_codec: def canonical_digest(data: bytes) -> Digest, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], attempt_diagnostics: def derive_diagnostic(channel_id: str, manifest: Manifest, prefix: JournalPrefix, request: AnalysisRequest) -> DiagnosticDocument]
+  TEST_ASSERTIONS: [replay_causing_external_write_fails_conformance, missing_replay_inputs_prevent_matched_receipt_without_mutating_source_diagnostic]
+  INVARIANTS: [EK-REPLAY, EK-DIAGNOSTIC, EK-HASHES, EK-ARTIFACTS, EXT-FAILURE]
+  FORBIDDEN:
+    - Do not import connector execution, provider effects, browser bindings, or native control clients.
+    - Do not invoke a browser, subject, email send, calendar write, or employer mutation.
+    - Do not use recorded diagnostics as authoritative inputs to their own re-derivation.
+    - Do not sleep to reproduce timing, fetch absent inputs from live services, or claim matched with missing inputs.
+    - Do not label production diagnostic re-derivation as exact fixture replay or live reproduction.
+    - Do not modify the compared diagnostic; return a separate immutable receipt for later registration.
+  VERIFICATION: pytest tests/test_conformance.py -k "replay_causing_external_write_fails_conformance or missing_replay_inputs_prevent_matched_receipt_without_mutating_source_diagnostic"
+
+NODE: workflow_runtime | modules/workflow_runtime | lang: python | tier: 9 | deps: [artifact_store, evidence_journal, lease_authority, legacy_collections, read_publications, query_policy, connector_artifacts, interview_scheduling, archive_retention, material_generation, attempt_commissioning, correspondence, dashboard_gateway, manual_observation, connector_dispatch, connector_observation, connector_controls, origin_receipts, claim_reconciliation, job_evaluation, product_domain, attempt_diagnostics, offline_replay]
+  READS: [seam-mappings/job-hunter-seam-mapping.md#19. End-to-end required traces, seam-mappings/job-hunter-seam-mapping.md#21. Unresolved inputs and bounded stop conditions, seam-mappings/job-hunter-seam-mapping.md#22. Completion and release criteria, seam-mappings/job-hunter-seam-mapping.md#17.6 Development tools]
+  EXPOSES: []
+  CONSUMES: [artifact_store: def retain_artifact(channel_id: str, owner_domain: str, media_type: str, content: bytes, access: str) -> ArtifactReference, artifact_store: def resolve_artifact(channel_id: str, reference: ArtifactReference) -> bytes, evidence_journal: def admit_manifest(channel_id: str, manifest: Manifest) -> JournalEnvelope, evidence_journal: def append_event(channel_id: str, owner_domain: str, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def read_prefix(channel_id: str, prefix: JournalPrefix) -> tuple[JournalEnvelope, ...], lease_authority: def transition_lease(channel_id: str, resource: ResourceReference, operation: str, expected: Union[LeaseRecord, Missing], policy: VersionPin) -> LeaseRecord, legacy_collections: def import_legacy_document(channel_id: str, collection: str, source: ArtifactReference, mapping: VersionPin) -> ArtifactReference, read_publications: def install_publication(channel_id: str, registration: EntityRegistration, document: ArtifactReference, view_id: str) -> PublicationReceipt, read_publications: def seal_row(channel_id: str, registration: EntityRegistration, view_id: str, seal_name: str) -> LogicalRow, query_policy: def build_query(channel_id: str, query_id: str, profile: ArtifactReference, catalog: VersionPin, veto_policy: VersionPin, syntax_mapping: VersionPin, family: str, board: str) -> QueryArtifact, connector_artifacts: async def collect_task_artifacts(channel_id: str, request: ConnectorRequest) -> Union[ArtifactInventory, ArtifactChunk, ConnectorError], interview_scheduling: async def schedule_interview(channel_id: str, command_id: str, event: ArtifactReference, adapter: VersionPin, authorization_refs: tuple[EvidenceRef, ...]) -> Union[ArtifactReference, Missing], archive_retention: def revise_retention(channel_id: str, pin: RetentionPinRevision) -> ArtifactReference, material_generation: async def generate_materials(channel_id: str, candidate_profile: ArtifactReference, job_snapshot: ArtifactReference, evaluation: Union[ArtifactReference, Missing], policy: VersionPin) -> MaterialPackage, attempt_commissioning: def register_attempt(channel_id: str, commission: AttemptCommission) -> ArtifactReference, correspondence: async def synchronize_mail(channel_id: str, mailbox_id: str, adapter: VersionPin) -> ArtifactReference, correspondence: async def send_followup(channel_id: str, command_id: str, payload: ArtifactReference, adapter: VersionPin, authorization_refs: tuple[EvidenceRef, ...]) -> Union[ArtifactReference, Missing], dashboard_gateway: def handle_http(channel_id: str, method: str, path: str, body: bytes) -> bytes, manual_observation: def record_manual_event(channel_id: str, commission: ArtifactReference, submission: EventSubmission) -> JournalEnvelope, manual_observation: def publish_manual_observation(channel_id: str, commission: ArtifactReference, value: ObservationValue, expected_revision: int, command_id: str) -> AxisRevision, connector_dispatch: async def describe_subject(channel_id: str, request: ConnectorRequest) -> Union[ConnectorDescriptor, ConnectorError], connector_dispatch: async def prepare_task(channel_id: str, request: ConnectorRequest) -> Union[PrepareResult, ConnectorError], connector_dispatch: async def start_task(channel_id: str, request: ConnectorRequest) -> Union[StartResult, ConnectorError], connector_observation: async def observe_task(channel_id: str, request: ConnectorRequest) -> Union[ObservationPage, ConnectorError], connector_controls: async def control_task(channel_id: str, request: ConnectorRequest) -> Union[ControlReceipt, ConnectorError], origin_receipts: def record_origin_receipt(channel_id: str, commission: ArtifactReference, receipt: ArtifactReference, expected_revision: int, command_id: str) -> Union[AxisRevision, Missing], claim_reconciliation: def derive_report(channel_id: str, commission: ArtifactReference, inputs: ReportInputPins, evaluator: VersionPin, prefix: JournalPrefix) -> ReportValue, claim_reconciliation: def publish_report(channel_id: str, commission: ArtifactReference, value: ReportValue, expected_revision: int, command_id: str) -> AxisRevision, job_evaluation: async def evaluate_job(channel_id: str, row: LogicalRow, candidate_profile: ArtifactReference, policies: EvaluationPolicyPins, method: str) -> EvaluationArtifact, job_evaluation: def rank_evaluations(channel_id: str, evaluations: tuple[EvaluationArtifact, ...], policy: VersionPin) -> RankingArtifact, product_domain: def publish_product_revision(channel_id: str, registration: EntityRegistration, expected_revision: int, command_id: str, value: JobDownstreamValue, lease: Union[LeaseRecord, Missing]) -> DataDomainRevision, attempt_diagnostics: def derive_diagnostic(channel_id: str, manifest: Manifest, prefix: JournalPrefix, request: AnalysisRequest) -> DiagnosticDocument, offline_replay: def replay_diagnostic(channel_id: str, manifest: Manifest, source: DiagnosticDocument, input_bundle: ArtifactReference, replay_engine: VersionPin) -> ReplayReceipt]
+  TEST_ASSERTIONS: [manual_production_lane_runs_without_crawler_model_executor_or_laboratory, practice_completion_never_automatically_dispatches_production, scheduler_recovery_observes_uncertain_work_without_repeating_external_effects, job_hunter_silo_verification_runs_with_synthetic_peers_and_no_live_portals]
+  INVARIANTS: [EK-MANUAL, EK-ATOMICITY, EK-ATTEMPT-SCOPE, EK-REPLAY, LIFE-COMMISSION, LIFE-IDEMPOTENCY, LIFE-LINEAGE, LIFE-MANUAL, LIFE-LATE-EVIDENCE, EXT-SURFACE, EXT-READ-ONLY, EXT-BOUNDS, OWD-LOCAL-COMMIT, OWD-PUBLISH]
+  FORBIDDEN:
+    - Do not expose this composition root as another shared contract or let dependencies import it.
+    - Do not merge owner transactions, credentials, publication authorities, or runtime failure domains.
+    - Do not import BrowserOxide, Camoufox, Playwright, Juggler, or shared browser primitives into Job Hunter.
+    - Do not implement any subsystem module in a language other than Python.
+    - Do not eagerly initialize optional providers, browser connectors, or laboratory services when starting the manual lane.
+    - Do not equate scheduler completion, a returned function, or local command acknowledgement with native acceptance or employer commitment.
+    - Do not turn missing policies or failed optional integrations into a portfolio-wide gate.
+    - Do not claim verification was executed merely because deterministic commands are specified.
+  VERIFICATION: pytest tests/test_conformance.py -k "manual_production_lane_runs_without_crawler_model_executor_or_laboratory or practice_completion_never_automatically_dispatches_production or scheduler_recovery_observes_uncertain_work_without_repeating_external_effects or job_hunter_silo_verification_runs_with_synthetic_peers_and_no_live_portals"

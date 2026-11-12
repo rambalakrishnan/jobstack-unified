@@ -1,0 +1,367 @@
+NODE: rm_wire | modules/rm_wire | lang: rust | tier: 0 | deps: []
+  READS: [seam-mappings/ringmaster-seam-mapping.md#3.1 Scalar and reference types, seam-mappings/ringmaster-seam-mapping.md#3.2 Missingness, seam-mappings/ringmaster-seam-mapping.md#3.5 Hashing and storage]
+  EXPOSES: ["pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "pub fn canonical_digest(bytes: &[u8]) -> Result<Digest, String>", "pub fn artifact_digest(bytes: &[u8]) -> Digest"]
+  CONSUMES: []
+  TEST_ASSERTIONS: [RM-C01, RM-C02]
+  INVARIANTS: [EK-NULL, EK-HASHES, EXT-TIME-NULL]
+  FORBIDDEN:
+    - Accepting duplicate keys, non-finite numbers, unknown versions, undeclared closed-object fields, or normalized bare nulls.
+    - Inserting defaults, normalizing Unicode, reordering arrays, or redacting bytes during canonicalization.
+    - Treating structural validation or a valid digest as authentication or semantic conformance.
+    - Replacing the registered lowercase conformance filters with unrelated test-name filters.
+  VERIFICATION: cargo test -p rm_wire -- rm-c01 rm-c02
+
+NODE: rm_time | modules/rm_time | lang: rust | tier: 1 | deps: [rm_wire]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#3.3 Clocks and TimePoint, seam-mappings/ringmaster-seam-mapping.md#3.4 Measurement]
+  EXPOSES: ["pub fn validate_measurement(measurement: &Measurement, clocks: &[ClockDescriptor]) -> Result<(), String>", "pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>"]
+  TEST_ASSERTIONS: [RM-C03, RM-C04]
+  INVARIANTS: [EK-TIME, EK-TIMING-INTERPRETATION, LIFE-TIME, EXT-TIME-NULL, BO-TIME, OWD-TIME-PROVENANCE]
+  FORBIDDEN:
+    - Subtracting or ordering monotonic coordinates across clocks, origins, or boots.
+    - Using UTC annotations to reconstruct elapsed time or restart downtime.
+    - Replacing missing duration with zero or changing an exact subject-reported zero.
+    - Treating local waiting duration as native execution duration or dividing aggregate runtime into step timings.
+  VERIFICATION: cargo test -p rm_time -- rm-c03 rm-c04
+
+NODE: rm_authority | modules/rm_authority | lang: rust | tier: 1 | deps: [rm_wire]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#2. Boundary ownership register, seam-mappings/ringmaster-seam-mapping.md#16.1 Commission, seam-mappings/ringmaster-seam-mapping.md#20. Security and data-flow restrictions]
+  EXPOSES: ["pub struct AuthenticatedPrincipal { principal_id: String, registration_digest: Digest }", "pub fn authenticate_channel(channel: &mut dyn std::io::Read) -> Result<AuthenticatedPrincipal, ConnectorError>", "pub fn authorize_work(principal: &AuthenticatedPrincipal, scope: &WorkScope, operation: &Operation) -> Result<ProducerDescriptor, ConnectorError>", "pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "pub fn verify_attempt_scope(manifest: &Manifest, commission: &AttemptCommission) -> Result<(), ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_wire: pub fn canonical_digest(bytes: &[u8]) -> Result<Digest, String>"]
+  TEST_ASSERTIONS: [RM-C53]
+  INVARIANTS: [EK-PROVENANCE, EK-ATTEMPT-SCOPE, LIFE-COMMISSION, LIFE-AXES, LIFE-LINEAGE, EXT-AUTHORITY, EXT-TASK, BO-AUTHORITY, OWD-OWNER]
+  FORBIDDEN:
+    - Constructing an authenticated principal from a request ID, source address, digest, serialized role, or application credential alone.
+    - Exposing public constructors or deserialization for AuthenticatedPrincipal.
+    - Promoting imported practice, historical, or synthetic evidence into current production evidence.
+    - Allowing lineage links, target text, scripts, or model output to enlarge commissioned authority.
+    - Granting the report writer execution or application write authority.
+  VERIFICATION: cargo test -p rm_authority -- rm-c53
+
+NODE: rm_evidence | modules/rm_evidence | lang: rust | tier: 2 | deps: [rm_wire, rm_time, rm_authority]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#3.5 Hashing and storage, seam-mappings/ringmaster-seam-mapping.md#3.6 Journal submission and envelope, seam-mappings/ringmaster-seam-mapping.md#18. Lease, recovery, and crash semantics]
+  EXPOSES: ["pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>", "pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>", "pub fn resolve_evidence(principal: &AuthenticatedPrincipal, reference: &EvidenceRef, prefix: &JournalPrefix) -> Result<JournalEnvelope, ConnectorError>", "pub fn read_event(principal: &AuthenticatedPrincipal, journal_id: &str, sequence: PositiveInteger) -> Result<JournalEnvelope, ConnectorError>", "pub fn journal_head(principal: &AuthenticatedPrincipal, journal_id: &str) -> Result<JournalPrefix, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_wire: pub fn canonical_digest(bytes: &[u8]) -> Result<Digest, String>", "rm_wire: pub fn artifact_digest(bytes: &[u8]) -> Digest", "rm_time: pub fn validate_measurement(measurement: &Measurement, clocks: &[ClockDescriptor]) -> Result<(), String>", "rm_authority: pub struct AuthenticatedPrincipal { principal_id: String, registration_digest: Digest }", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C49, RM-C58]
+  INVARIANTS: [EK-JOURNAL, EK-ATOMICITY, EK-HASHES, EK-PROVENANCE, EK-OBSERVATION, EK-ARTIFACTS, LIFE-EVIDENCE, EXT-EVIDENCE, EXT-ARTIFACTS, OWD-LOCAL-COMMIT, OWD-PUBLISH, OWD-RETENTION]
+  FORBIDDEN:
+    - Accepting caller-authored JournalEnvelope authority fields instead of authenticated EventSubmission content.
+    - Acknowledging an owner effect before its input, deduplication record, effects, journal events, and replayable response commit durably.
+    - Using append_event to split an authoritative effect from its required owner-local atomic commit.
+    - Acquiring another owner's transaction or waiting for peer publication on the owner commit path.
+    - Registering absent artifact bytes, citing a future registration, or replacing bytes under an existing digest.
+    - Repairing a journal gap by repeating an external action.
+    - Collecting artifacts reachable from retained prefixes, publications, replay bundles, or archives.
+  VERIFICATION: cargo test -p rm_evidence -- rm-c49 rm-c58
+
+NODE: rm_leases | modules/rm_leases | lang: rust | tier: 3 | deps: [rm_authority, rm_evidence, rm_time]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#18. Lease, recovery, and crash semantics, seam-mappings/ringmaster-seam-mapping.md#4.3 Local scheduling states]
+  EXPOSES: ["pub fn transition_lease(principal: &AuthenticatedPrincipal, current: &LeaseRecord, intent: &ArtifactReference, now: &TimePoint) -> Result<LeaseRecord, ConnectorError>", "pub fn validate_lease(lease: &LeaseRecord, now: &TimePoint, entity_revision: Revision, input_revision: Revision, owner_epoch: &str, session_epoch: &MaybeString) -> Result<(), ConnectorError>"]
+  CONSUMES: ["rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>"]
+  TEST_ASSERTIONS: [RM-C50]
+  INVARIANTS: [EK-LEASE, EK-LEASE-RESTART, EK-ATOMICITY, LIFE-IDEMPOTENCY, EXT-RESUME, OWD-REVISION]
+  FORBIDDEN:
+    - Allowing a worker to self-issue ownership or bypass the registered resource authority.
+    - Changing pending resource state merely because a lease was claimed.
+    - Committing stale completions or counting a failed claim generation more than once.
+    - Comparing old-boot lease offsets with a restarted authority clock.
+    - Treating reclamation, confirmed local death, or lease expiry as proof of external termination or safe resubmission.
+  VERIFICATION: cargo test -p rm_leases -- rm-c50
+
+NODE: rm_catalog | modules/rm_catalog | lang: rust | tier: 3 | deps: [rm_wire, rm_authority, rm_evidence]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#5.2 BOBindingDescriptor, seam-mappings/ringmaster-seam-mapping.md#5.3 Complete BrowserOxide capability catalog, seam-mappings/ringmaster-seam-mapping.md#12.2 Describe, seam-mappings/ringmaster-seam-mapping.md#12.3 CapabilityDescriptor, seam-mappings/ringmaster-seam-mapping.md#12.4 Operation and task mappings]
+  EXPOSES: ["pub fn describe(principal: &AuthenticatedPrincipal, request: &DescribeRequest) -> Result<ConnectorDescriptor, ConnectorError>", "pub fn validate_native_binding(principal: &AuthenticatedPrincipal, descriptor: &BOBindingDescriptor) -> Result<(), ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn resolve_evidence(principal: &AuthenticatedPrincipal, reference: &EvidenceRef, prefix: &JournalPrefix) -> Result<JournalEnvelope, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C51]
+  INVARIANTS: [EK-CAPABILITY, EXT-DESCRIBE, EXT-DECLARE-NOT-ASSESS, BO-CAPS]
+  FORBIDDEN:
+    - Inheriting capability presence or absence across subject, binding, engine, or configuration versions.
+    - Advertising guessed native symbols, endpoints, cancellation, capture, upload, or isolation support.
+    - Treating operation-handler coverage or a mapped primitive as demonstrated capability.
+    - Launching a browser, probing an endpoint, or performing a task during Describe.
+    - Converting a binding descriptor into an automatically equivalent Ringmaster capability finding.
+  VERIFICATION: cargo test -p rm_catalog -- rm-c51
+
+NODE: rm_models | modules/rm_models | lang: rust | tier: 3 | deps: [rm_wire, rm_authority, rm_evidence, rm_time]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#10.3 Tier 2, seam-mappings/ringmaster-seam-mapping.md#10.6 Model conduit, seam-mappings/ringmaster-seam-mapping.md#10.7 Circuit breaker and budget dimensions, seam-mappings/ringmaster-seam-mapping.md#20. Security and data-flow restrictions]
+  EXPOSES: ["pub fn propose_recovery(principal: &AuthenticatedPrincipal, handle: &ConnectorHandle, binding: &BOBindingDescriptor, prompt: &ArtifactReference, provider_policy: &VersionPin, budgets: &TaskBudgets) -> Result<ArtifactReference, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_authority: pub fn authorize_work(principal: &AuthenticatedPrincipal, scope: &WorkScope, operation: &Operation) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_evidence: pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>"]
+  TEST_ASSERTIONS: [RM-C36, RM-C37, RM-C38, RM-C39, RM-C40]
+  INVARIANTS: [EK-ARTIFACTS, EK-TIMING-INTERPRETATION, EXT-AUTHORITY, EXT-BOUNDS, EXT-TIME-NULL, BO-AUTHORITY]
+  FORBIDDEN:
+    - Introducing a Python LiteLLM runtime or importing Circus Tent provider implementations.
+    - Calling a provider without open task authority, disclosure permission, and a finite budget reservation.
+    - Treating unknown usage or a missing breaker denominator as zero.
+    - Repairing model output by inventing semantic fields or discarding the original response.
+    - Executing model-provided scripts or allowing a proposal to change task values, files, destinations, permissions, or action order.
+    - Allowing provider failover, JSON repair, or candidate retries to bypass aggregate limits.
+  VERIFICATION: cargo test -p rm_models -- rm-c36 rm-c37 rm-c38 rm-c39 rm-c40
+
+NODE: rm_observe | modules/rm_observe | lang: rust | tier: 3 | deps: [rm_authority, rm_evidence, rm_time]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#14.1 ObserveRequest and cursor, seam-mappings/ringmaster-seam-mapping.md#14.2 ObservationPage, seam-mappings/ringmaster-seam-mapping.md#14.3 Allowed payloads]
+  EXPOSES: ["pub fn observe(principal: &AuthenticatedPrincipal, request: &ObserveRequest) -> Result<ObservationPage, ConnectorError>"]
+  CONSUMES: ["rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn read_event(principal: &AuthenticatedPrincipal, journal_id: &str, sequence: PositiveInteger) -> Result<JournalEnvelope, ConnectorError>", "rm_evidence: pub fn journal_head(principal: &AuthenticatedPrincipal, journal_id: &str) -> Result<JournalPrefix, ConnectorError>", "rm_evidence: pub fn resolve_evidence(principal: &AuthenticatedPrincipal, reference: &EvidenceRef, prefix: &JournalPrefix) -> Result<JournalEnvelope, ConnectorError>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>"]
+  TEST_ASSERTIONS: [RM-C45, RM-C46]
+  INVARIANTS: [EK-JOURNAL, EK-HASHES, EK-OBSERVATION, EXT-OBSERVE, EXT-EVIDENCE, EXT-BOUNDS, LIFE-LATE-EVIDENCE]
+  FORBIDDEN:
+    - Advancing a cursor past unavailable history or silently dropping an oversized observation.
+    - Changing the cutoff during continuation pagination.
+    - Using the last returned item instead of the last scanned journal position as next.
+    - Treating an empty page, transport closure, or cutoff exhaustion as native termination.
+    - Assigning new provenance, ordering, or stronger semantics to journal projections.
+    - Adding primitive records as undeclared ObservationPayload variants.
+  VERIFICATION: cargo test -p rm_observe -- rm-c45 rm-c46
+
+NODE: rm_artifacts | modules/rm_artifacts | lang: rust | tier: 3 | deps: [rm_wire, rm_authority, rm_evidence]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#14.6 CollectArtifacts, seam-mappings/ringmaster-seam-mapping.md#3.5 Hashing and storage]
+  EXPOSES: ["pub fn collect_inventory(principal: &AuthenticatedPrincipal, command: &ConnectorRequest) -> Result<ArtifactInventory, ConnectorError>", "pub fn collect_chunk(principal: &AuthenticatedPrincipal, command: &ConnectorRequest) -> Result<ArtifactChunk, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn artifact_digest(bytes: &[u8]) -> Digest", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn journal_head(principal: &AuthenticatedPrincipal, journal_id: &str) -> Result<JournalPrefix, ConnectorError>", "rm_evidence: pub fn resolve_evidence(principal: &AuthenticatedPrincipal, reference: &EvidenceRef, prefix: &JournalPrefix) -> Result<JournalEnvelope, ConnectorError>", "rm_evidence: pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C47, RM-C48]
+  INVARIANTS: [EK-ARTIFACTS, EK-NULL, EXT-ARTIFACTS, EXT-IDEMPOTENCY, EXT-AUTHORITY, OWD-RETENTION]
+  FORBIDDEN:
+    - Fetching arbitrary caller URLs or filesystem paths.
+    - Rerunning workflow actions, opening a browser, or inventing a native retrieval API to obtain missing artifacts.
+    - Erasing a known digest when its bytes are lost.
+    - Returning fewer named slots than requested or presenting unavailable inventory as established emptiness.
+    - Returning noncanonical base64, incorrect byte counts, nonprogressing non-EOF chunks, or offsets beyond EOF.
+    - Weakening artifact access classification or provenance during transfer.
+  VERIFICATION: cargo test -p rm_artifacts -- rm-c47 rm-c48
+
+NODE: rm_learning | modules/rm_learning | lang: rust | tier: 4 | deps: [rm_wire, rm_authority, rm_evidence, rm_leases]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#7.2 State domains, seam-mappings/ringmaster-seam-mapping.md#7.3 ContextPolicy transformation, seam-mappings/ringmaster-seam-mapping.md#10.5 Learning state]
+  EXPOSES: ["pub fn select_learning_state(principal: &AuthenticatedPrincipal, policy: &ContextPolicy, subject: &SubjectIdentity) -> Result<ArtifactReference, ConnectorError>", "pub fn commit_verified_learning(principal: &AuthenticatedPrincipal, baseline: &ArtifactReference, candidate: &ArtifactReference, verification: &SupportRefs, policy: &StatePolicy) -> Result<ArtifactReference, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_evidence: pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>", "rm_leases: pub fn validate_lease(lease: &LeaseRecord, now: &TimePoint, entity_revision: Revision, input_revision: Revision, owner_epoch: &str, session_epoch: &MaybeString) -> Result<(), ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C43]
+  INVARIANTS: [EK-CAPABILITY, EXT-STATE-POLICY, EXT-PREPARE, OWD-OWNER, OWD-LOCAL-COMMIT, OWD-REVISION]
+  FORBIDDEN:
+    - Writing operational caches under frozen learning policy.
+    - Treating fresh browser state as fresh learning state.
+    - Promoting tentative model candidates or imported predecessor counters into verified current-version learning.
+    - Updating confidence, counts, or staleness without a pinned transition policy and verification evidence.
+    - Performing target visits during Prepare or allowing background revalidation to interfere with active session ordering.
+    - Sharing Circus Tent cache implementation or interpreting its filesystem format as Ringmaster's native storage contract.
+  VERIFICATION: cargo test -p rm_learning -- rm-c43
+
+NODE: rm_normalization | modules/rm_normalization | lang: rust | tier: 4 | deps: [rm_wire, rm_authority, rm_evidence, rm_time, rm_catalog]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#14.4 SourceChecks, seam-mappings/ringmaster-seam-mapping.md#14.5 ExecutionClaim, seam-mappings/ringmaster-seam-mapping.md#17. Connector errors and retry safety]
+  EXPOSES: ["pub fn normalize_report(principal: &AuthenticatedPrincipal, handle: &ConnectorHandle, raw: &ArtifactReference, source_event: &EvidenceRef, checks: &SourceChecks, mapping: &VersionPin) -> Result<NativeReportObservation, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn resolve_evidence(principal: &AuthenticatedPrincipal, reference: &EvidenceRef, prefix: &JournalPrefix) -> Result<JournalEnvelope, ConnectorError>", "rm_evidence: pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>", "rm_time: pub fn validate_measurement(measurement: &Measurement, clocks: &[ClockDescriptor]) -> Result<(), String>", "rm_catalog: pub fn describe(principal: &AuthenticatedPrincipal, request: &DescribeRequest) -> Result<ConnectorDescriptor, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C33, RM-C34]
+  INVARIANTS: [EK-CLAIMS, EK-PROVENANCE, EK-TIMING-INTERPRETATION, LIFE-CLAIMS, LIFE-SOURCE-CHECKS, EXT-NORMALIZE, EXT-FAILURE]
+  FORBIDDEN:
+    - Trusting serialized verified or matched labels without their actual verification evidence.
+    - Equating authentication with attempt correlation or concealing trace mismatch.
+    - Mapping None, acknowledgement, primitive return, or lifecycle completion to application commitment.
+    - Inventing a native unknown or failed statement when no source statement exists.
+    - Replacing conflicting responses or callbacks using last-write-wins.
+    - Converting ordinary observed native failure into an unrelated connector-operation failure.
+  VERIFICATION: cargo test -p rm_normalization -- rm-c33 rm-c34
+
+NODE: rm_browseroxide | modules/rm_browseroxide | lang: rust | tier: 4 | deps: [rm_wire, rm_authority, rm_evidence, rm_time, rm_leases, rm_catalog]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#4.2 OS-thread confinement, seam-mappings/ringmaster-seam-mapping.md#5.1 Diagnostic references, seam-mappings/ringmaster-seam-mapping.md#6. Complete synchronous primitive mapping, seam-mappings/ringmaster-seam-mapping.md#7.1 HttpClient is not Page, seam-mappings/ringmaster-seam-mapping.md#Appendix A — Normative contract-identifier cross-reference]
+  EXPOSES: ["pub struct NativeSession { owner: BOOwner, principal: AuthenticatedPrincipal, manifest: Manifest, lease: LeaseRecord, affinity: std::marker::PhantomData<std::rc::Rc<()>> }", "pub struct BrowserOxideReturn<T> { pub value: Option<T>, pub record: BOPrimitiveRecord }", "pub fn open_native_session(principal: AuthenticatedPrincipal, manifest: Manifest, binding: BOBindingDescriptor, lease: LeaseRecord) -> Result<NativeSession, ConnectorError>", "pub fn client_create(session: &mut NativeSession, request: &BOClientCreate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOClientRef>, ConnectorError>", "pub fn http_exchange(session: &mut NativeSession, request: &BOHttpExchange, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOHttpReturn>, ConnectorError>", "pub fn page_create(session: &mut NativeSession, request: &BOPageCreate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOPageRef>, ConnectorError>", "pub fn navigate(session: &mut NativeSession, request: &BONavigate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BONavigationReturn>, ConnectorError>", "pub fn from_html(session: &mut NativeSession, request: &BOFromHtml, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BONavigationReturn>, ConnectorError>", "pub fn dom_read(session: &mut NativeSession, request: &BODomRead, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BODomExport>, ConnectorError>", "pub fn dom_write(session: &mut NativeSession, request: &BODomWrite, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOMutationReturn>, ConnectorError>", "pub fn event_dispatch(session: &mut NativeSession, request: &BOEventDispatch, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOMutationReturn>, ConnectorError>", "pub fn v8_evaluate(session: &mut NativeSession, request: &BOV8Evaluate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOV8Return>, ConnectorError>", "pub fn assign_files(session: &mut NativeSession, request: &BOAssignFiles, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOMutationReturn>, ConnectorError>", "pub fn capture(session: &mut NativeSession, request: &BOCapture, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOCaptureReturn>, ConnectorError>", "pub fn render_verdict(session: &mut NativeSession, request: &BOPageArgument, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOVerdictReturn>, ConnectorError>", "pub fn reset_for_reuse(session: &mut NativeSession, request: &BOPageArgument, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOResetReturn>, ConnectorError>", "pub fn page_destroy(session: &mut NativeSession, request: &BOPageArgument, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BODestroyReturn>, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_authority: pub struct AuthenticatedPrincipal { principal_id: String, registration_digest: Digest }", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_evidence: pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>", "rm_time: pub fn validate_measurement(measurement: &Measurement, clocks: &[ClockDescriptor]) -> Result<(), String>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>", "rm_leases: pub fn validate_lease(lease: &LeaseRecord, now: &TimePoint, entity_revision: Revision, input_revision: Revision, owner_epoch: &str, session_epoch: &MaybeString) -> Result<(), ConnectorError>", "rm_catalog: pub fn validate_native_binding(principal: &AuthenticatedPrincipal, descriptor: &BOBindingDescriptor) -> Result<(), ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C05, RM-C06, RM-C07, RM-C08, RM-C09, RM-C10, RM-C11, RM-C12, RM-C18, RM-C19, RM-C42]
+  INVARIANTS: [BO-NATIVE, BO-THREAD, BO-HTTP, BO-OFFLINE, BO-DOM, BO-INPUT, BO-AUTHORITY, BO-REUSE, BO-TIME, BO-EVIDENCE, BO-CAPS, EK-ATOMICITY, EXT-READ-ONLY]
+  FORBIDDEN:
+    - Routing native DOM or V8 operations through CDP, Playwright, Juggler, Camoufox, or a cross-browser adapter.
+    - Moving Page, isolate values, DOM borrows, solvers, NativeSession, or closures capturing them across OS threads.
+    - Treating serialized diagnostic identities as restored native handles or permission to enter the engine.
+    - Treating these Rust wrapper signatures as evidence of actual BrowserOxide native symbols.
+    - Returning value=Some unless the matching BOPrimitiveRecord records returned with the same typed value.
+    - Hiding native failures in ConnectorError when a truthful BOPrimitiveRecord can be retained; infrastructure failures remain separately scoped.
+    - Sharing process-global session storage across independent domains without verified namespacing or applying rotating cookies concurrently.
+    - Performing network acquisition inside from_html or assuming Page is an operational superset of the retained HTTP client.
+    - Labeling property writes or synthetic events as trusted input, or file assignment as accepted upload.
+    - Inventing coordinate-click, native cancellation, capture, upload, closed-root, or interruption support.
+    - Entering a potentially side-effecting call before durable authorized intent.
+  VERIFICATION: cargo test -p rm_browseroxide -- rm-c05 rm-c06 rm-c07 rm-c08 rm-c09 rm-c10 rm-c11 rm-c12 rm-c18 rm-c19 rm-c42
+
+NODE: rm_lifecycle | modules/rm_lifecycle | lang: rust | tier: 5 | deps: [rm_wire, rm_authority, rm_evidence, rm_time]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#16.2 AxisRevision and publication, seam-mappings/ringmaster-seam-mapping.md#16.3 DispatchValue, seam-mappings/ringmaster-seam-mapping.md#16.4 ObservationValue, seam-mappings/ringmaster-seam-mapping.md#16.5 Execution and application axes, seam-mappings/ringmaster-seam-mapping.md#16.6 ReportValue, seam-mappings/ringmaster-seam-mapping.md#16.7 Pins and snapshots]
+  EXPOSES: ["pub fn publish_axis(principal: &AuthenticatedPrincipal, commission: &AttemptCommission, revision: &AxisRevision) -> Result<LifecyclePublicationReference, ConnectorError>", "pub fn validate_snapshot(principal: &AuthenticatedPrincipal, snapshot: &AttemptSnapshot) -> Result<(), ConnectorError>", "pub fn validate_reconciliation(execution: &ExecutionValue, application: &ApplicationValue, report: &ReportValue) -> Result<(), ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_wire: pub fn canonical_digest(bytes: &[u8]) -> Result<Digest, String>", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_authority: pub fn verify_attempt_scope(manifest: &Manifest, commission: &AttemptCommission) -> Result<(), ConnectorError>", "rm_evidence: pub fn resolve_evidence(principal: &AuthenticatedPrincipal, reference: &EvidenceRef, prefix: &JournalPrefix) -> Result<JournalEnvelope, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_evidence: pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>", "rm_time: pub fn validate_measurement(measurement: &Measurement, clocks: &[ClockDescriptor]) -> Result<(), String>"]
+  TEST_ASSERTIONS: [RM-C30, RM-C31, RM-C32, RM-C57]
+  INVARIANTS: [EK-CLAIMS, LIFE-AXES, LIFE-PUBLICATION, LIFE-EVIDENCE, LIFE-CLAIMS, LIFE-ORIGIN, LIFE-RECONCILE, LIFE-REPORT-COVERAGE, LIFE-LATE-EVIDENCE, OWD-OWNER, OWD-REVISION, OWD-PUBLISH, OWD-VIEW, OWD-SEAL, OWD-ATTEMPT]
+  FORBIDDEN:
+    - Publishing application or report through Ringmaster's publish_axis entry point.
+    - Rewriting claims, origin facts, existing revision bytes, or the original close-time snapshot.
+    - Treating outcome_unknown followed by commitment as contradiction.
+    - Using later receipt time alone to contradict an earlier-boundary claim.
+    - Presenting a stale report as current or interpreting reconciled as application success.
+    - Composing partial owner publications or requiring a cross-owner transaction.
+    - Turning read-side reconciliation validation into authority to author or repair either source axis.
+  VERIFICATION: cargo test -p rm_lifecycle -- rm-c30 rm-c31 rm-c32 rm-c57
+
+NODE: rm_reduction | modules/rm_reduction | lang: rust | tier: 5 | deps: [rm_browseroxide, rm_authority, rm_evidence, rm_time]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#9.1 BODomExport schema, seam-mappings/ringmaster-seam-mapping.md#9.2 Proposed RingmasterReduction artifact, seam-mappings/ringmaster-seam-mapping.md#9.3 Ordered transformation, seam-mappings/ringmaster-seam-mapping.md#9.4 Profiles, seam-mappings/ringmaster-seam-mapping.md#9.5 Stabilization]
+  EXPOSES: ["pub fn reduce_document(principal: &AuthenticatedPrincipal, session: &mut NativeSession, request: &BODomRead, profile: &str, profile_policy: &VersionPin, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<ArtifactReference, ConnectorError>"]
+  CONSUMES: ["rm_browseroxide: pub fn dom_read(session: &mut NativeSession, request: &BODomRead, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BODomExport>, ConnectorError>", "rm_browseroxide: pub fn v8_evaluate(session: &mut NativeSession, request: &BOV8Evaluate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOV8Return>, ConnectorError>", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_evidence: pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>", "rm_time: pub fn validate_measurement(measurement: &Measurement, clocks: &[ClockDescriptor]) -> Result<(), String>"]
+  TEST_ASSERTIONS: [RM-C13, RM-C14, RM-C15, RM-C16]
+  INVARIANTS: [BO-NATIVE, BO-THREAD, BO-DOM, BO-EVIDENCE, EK-NULL, EK-TIME, EXT-BOUNDS]
+  FORBIDDEN:
+    - Exporting an unbounded raw DOM across threads or processes before reduction.
+    - Flattening presentation while losing frame, root, mount, document, or node identity.
+    - Treating inaccessible or unobserved roots as empty complete trees.
+    - Assuming ordinary cloning traverses shadow roots or that another browser's frame access establishes BrowserOxide access.
+    - Silently truncating output, splitting UTF-8, dropping limitation metadata, or overstating completeness.
+    - Treating network idle, DOM quiet, or hydration signatures as universal readiness or origin commitment.
+    - Performing model calls or mutating the live document during reduction.
+  VERIFICATION: cargo test -p rm_reduction -- rm-c13 rm-c14 rm-c15 rm-c16
+
+NODE: rm_preparation | modules/rm_preparation | lang: rust | tier: 5 | deps: [rm_wire, rm_authority, rm_evidence, rm_catalog]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#8.1 RingmasterPlan, seam-mappings/ringmaster-seam-mapping.md#12.4 Operation and task mappings, seam-mappings/ringmaster-seam-mapping.md#13.1 PrepareRequest, seam-mappings/ringmaster-seam-mapping.md#13.2 TaskEnvelope, seam-mappings/ringmaster-seam-mapping.md#13.3 PreparedTask]
+  EXPOSES: ["pub fn prepare(principal: &AuthenticatedPrincipal, command: &ConnectorRequest) -> Result<PrepareResult, ConnectorError>", "pub fn verify_preparation(principal: &AuthenticatedPrincipal, reference: &PreparationReference) -> Result<PreparedTask, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_wire: pub fn canonical_digest(bytes: &[u8]) -> Result<Digest, String>", "rm_authority: pub fn authorize_work(principal: &AuthenticatedPrincipal, scope: &WorkScope, operation: &Operation) -> Result<ProducerDescriptor, ConnectorError>", "rm_authority: pub fn verify_attempt_scope(manifest: &Manifest, commission: &AttemptCommission) -> Result<(), ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_evidence: pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>", "rm_catalog: pub fn describe(principal: &AuthenticatedPrincipal, request: &DescribeRequest) -> Result<ConnectorDescriptor, ConnectorError>", "rm_catalog: pub fn validate_native_binding(principal: &AuthenticatedPrincipal, descriptor: &BOBindingDescriptor) -> Result<(), ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C20, RM-C21]
+  INVARIANTS: [LIFE-COMMISSION, EXT-TASK, EXT-PREPARE, EXT-PREPARATION-PIN, EXT-IDEMPOTENCY, EXT-STATE-POLICY, EXT-DECLARE-NOT-ASSESS]
+  FORBIDDEN:
+    - Browsing, probing authentication, invoking a planner, resetting context, healing, or executing preflight during preparation.
+    - Silently changing action order, values, destinations, retries, assistance, state policy, or required budgets.
+    - Repreparing changed input during Start or accepting equal semantic hashes as authority to change actual destinations.
+    - Producing a startable preparation with blocking unsupported mappings or required unenforceable policies.
+    - Dispatching manual commissions or fabricating application attempts for discovery.
+    - Treating missing native cancellation as an unconditional portfolio-wide preparation blocker.
+  VERIFICATION: cargo test -p rm_preparation -- rm-c20 rm-c21
+
+NODE: rm_targets | modules/rm_targets | lang: rust | tier: 6 | deps: [rm_browseroxide, rm_reduction, rm_authority, rm_evidence]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#8.1 RingmasterPlan, seam-mappings/ringmaster-seam-mapping.md#10.1 Tier 1, seam-mappings/ringmaster-seam-mapping.md#9.3 Ordered transformation]
+  EXPOSES: ["pub fn resolve_target(principal: &AuthenticatedPrincipal, session: &mut NativeSession, recipe: &ArtifactReference, root: &BORootRef, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BODomExport, ConnectorError>"]
+  CONSUMES: ["rm_browseroxide: pub fn dom_read(session: &mut NativeSession, request: &BODomRead, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BODomExport>, ConnectorError>", "rm_browseroxide: pub fn v8_evaluate(session: &mut NativeSession, request: &BOV8Evaluate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOV8Return>, ConnectorError>", "rm_reduction: pub fn reduce_document(principal: &AuthenticatedPrincipal, session: &mut NativeSession, request: &BODomRead, profile: &str, profile_policy: &VersionPin, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<ArtifactReference, ConnectorError>", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C17]
+  INVARIANTS: [BO-DOM, BO-NATIVE, BO-AUTHORITY, EXT-PREPARE]
+  FORBIDDEN:
+    - Resolving duplicate labels in a flattened global selector namespace.
+    - Selecting the first bounded match or inferring uniqueness from a truncated match set.
+    - Treating a durable recipe as a live node reference.
+    - Interpreting Playwright selector syntax as native CSS or guessing unsupported XPath mappings.
+    - Healing, clicking, writing cache state, or performing model calls during target lookup.
+  VERIFICATION: cargo test -p rm_targets -- rm-c17
+
+NODE: rm_extraction | modules/rm_extraction | lang: rust | tier: 6 | deps: [rm_wire, rm_browseroxide, rm_reduction, rm_authority, rm_evidence]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#11. Extraction transformation, seam-mappings/ringmaster-seam-mapping.md#7.1 HttpClient is not Page, seam-mappings/ringmaster-seam-mapping.md#14.3 Allowed payloads]
+  EXPOSES: ["pub fn extract_output(principal: &AuthenticatedPrincipal, session: &mut NativeSession, preparation: &PreparedTask, page: &BOPageRef, source: &ArtifactReference) -> Result<TaskOutput, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_browseroxide: pub fn http_exchange(session: &mut NativeSession, request: &BOHttpExchange, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOHttpReturn>, ConnectorError>", "rm_browseroxide: pub fn from_html(session: &mut NativeSession, request: &BOFromHtml, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BONavigationReturn>, ConnectorError>", "rm_browseroxide: pub fn render_verdict(session: &mut NativeSession, request: &BOPageArgument, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOVerdictReturn>, ConnectorError>", "rm_reduction: pub fn reduce_document(principal: &AuthenticatedPrincipal, session: &mut NativeSession, request: &BODomRead, profile: &str, profile_policy: &VersionPin, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<ArtifactReference, ConnectorError>", "rm_authority: pub fn authorize_work(principal: &AuthenticatedPrincipal, scope: &WorkScope, operation: &Operation) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_evidence: pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C44]
+  INVARIANTS: [EK-NULL, EXT-READ-ONLY, EXT-TASK, EXT-EVIDENCE, BO-OFFLINE, BO-HTTP, BO-AUTHORITY]
+  FORBIDDEN:
+    - Introducing Crawl4AI, LXML, Python, or a browser sidecar as the Ringmaster extraction implementation.
+    - Making model calls under the deterministic extraction profile.
+    - Inventing missing required fields or treating completeness=partial as permission to violate output_schema.
+    - Publishing schema-invalid partial material as TaskOutput rather than a diagnostic artifact.
+    - Claiming live shadow/frame observations from raw HTML.
+    - Treating acquisition Pass as relevance, authentication, application success, or global discovery coverage.
+  VERIFICATION: cargo test -p rm_extraction -- rm-c44
+
+NODE: rm_delivery | modules/rm_delivery | lang: rust | tier: 6 | deps: [rm_authority, rm_evidence, rm_time, rm_leases, rm_preparation, rm_lifecycle]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#4.3 Local scheduling states, seam-mappings/ringmaster-seam-mapping.md#13.4 StartRequest and durable admission, seam-mappings/ringmaster-seam-mapping.md#13.5 ResumeAuthorization, seam-mappings/ringmaster-seam-mapping.md#16.3 DispatchValue, seam-mappings/ringmaster-seam-mapping.md#18. Lease, recovery, and crash semantics]
+  EXPOSES: ["pub fn start(principal: &AuthenticatedPrincipal, command: &ConnectorRequest) -> Result<StartResult, ConnectorError>", "pub fn claim_work(principal: &AuthenticatedPrincipal, now: &TimePoint) -> Result<Option<ConnectorHandle>, ConnectorError>", "pub fn enqueue_owner_control(principal: &AuthenticatedPrincipal, request: &ConnectorRequest) -> Result<EvidenceRef, ConnectorError>", "pub fn take_owner_control(principal: &AuthenticatedPrincipal, handle: &ConnectorHandle) -> Result<Option<ConnectorRequest>, ConnectorError>"]
+  CONSUMES: ["rm_authority: pub fn authorize_work(principal: &AuthenticatedPrincipal, scope: &WorkScope, operation: &Operation) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>", "rm_leases: pub fn validate_lease(lease: &LeaseRecord, now: &TimePoint, entity_revision: Revision, input_revision: Revision, owner_epoch: &str, session_epoch: &MaybeString) -> Result<(), ConnectorError>", "rm_preparation: pub fn verify_preparation(principal: &AuthenticatedPrincipal, reference: &PreparationReference) -> Result<PreparedTask, ConnectorError>", "rm_lifecycle: pub fn publish_axis(principal: &AuthenticatedPrincipal, commission: &AttemptCommission, revision: &AxisRevision) -> Result<LifecyclePublicationReference, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C22, RM-C23, RM-C24]
+  INVARIANTS: [EK-ATOMICITY, LIFE-DISPATCH, LIFE-IDEMPOTENCY, EXT-START, EXT-IDEMPOTENCY, EXT-RESUME, EXT-BOUNDS, OWD-LOCAL-COMMIT]
+  FORBIDDEN:
+    - Delivering native work before durable handle, immutable request binding, logical-key association, and dispatch intent.
+    - Waiting for native completion before returning the local Start receipt.
+    - Creating another execution by changing command IDs, logical keys, callers, or executors under one application commission.
+    - Treating local acceptance as native acceptance or lost delivery acknowledgement as rejection.
+    - Starting queued work after its active boundary or excluding queue time from the active budget.
+    - Resuming without exact request/context identity, native recovery evidence, and explicit recovery authority.
+    - Blocking local control admission behind the workflow queue.
+  VERIFICATION: cargo test -p rm_delivery -- rm-c22 rm-c23 rm-c24
+
+NODE: rm_diagnostics | modules/rm_diagnostics | lang: rust | tier: 6 | deps: [rm_wire, rm_authority, rm_evidence, rm_time, rm_lifecycle]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#19.1 DiagnosticDocument mapping, seam-mappings/ringmaster-seam-mapping.md#19.2 Assessment distinctions, seam-mappings/ringmaster-seam-mapping.md#19.4 Completeness and analysis boundaries, seam-mappings/ringmaster-seam-mapping.md#19.5 ReplayReceipt]
+  EXPOSES: ["pub fn verify_diagnostic(principal: &AuthenticatedPrincipal, diagnostic: &DiagnosticDocument) -> Result<(), ConnectorError>", "pub fn replay_diagnostic(principal: &AuthenticatedPrincipal, request: &AnalysisRequest, prefix: &JournalPrefix, source: &ArtifactReference) -> Result<ReplayReceipt, ConnectorError>"]
+  CONSUMES: ["rm_wire: pub fn validate_record(schema_id: &str, bytes: &[u8]) -> Result<(), String>", "rm_wire: pub fn canonical_digest(bytes: &[u8]) -> Result<Digest, String>", "rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn resolve_evidence(principal: &AuthenticatedPrincipal, reference: &EvidenceRef, prefix: &JournalPrefix) -> Result<JournalEnvelope, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_time: pub fn validate_measurement(measurement: &Measurement, clocks: &[ClockDescriptor]) -> Result<(), String>", "rm_lifecycle: pub fn validate_snapshot(principal: &AuthenticatedPrincipal, snapshot: &AttemptSnapshot) -> Result<(), ConnectorError>", "rm_lifecycle: pub fn validate_reconciliation(execution: &ExecutionValue, application: &ApplicationValue, report: &ReportValue) -> Result<(), ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C52, RM-C55, RM-C56]
+  INVARIANTS: [EK-ASSESSMENT, EK-DIAGNOSTIC, EK-REPLAY, EK-CAPABILITY, EK-ARTIFACTS, EK-TIMING-INTERPRETATION, EXT-DECLARE-NOT-ASSESS]
+  FORBIDDEN:
+    - Invoking a browser, subject, model provider, or external mutation during diagnostic re-derivation.
+    - Reading current wall time, mutable application rows, current registry heads, or unrecorded network data as evidence.
+    - Concluding isolation or non-isolation from invalid write controls.
+    - Returning matched when required inputs or comparisons are unavailable.
+    - Feeding recorded derived outputs back as authoritative replay inputs.
+    - Issuing Ringmaster qualification, authoring origin facts, or using verification as connector self-certification.
+    - Calling diagnostic re-derivation exact fixture replay or claiming it demonstrates changed live execution.
+  VERIFICATION: cargo test -p rm_diagnostics -- rm-c52 rm-c55 rm-c56
+
+NODE: rm_recovery | modules/rm_recovery | lang: rust | tier: 7 | deps: [rm_authority, rm_evidence, rm_time, rm_browseroxide, rm_reduction, rm_targets, rm_models]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#10.2 Failure routing, seam-mappings/ringmaster-seam-mapping.md#10.3 Tier 2, seam-mappings/ringmaster-seam-mapping.md#10.4 Tier 3, seam-mappings/ringmaster-seam-mapping.md#10.5 Learning state]
+  EXPOSES: ["pub fn recover_target(principal: &AuthenticatedPrincipal, session: &mut NativeSession, preparation: &PreparedTask, handle: &ConnectorHandle, step: &ArtifactReference, failed_call: &BOPrimitiveRecord) -> Result<ArtifactReference, ConnectorError>"]
+  CONSUMES: ["rm_authority: pub fn authorize_work(principal: &AuthenticatedPrincipal, scope: &WorkScope, operation: &Operation) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn install_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference, bytes: &[u8]) -> Result<ArtifactReference, ConnectorError>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>", "rm_browseroxide: pub fn capture(session: &mut NativeSession, request: &BOCapture, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOCaptureReturn>, ConnectorError>", "rm_browseroxide: pub fn v8_evaluate(session: &mut NativeSession, request: &BOV8Evaluate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOV8Return>, ConnectorError>", "rm_reduction: pub fn reduce_document(principal: &AuthenticatedPrincipal, session: &mut NativeSession, request: &BODomRead, profile: &str, profile_policy: &VersionPin, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<ArtifactReference, ConnectorError>", "rm_targets: pub fn resolve_target(principal: &AuthenticatedPrincipal, session: &mut NativeSession, recipe: &ArtifactReference, root: &BORootRef, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BODomExport, ConnectorError>", "rm_models: pub fn propose_recovery(principal: &AuthenticatedPrincipal, handle: &ConnectorHandle, binding: &BOBindingDescriptor, prompt: &ArtifactReference, provider_policy: &VersionPin, budgets: &TaskBudgets) -> Result<ArtifactReference, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C41]
+  INVARIANTS: [BO-DOM, BO-INPUT, BO-AUTHORITY, EK-TIMING-INTERPRETATION, EXT-BOUNDS, EXT-STATE-POLICY, LIFE-IDEMPOTENCY]
+  FORBIDDEN:
+    - Authorizing an action solely from dHash similarity or a cached bounding box.
+    - Substituting zero offsets or unit scale for missing crop, viewport, frame, or scale measurements.
+    - Falling back silently to a full-viewport image or an invented coordinate-click primitive.
+    - Treating vision-assisted DOM grounding as trusted coordinate input.
+    - Replaying possibly side-effecting operations as selector recovery.
+    - Committing tentative recovery proposals to verified learning state.
+    - Extending observation, recovery, or model budgets because a tier failed.
+  VERIFICATION: cargo test -p rm_recovery -- rm-c41
+
+NODE: rm_controls | modules/rm_controls | lang: rust | tier: 7 | deps: [rm_authority, rm_evidence, rm_time, rm_catalog, rm_leases, rm_delivery, rm_lifecycle]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#15. Complete control behavior, seam-mappings/ringmaster-seam-mapping.md#16.4 ObservationValue, seam-mappings/ringmaster-seam-mapping.md#18. Lease, recovery, and crash semantics]
+  EXPOSES: ["pub fn control(principal: &AuthenticatedPrincipal, request: &ConnectorRequest) -> Result<ControlReceipt, ConnectorError>", "pub fn close_at_boundary(principal: &AuthenticatedPrincipal, handle: &ConnectorHandle, now: &TimePoint) -> Result<AxisRevision, ConnectorError>"]
+  CONSUMES: ["rm_authority: pub fn authorize_work(principal: &AuthenticatedPrincipal, scope: &WorkScope, operation: &Operation) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>", "rm_evidence: pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>", "rm_evidence: pub fn journal_head(principal: &AuthenticatedPrincipal, journal_id: &str) -> Result<JournalPrefix, ConnectorError>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>", "rm_catalog: pub fn describe(principal: &AuthenticatedPrincipal, request: &DescribeRequest) -> Result<ConnectorDescriptor, ConnectorError>", "rm_leases: pub fn validate_lease(lease: &LeaseRecord, now: &TimePoint, entity_revision: Revision, input_revision: Revision, owner_epoch: &str, session_epoch: &MaybeString) -> Result<(), ConnectorError>", "rm_delivery: pub fn enqueue_owner_control(principal: &AuthenticatedPrincipal, request: &ConnectorRequest) -> Result<EvidenceRef, ConnectorError>", "rm_lifecycle: pub fn publish_axis(principal: &AuthenticatedPrincipal, commission: &AttemptCommission, revision: &AxisRevision) -> Result<LifecyclePublicationReference, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C26, RM-C27, RM-C28, RM-C29]
+  INVARIANTS: [LIFE-CLOSE, LIFE-CONTROLS, LIFE-LATE-EVIDENCE, EXT-CLOSE, EXT-CONTROLS, EXT-BOUNDS, EK-CLAIMS, BO-TIME]
+  FORBIDDEN:
+    - Equating cancellation request, acknowledgement, subject stop claim, and independently observed effect.
+    - Making local finalization depend on native cancellation support.
+    - Treating end_observation=false as window finalization or either close setting as a cancel request.
+    - Reopening a closed window or rewriting its close-time knowledge.
+    - Calling owner-thread native release directly from the control thread.
+    - Escalating release failure into containment without separate explicit authority.
+    - Killing unrelated work, resetting shared profiles, accepting arbitrary shell commands, or omitting known affected attempts.
+    - Sealing employer mutation authority or presenting forced termination as rollback.
+  VERIFICATION: cargo test -p rm_controls -- rm-c26 rm-c27 rm-c28 rm-c29
+
+NODE: rm_execution | modules/rm_execution | lang: rust | tier: 8 | deps: [rm_authority, rm_evidence, rm_time, rm_leases, rm_catalog, rm_browseroxide, rm_learning, rm_targets, rm_extraction, rm_delivery, rm_recovery]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#8.2 All nine actions, seam-mappings/ringmaster-seam-mapping.md#8.3 Preflight, seam-mappings/ringmaster-seam-mapping.md#10.1 Tier 1, seam-mappings/ringmaster-seam-mapping.md#10.2 Failure routing, seam-mappings/ringmaster-seam-mapping.md#7.4 Checkpoints]
+  EXPOSES: ["pub fn run_owner_work(principal: AuthenticatedPrincipal, preparation: PreparedTask, handle: ConnectorHandle, lease: LeaseRecord) -> Result<ArtifactReference, ConnectorError>"]
+  CONSUMES: ["rm_authority: pub struct AuthenticatedPrincipal { principal_id: String, registration_digest: Digest }", "rm_authority: pub fn authorize_work(principal: &AuthenticatedPrincipal, scope: &WorkScope, operation: &Operation) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>", "rm_evidence: pub fn commit_owner_effect(principal: &AuthenticatedPrincipal, manifest: &Manifest, effect: &ArtifactReference, submissions: &[EventSubmission], response: &ArtifactReference) -> Result<Vec<JournalEnvelope>, ConnectorError>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>", "rm_leases: pub fn validate_lease(lease: &LeaseRecord, now: &TimePoint, entity_revision: Revision, input_revision: Revision, owner_epoch: &str, session_epoch: &MaybeString) -> Result<(), ConnectorError>", "rm_catalog: pub fn validate_native_binding(principal: &AuthenticatedPrincipal, descriptor: &BOBindingDescriptor) -> Result<(), ConnectorError>", "rm_browseroxide: pub struct NativeSession { owner: BOOwner, principal: AuthenticatedPrincipal, manifest: Manifest, lease: LeaseRecord, affinity: std::marker::PhantomData<std::rc::Rc<()>> }", "rm_browseroxide: pub struct BrowserOxideReturn<T> { pub value: Option<T>, pub record: BOPrimitiveRecord }", "rm_browseroxide: pub fn open_native_session(principal: AuthenticatedPrincipal, manifest: Manifest, binding: BOBindingDescriptor, lease: LeaseRecord) -> Result<NativeSession, ConnectorError>", "rm_browseroxide: pub fn client_create(session: &mut NativeSession, request: &BOClientCreate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOClientRef>, ConnectorError>", "rm_browseroxide: pub fn page_create(session: &mut NativeSession, request: &BOPageCreate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOPageRef>, ConnectorError>", "rm_browseroxide: pub fn navigate(session: &mut NativeSession, request: &BONavigate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BONavigationReturn>, ConnectorError>", "rm_browseroxide: pub fn dom_write(session: &mut NativeSession, request: &BODomWrite, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOMutationReturn>, ConnectorError>", "rm_browseroxide: pub fn event_dispatch(session: &mut NativeSession, request: &BOEventDispatch, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOMutationReturn>, ConnectorError>", "rm_browseroxide: pub fn v8_evaluate(session: &mut NativeSession, request: &BOV8Evaluate, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOV8Return>, ConnectorError>", "rm_browseroxide: pub fn assign_files(session: &mut NativeSession, request: &BOAssignFiles, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOMutationReturn>, ConnectorError>", "rm_browseroxide: pub fn reset_for_reuse(session: &mut NativeSession, request: &BOPageArgument, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BOResetReturn>, ConnectorError>", "rm_browseroxide: pub fn page_destroy(session: &mut NativeSession, request: &BOPageArgument, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BrowserOxideReturn<BODestroyReturn>, ConnectorError>", "rm_learning: pub fn select_learning_state(principal: &AuthenticatedPrincipal, policy: &ContextPolicy, subject: &SubjectIdentity) -> Result<ArtifactReference, ConnectorError>", "rm_learning: pub fn commit_verified_learning(principal: &AuthenticatedPrincipal, baseline: &ArtifactReference, candidate: &ArtifactReference, verification: &SupportRefs, policy: &StatePolicy) -> Result<ArtifactReference, ConnectorError>", "rm_targets: pub fn resolve_target(principal: &AuthenticatedPrincipal, session: &mut NativeSession, recipe: &ArtifactReference, root: &BORootRef, authorization_ref: &EvidenceRef, limit: &DurationLimit) -> Result<BODomExport, ConnectorError>", "rm_extraction: pub fn extract_output(principal: &AuthenticatedPrincipal, session: &mut NativeSession, preparation: &PreparedTask, page: &BOPageRef, source: &ArtifactReference) -> Result<TaskOutput, ConnectorError>", "rm_delivery: pub fn take_owner_control(principal: &AuthenticatedPrincipal, handle: &ConnectorHandle) -> Result<Option<ConnectorRequest>, ConnectorError>", "rm_recovery: pub fn recover_target(principal: &AuthenticatedPrincipal, session: &mut NativeSession, preparation: &PreparedTask, handle: &ConnectorHandle, step: &ArtifactReference, failed_call: &BOPrimitiveRecord) -> Result<ArtifactReference, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C35]
+  INVARIANTS: [BO-THREAD, BO-INPUT, BO-AUTHORITY, BO-REUSE, BO-EVIDENCE, LIFE-IDEMPOTENCY, LIFE-CLAIMS, EXT-READ-ONLY, EXT-RESUME, EXT-BOUNDS, EXT-STATE-POLICY]
+  FORBIDDEN:
+    - Running native work outside its owning OS thread or carrying native state across a migratable async suspension.
+    - Entering a new workflow primitive after active closure, fencing, authorization loss, or budget exhaustion.
+    - Replaying a whole compound action after a partial effect or treating uncertain delivery as a selector miss.
+    - Importing Playwright exception classes or silently substituting trusted input with synthetic mechanisms.
+    - Treating a missing preflight marker in incomplete observation as definite session expiry.
+    - Updating verified caches before the configured readback criterion succeeds.
+    - Resuming completed side effects, changing checkpoint context, or reopening observation through checkpoint recovery.
+    - Publishing origin facts, diagnostics, or qualification from native task completion.
+  VERIFICATION: cargo test -p rm_execution -- rm-c35
+
+NODE: rm_supervisor | modules/rm_supervisor | lang: rust | tier: 9 | deps: [rm_authority, rm_evidence, rm_time, rm_leases, rm_preparation, rm_delivery, rm_controls, rm_execution, rm_normalization, rm_lifecycle]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#4.1 Bounded supervision, seam-mappings/ringmaster-seam-mapping.md#4.3 Local scheduling states, seam-mappings/ringmaster-seam-mapping.md#18. Lease, recovery, and crash semantics]
+  EXPOSES: ["pub fn drive_once(principal: &AuthenticatedPrincipal, now: &TimePoint) -> Result<(), ConnectorError>"]
+  CONSUMES: ["rm_authority: pub fn authorize_owner(principal: &AuthenticatedPrincipal, owner_domain: &str, event_kind: &str) -> Result<ProducerDescriptor, ConnectorError>", "rm_evidence: pub fn load_artifact(principal: &AuthenticatedPrincipal, reference: &ArtifactReference) -> Result<Vec<u8>, ConnectorError>", "rm_evidence: pub fn append_event(principal: &AuthenticatedPrincipal, manifest: &Manifest, submission: EventSubmission) -> Result<JournalEnvelope, ConnectorError>", "rm_time: pub fn boundary_reached(now: &TimePoint, deadline: &TimePoint) -> Result<bool, String>", "rm_leases: pub fn transition_lease(principal: &AuthenticatedPrincipal, current: &LeaseRecord, intent: &ArtifactReference, now: &TimePoint) -> Result<LeaseRecord, ConnectorError>", "rm_preparation: pub fn verify_preparation(principal: &AuthenticatedPrincipal, reference: &PreparationReference) -> Result<PreparedTask, ConnectorError>", "rm_delivery: pub fn claim_work(principal: &AuthenticatedPrincipal, now: &TimePoint) -> Result<Option<ConnectorHandle>, ConnectorError>", "rm_controls: pub fn close_at_boundary(principal: &AuthenticatedPrincipal, handle: &ConnectorHandle, now: &TimePoint) -> Result<AxisRevision, ConnectorError>", "rm_execution: pub fn run_owner_work(principal: AuthenticatedPrincipal, preparation: PreparedTask, handle: ConnectorHandle, lease: LeaseRecord) -> Result<ArtifactReference, ConnectorError>", "rm_normalization: pub fn normalize_report(principal: &AuthenticatedPrincipal, handle: &ConnectorHandle, raw: &ArtifactReference, source_event: &EvidenceRef, checks: &SourceChecks, mapping: &VersionPin) -> Result<NativeReportObservation, ConnectorError>", "rm_lifecycle: pub fn publish_axis(principal: &AuthenticatedPrincipal, commission: &AttemptCommission, revision: &AxisRevision) -> Result<LifecyclePublicationReference, ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C25]
+  INVARIANTS: [BO-THREAD, BO-TIME, EK-OBSERVATION, EK-LEASE-RESTART, LIFE-CLOSE, LIFE-LATE-EVIDENCE, EXT-BOUNDS, EXT-CLOSE, OWD-LOCAL-COMMIT]
+  FORBIDDEN:
+    - Executing or awaiting an unbounded native call on the only deadline, evidence, or control service thread.
+    - Sending live Page, DOM, V8, solver, or NativeSession objects to workers.
+    - Allowing workflow queue pressure to consume reserved local-close and control progress.
+    - Fabricating native timers, completion, failure, or cancellation when an owner disappears.
+    - Replacing an unresolved worker with another logical execution.
+    - Reopening observation when late results arrive or inferring remote termination from worker fencing.
+  VERIFICATION: cargo test -p rm_supervisor -- rm-c25
+
+NODE: rm_service | modules/rm_service | lang: rust | tier: 10 | deps: [rm_authority, rm_catalog, rm_preparation, rm_delivery, rm_observe, rm_artifacts, rm_controls, rm_supervisor, rm_diagnostics, rm_lifecycle]
+  READS: [seam-mappings/ringmaster-seam-mapping.md#12.1 Request and response, seam-mappings/ringmaster-seam-mapping.md#17. Connector errors and retry safety, seam-mappings/ringmaster-seam-mapping.md#20. Security and data-flow restrictions, seam-mappings/ringmaster-seam-mapping.md#22.3 Acceptance gates, full-featured-blueprints/1-handoff-brief.txt#Part IX — The roadmap after Step 0]
+  EXPOSES: []
+  CONSUMES: ["rm_authority: pub fn authenticate_channel(channel: &mut dyn std::io::Read) -> Result<AuthenticatedPrincipal, ConnectorError>", "rm_authority: pub fn verify_attempt_scope(manifest: &Manifest, commission: &AttemptCommission) -> Result<(), ConnectorError>", "rm_catalog: pub fn describe(principal: &AuthenticatedPrincipal, request: &DescribeRequest) -> Result<ConnectorDescriptor, ConnectorError>", "rm_preparation: pub fn prepare(principal: &AuthenticatedPrincipal, command: &ConnectorRequest) -> Result<PrepareResult, ConnectorError>", "rm_delivery: pub fn start(principal: &AuthenticatedPrincipal, command: &ConnectorRequest) -> Result<StartResult, ConnectorError>", "rm_observe: pub fn observe(principal: &AuthenticatedPrincipal, request: &ObserveRequest) -> Result<ObservationPage, ConnectorError>", "rm_artifacts: pub fn collect_inventory(principal: &AuthenticatedPrincipal, command: &ConnectorRequest) -> Result<ArtifactInventory, ConnectorError>", "rm_artifacts: pub fn collect_chunk(principal: &AuthenticatedPrincipal, command: &ConnectorRequest) -> Result<ArtifactChunk, ConnectorError>", "rm_controls: pub fn control(principal: &AuthenticatedPrincipal, request: &ConnectorRequest) -> Result<ControlReceipt, ConnectorError>", "rm_supervisor: pub fn drive_once(principal: &AuthenticatedPrincipal, now: &TimePoint) -> Result<(), ConnectorError>", "rm_diagnostics: pub fn verify_diagnostic(principal: &AuthenticatedPrincipal, diagnostic: &DiagnosticDocument) -> Result<(), ConnectorError>", "rm_diagnostics: pub fn replay_diagnostic(principal: &AuthenticatedPrincipal, request: &AnalysisRequest, prefix: &JournalPrefix, source: &ArtifactReference) -> Result<ReplayReceipt, ConnectorError>", "rm_lifecycle: pub fn validate_snapshot(principal: &AuthenticatedPrincipal, snapshot: &AttemptSnapshot) -> Result<(), ConnectorError>"]
+  TEST_ASSERTIONS: [RM-C54]
+  INVARIANTS: [EK-MANUAL, EK-ATTEMPT-SCOPE, LIFE-MANUAL, LIFE-AXES, EXT-SURFACE, EXT-AUTHORITY, EXT-TASK, EXT-DECLARE-NOT-ASSESS, EXT-FAILURE]
+  FORBIDDEN:
+    - Adding a tenth external connector verb, shared browser primitive endpoint, or whole-attempt update API.
+    - Treating HTTP success as native acceptance, authenticated application state, or origin commitment.
+    - Requiring Ringmaster startup, a browser installation, Hellscape, or completed portfolio integration to record a manual production attempt.
+    - Sending manual commissions through Prepare or Start or inventing their subject, native run ID, connector version, or execution publication.
+    - Exposing diagnostic maintenance operations as connector-issued qualification or granting the connector an assessor's authority.
+    - Running evidence verification or replay through task execution; local maintenance paths remain separately authorized and offline.
+    - Revealing another principal's handles, artifacts, credentials, or internal error details.
+  VERIFICATION: cargo test -p rm_service -- rm-c54

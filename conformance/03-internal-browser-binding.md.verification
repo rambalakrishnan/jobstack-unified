@@ -1,0 +1,50 @@
+# Review: conformance/03-internal-browser-binding.md (turn 8)
+
+## Overall assessment
+
+The file is a complete, well-structured conformance suite covering both independent binding documents (BrowserOxide and Camoufox) with a shared assertion corpus (K-01–K-15), per-browser native cases (BO-01–BO-18, CF-01–CF-21), full operation-coverage maps, exemption discipline, and a release gate. Epistemic tagging is thorough and spot-checked extractions verify against the cited contracts; cross-file references to rule IDs, entry points, primitives, error codes, and consumers are accurate. The file is acceptable as-is.
+
+## Protocol compliance
+
+The raw deliverable (`runs/turn8-20/deliverables/turn8.md`) wraps the content in a single fenced block annotated `markdown:conformance/03-internal-browser-binding.md` and ends with `<!-- TURN_END:8 -->` with no content outside the fence except the marker. The tree file is byte-identical to the fenced inner content (verified by diff). No protocol concern.
+
+## Completeness
+
+The file ends at a coherent boundary (§9 "Outstanding reconnaissance and decision boundaries" with an explicit no-amendment statement). Not truncated. Nine sections, all fully populated: authority/scope, execution model, evidence/fixture discipline, shared corpus, two browser instances with coverage maps, exemptions, result calculation, and reconnaissance.
+
+## Structure
+
+Matches what a conformance suite should be: organized test cases with IDs, stimulus/procedure, required oracle/failure oracle, and identifiable evidence references (journal, admission, build receipt, oracle observations, revalidation receipt). The dual-instance shape (one file, two independently-run suites selected by `$id`) correctly reflects that turn 7 produced two schema documents in one YAML file.
+
+## Epistemic discipline
+
+Strong. Roughly 149 epistemic tags; every substantive paragraph, table row oracle, and coverage mapping carries one. The file consistently distinguishes review-draft specification from executed qualification (§1, §9), labels runner/CLI/bundle details as packaging proposals rather than binding fields (§2.3, §3.1), and marks unknown native support as `uncertain` rather than inventing it (§2.3, §9). Spot checks:
+
+- Entry points (`BOBindingDescriptor`, `BOPrimitiveRecord`, `BODomExport`; `CFBindingDescriptor`, `CFPrimitiveTranscript`, `CFReduction`) and `$id`s match the contract's `schema_entrypoints` and document `$id`s.
+- Consumers (Crawler and Ringmaster; Python Circus Tent) match the contract's `consumers` plus `controller_language: Python`.
+- K-10's "BO 14 primitives / CF 13" matches the contract operation enums (14 `bo.*`, 13 `fx.*`); both §5.4 and §6.4 coverage tables enumerate exactly those sets with no omissions or extras.
+- Error codes cited (`WRONG_THREAD`, `STALE_REFERENCE`, `STALE_TARGET`/`STALE_DOCUMENT`, `PROFILE_BUSY`, `NATIVE_TIMEOUT`, `LOCAL_DEADLINE`/`LOCAL_WAIT_EXPIRED`, `TRANSPORT_LOST`, `BROWSER_EXITED`, `INPUTS_INCOMPLETE`, `RESPONSE_LIMIT`, `UNMAPPED_PRIMITIVE`) all exist in the contract failure enums.
+- Rule IDs invoked (BO-NATIVE/THREAD/HTTP/OFFLINE/DOM/INPUT/AUTHORITY/REUSE/TIME/EVIDENCE/CAPS; CF-ROUTE/SYNC/PROFILE/STATE/STRUCTURE/INPUT/IMAGE/TIME/EVIDENCE/CAPS) all exist in the contract's `x-rules`.
+- The capability/opportunity/result axes in §4 (`present|absent|unknown|not_applicable`, `exposed|unexposed|blocked`, `satisfied|violated|native_absence|indeterminate|not_exercised`) match the handoff's three-way distinction and the kernel's reconciliation.
+
+No fabricated citations found in the sampled claims; no invented enumerations; the K-05 timing vectors (0 and 7 ms) and K-04 missingness vectors are presented as synthetic test designs under `proposed`, not as source extractions.
+
+## Concerns
+
+No blocking or concerning issues. One cosmetic note:
+
+- **Untagged procedure cells (cosmetic):** In the K/BO/CF tables the epistemic tag sits on the oracle cell, with the stimulus/procedure cell relying on the row-level tag and the §4 framing ("Rows describe test designs"). This is a reasonable convention and consistently applied; a stricter reading of "every claim tagged" could want per-cell tags, but the current form is unambiguous. No action required.
+
+## Scope
+
+On-scope: internal browser bindings for both browsers, route-scoped Camoufox qualification, evidence/fixture discipline, exemptions, and release gating. No drift into external-connector mechanics, lifecycle, or PRD packaging decisions; §9 explicitly defers Ringmaster packaging to its PRD. No silent re-litigation of the handoff's independent-products / no-shared-driver invariants — the file enforces them (§1, K-01, §2.3).
+
+## Cross-file consistency
+
+Consistent with all three prior accepted files: kernel timing/null/provenance semantics (K-03–K-07), connector sync/async boundary (BO-03, CF-03, CF-20), and binding rule IDs/names. Amendment discipline is clean: §9 states no handoff amendment is introduced, and none was found.
+
+## Recommendation
+
+**Accept as-is.**
+
+No revision requested. The cosmetic note above may be carried as forward guidance if a later style pass touches this file, but it does not warrant a retry.

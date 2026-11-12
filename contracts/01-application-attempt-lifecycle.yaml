@@ -1,0 +1,2268 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: urn:job-application:contracts:application-attempt-lifecycle:0.1.0
+title: Application attempt lifecycle
+description: >-
+  Review draft for commissioning, observing, and reconciling one application
+  attempt without collapsing dispatch, observation, execution claims, origin
+  facts, and reporting into a single status. Supports manual production work
+  without requiring an automation subject or laboratory.
+x-status: proposed
+x-source: "1-handoff-brief.txt, Parts VI and VIII–IX."
+
+x-source-index:
+  handoff: &h "1-handoff-brief.txt, Parts VI and VIII–X"
+  scope: &s "1-handoff-brief.txt, Parts III and V"
+  storage: &o "2-state-bank-crawler-blueprint.json, §11 and Decision 8"
+  diagnostic: &d "3-hellscape-blueprint.md, §§4–5 and 10"
+  fixture: &f "3-hellscape-blueprint.md, §§6.1, 9, and 12"
+  native: &n "4-circus-tent-arch.md, §§5.6 and 5.8"
+  qualification: &q "5-browser-qualification.md, Evidence discipline"
+  product: &j "6-get-a-job.xml.txt, docs/contracts/firestore-collections.md and job_search_queries.txt"
+  kernel: &k "contracts/00-evidence-kernel.yaml, evidence-kernel/0.1.0"
+  wire: &w >-
+    Proposed wire design implementing the handoff's five-owner lifecycle.
+    New state names, record discriminators, guards, and publication mechanics
+    are contract proposals, not claims about an existing native deployment.
+
+x-contract:
+  name: application-attempt-lifecycle
+  version: 0.1.0
+  maturity: review_draft
+  owner: contracts
+  consumers: [job-hunter, Circus Tent, Ringmaster, Hellscape]
+  conformance_suite: conformance/01-application-attempt-lifecycle.md
+  corpus:
+    - qualification_evidence_discipline
+    - cancellation_and_late_commitment_cases
+    - synthetic_connector_lifecycle_cases
+    - manual_practice_and_production_recording
+  purpose: >-
+    Track the candidate's attempts through honest outcomes, including unresolved
+    outcomes, and retain the evidence needed to improve execution. A successful
+    practice attempt cannot commission or certify a production application.
+  x-status: inferred
+  x-source: "1-handoff-brief.txt Parts III, VI, VIII–IX; 3-hellscape-blueprint.md §§4–5."
+
+x-kernel-compatibility:
+  version: evidence-kernel/0.1.0
+  reference_policy: >-
+    All schema references are local. The common definitions below preserve the
+    kernel's wire meanings; this file does not introduce alternative null,
+    timing, digest, provenance, or evidence-reference conventions.
+  mirrored_types:
+    - Identifier
+    - Revision
+    - PositiveInteger
+    - Digest
+    - Missing
+    - EvidenceRef
+    - JournalPrefix
+    - ArtifactReference
+    - VersionPin
+    - TimePoint
+    - Measurement
+    - MeasurementEvidence
+    - SubjectIdentity
+    - AssistanceRecord
+    - AttemptContext
+  application_restriction: >-
+    ExecutionDescriptor is restricted to manual or subject for an application
+    attempt. The kernel's service mode remains valid for discovery and other
+    non-application work.
+  validation_gate: >-
+    Structural validation and all LIFE rules are required. Validate evidence
+    references, identities, ownership, publication revisions, and measurements
+    against retained kernel evidence; a structurally valid source_checks object
+    is not itself proof that its checks occurred.
+  x-status: proposed
+  x-source: *k
+
+x-ownership:
+  commissioning:
+    authority: commissioner
+    scope: >-
+      Immutable candidate, job, task, permission, execution configuration,
+      lineage, and owner bindings. This is metadata, not a sixth outcome axis.
+    x-status: inferred
+    x-source: *h
+  dispatch:
+    authority: connector
+    scope: Intended delivery, local handle, delivery uncertainty, and native acceptance evidence.
+    x-status: extracted
+    x-source: *h
+  observation:
+    authority: connector
+    scope: >-
+      Observation window, local deadlines, connection closure, bounded drain,
+      cleanup observations, and the immutable close-time knowledge snapshot.
+    x-status: inferred
+    x-source: *d
+  execution:
+    authority: subject
+    scope: >-
+      Subject-authored claims only. An authenticated adapter may faithfully
+      publish them for the bound subject; it may not invent or strengthen them.
+    x-status: inferred
+    x-source: *h
+  application:
+    authority: origin
+    scope: >-
+      Origin facts only. Hellscape's reducer supplies practice facts; a
+      production receipt gateway records verified facts from the bound employer
+      origin without becoming the origin or the reconciler.
+    x-status: proposed
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§3.2, 4.6, 11.1."
+  report:
+    authority: reconciler
+    scope: >-
+      Comparisons and limitations over pinned source revisions. It writes no
+      dispatch, observation, execution, or application field.
+    x-status: extracted
+    x-source: *h
+  manual_recording:
+    rule: >-
+      A local recorder occupies the observation role without invoking an
+      automation connector. Dispatch and execution remain explicitly
+      inapplicable. Manual actions are observations, not fabricated subject
+      claims; employer receipt evidence can still establish an application fact.
+    x-status: proposed
+    x-source: "1-handoff-brief.txt Part IX; 3-hellscape-blueprint.md §§3.1, 4.4, 11.1."
+
+x-reconciliation:
+  - decision: >-
+      Firestore tracker.status and crawler semantic_state are not imported as
+      this attempt's authoritative outcome. Product projections may retain their
+      own workflow fields, but must cite these independently owned axes.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 2-state-bank-crawler-blueprint.json §11.14; 6-get-a-job.xml.txt docs/contracts/firestore-collections.md."
+  - decision: >-
+      Native /run completed maps initially to an execution-lifecycle claim, not
+      application commitment. Primitive success, acknowledgement, and None
+      never acquire stronger semantics merely through normalization.
+    x-status: extracted
+    x-source: "3-hellscape-blueprint.md §4.6; 5-browser-qualification.md."
+  - decision: >-
+      Execution and application domains retain cumulative immutable claim/fact
+      histories. Receipt order is not assumed to be occurrence order, and a
+      later callback cannot silently replace an earlier conflicting response.
+    x-status: proposed
+    x-source: *d
+  - decision: >-
+      Report.state has only reconciled and contradicted as decided verdicts.
+      Missing with reason represents no decidable or applicable verdict; it is
+      not a third success state. Reconciled means the declared comparisons were
+      accounted for, not that the application succeeded or every native claim
+      was independently proved.
+    x-status: proposed
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§4.4–4.6."
+  - decision: >-
+      A production origin need not implement this portfolio's connector or
+      journal API. Its designated fact recorder may normalize verified origin
+      receipts under a pinned policy. A human note or subject claim alone is
+      insufficient; the receipt's original provenance and correlation evidence
+      remain visible.
+    x-status: proposed
+    x-source: "1-handoff-brief.txt Parts VI and IX; 3-hellscape-blueprint.md §§3.2, 11.1."
+  - decision: >-
+      Local idempotency and native checkpoint ledgers do not promise exactly-once
+      employer commitment. Ambiguous delivery is preserved and is not repaired
+      by generating a new idempotency key or switching executors.
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §10.6; 4-circus-tent-arch.md §5.6."
+  - decision: >-
+      No handoff amendment is introduced. The mechanisms here operationalize
+      its invariants without claiming current native capability or selecting
+      orchestrator storage, language, or browser packaging.
+    x-status: proposed
+    x-source: *w
+
+x-invariants:
+  - id: LIFE-COMMISSION
+    classification: invariant
+    rule: >-
+      Commission before an authorized automated dispatch. Freeze attempt identity,
+      kind, candidate, job snapshot, target, task, execution configuration, owner
+      bindings, and permissions. The commission must agree with the admitted
+      manifest and be journaled before Start can cause a native request.
+      Changing the subject version, target, kind, or task creates a new attempt.
+    derivation: "A later outcome cannot determine retroactively what was commissioned."
+    x-status: inferred
+    x-source: *h
+
+  - id: LIFE-AXES
+    classification: invariant
+    rule: >-
+      Exactly one authority role owns each of the five axes. Each applicable
+      axis has exactly one bound publication writer. A writer may publish only
+      its axis and must preserve the identity of its authoritative source.
+      A report writer must not hold execution/application write authority.
+      No whole-attempt status or multi-axis update command is defined here.
+    consequence: >-
+      Missing source evidence is not permission for another owner to fill the
+      axis. An inapplicable manual execution axis has no invented subject or
+      active subject writer.
+    derivation: "A single status cannot represent connection closure, unknown execution, and later commitment."
+    x-status: extracted
+    x-source: *h
+
+  - id: LIFE-PUBLICATION
+    classification: invariant
+    rule: >-
+      Axis revisions are complete immutable publications. The key is
+      (attempt_id, kind, axis, revision); a different value under the same key
+      is an integrity conflict. Each next revision is previous_revision + 1.
+      Only the owner-local revision check and journal commit are atomic.
+      Publication to readers is asynchronous and cannot require another
+      owner's transaction, acknowledgement, or payload serialization.
+    consequence: >-
+      A snapshot pins one complete publication per axis, or revision zero for
+      no publication. Readers see old-or-new publications, never partial bodies.
+      A snapshot seal records the locally available version vector, not global
+      synchronous linearizability.
+    derivation: "Stage1's independent write domains must survive composition of the attempt record."
+    x-status: inferred
+    x-source: *o
+
+  - id: LIFE-EVIDENCE
+    classification: invariant
+    rule: >-
+      The journal is the source of truth. Every publication cites its supporting
+      prefix and source evidence; it is itself registered after its bytes exist.
+      Do not put the publication's own registration event or digest inside its
+      derivation inputs. Imported evidence must be registered locally with its
+      original scope and trust, not promoted by the act of import.
+    consequence: >-
+      Readers verify commission digests, owner identity, evidence references,
+      artifact availability, and prefix bounds before using a publication.
+      Synthetic and historical-unscored records cannot count as real production
+      applications.
+    derivation: "Anything added outside the journal could otherwise become retroactive evidence."
+    x-status: inferred
+    x-source: *h
+
+  - id: LIFE-DISPATCH
+    classification: invariant
+    rule: >-
+      Prepare is non-executing. Before the first native delivery, durably allocate
+      the connector-local handle and record the intended request digest,
+      idempotency key, and dispatching transition. A native run ID is attached
+      only when actually received and correlated. Local Start acknowledgement
+      is not native acceptance; native acceptance is not execution completion.
+    consequence: >-
+      A crash or lost response around delivery yields uncertain unless stronger
+      evidence establishes acceptance or non-acceptance. A local prerequisite or
+      translation failure is not a fabricated subject execution failure.
+    derivation: "Acknowledgement, execution, and semantic success have different evidence boundaries."
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §§5.2–5.4 and 10.6; 5-browser-qualification.md."
+
+  - id: LIFE-IDEMPOTENCY
+    classification: invariant
+    rule: >-
+      The commissioning idempotency key is scoped to the commissioning principal
+      and immutable attempt request. Same key and request returns the same local
+      attempt/handle; changed content under the key is rejected. Repeated Start
+      does not launch a second logical execution.
+    consequence: >-
+      Native resend/resume requires an evidenced native idempotency or checkpoint
+      contract, matching request identity, and a journaled recovery authorization.
+      It remains the same logical delivery and cannot re-execute a completed
+      side-effecting step. Without those guarantees, preserve uncertainty and
+      require reconciliation or explicit duplicate-risk review before a new try.
+      A local lease expiry does not establish safe resubmission.
+    derivation: "A local ledger cannot roll back an employer write whose acknowledgement was lost."
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §10.6; 4-circus-tent-arch.md §5.6."
+
+  - id: LIFE-CLOSE
+    classification: invariant
+    rule: >-
+      Active observation, transport connection, native execution, application
+      mutation authority, and native context lifetime are distinct. On the local
+      active deadline or end request, stop issuing workflow commands, record
+      native-cancel availability and any attempt, record transport closure, and
+      drain effects/evidence only within the commissioned bound.
+    consequence: >-
+      Close the observation window even if the subject continues. Freeze the
+      close-time knowledge snapshot and version pins. Later evidence may append
+      and revise the report but cannot reopen that window, rewrite close-time
+      knowledge, or silently resume workflow commands.
+    derivation: "The observed post-disconnect continuation makes close equivalent to cancel unsound."
+    x-status: extracted
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §5.5."
+
+  - id: LIFE-CONTROLS
+    classification: invariant
+    rule: >-
+      RequestNativeCancel, CloseObservationConnection, ReleaseNativeContext, and
+      Contain are separately evidenced operations. A request is not an
+      acknowledgement; acknowledgement is not an observed effect. A stop claim
+      is retained as a subject claim, not upgraded to a no-commit fact.
+    consequence: >-
+      Unsupported or uncertain cancellation does not prevent local finalization.
+      Containment needs explicit authority and records its affected scope.
+      Killing a process, releasing a context, quarantining a slot, or sealing a
+      fixture does not demonstrate subject-native bounded cancellation or undo
+      committed application work.
+    derivation: "Forced termination is not cooperative cancellation, and application transactions can outlive a client."
+    x-status: extracted
+    x-source: "3-hellscape-blueprint.md §§4.1, 5.5, 13; 5-browser-qualification.md."
+
+  - id: LIFE-CLAIMS
+    classification: invariant
+    rule: >-
+      Execution publications contain only faithfully mapped, source-attributed
+      claims from the commissioned subject/version. Preserve raw responses,
+      mapping versions, declared scope, original times when available, and
+      receipt times. An absent state is Missing, not an invented subject claim
+      of unknown. Explicit unknown remains a valid subject claim.
+    consequence: >-
+      Append conflicting authenticated responses/callbacks without last-write-wins
+      replacement. A terminal-looking claim does not prohibit recording later
+      conflicting evidence. Primitive or lifecycle scope is not silently widened
+      to application commitment.
+    derivation: "The reconciler must compare the original claim, not a corrected copy of it."
+    x-status: inferred
+    x-source: *d
+
+  - id: LIFE-ORIGIN
+    classification: invariant
+    rule: >-
+      An application fact must identify the commissioned origin, candidate, job,
+      and attempt, and cite verified source and correlation evidence under the
+      pinned origin policy. A local fixture fact cites its transaction; a
+      production fact cites an actual verified origin receipt. HTTP 200, a submit
+      click, a subject result, or an operator assertion alone is insufficient.
+    consequence: >-
+      No accepted fact means unknown knowledge, not not_committed. An as-of
+      absence permits later commitment. Final absence requires an origin-owned
+      guarantee covering the attempt, not expiration of the observer's timer.
+      A valid commitment remains historical evidence even after withdrawal,
+      employer rejection, job closure, or lost confirmation rendering.
+    derivation: "Execution is a subject claim; application commitment is an origin fact."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§4.6, 9.3, 11.1."
+
+  - id: LIFE-SOURCE-CHECKS
+    classification: invariant
+    rule: >-
+      Verify source identity and attempt correlation independently. Preserve trace
+      mismatch separately from authentication. An authenticated but uncorrelated
+      message remains evidence of receipt, not an accepted claim/fact for an
+      arbitrary attempt. Strong alternate correlation may establish the attempt
+      despite a trace defect, but must be explicit and evidenced.
+    consequence: >-
+      Normalization metadata is assigned by the authenticated ingestion/verification
+      path, never accepted merely because the sender serialized verified or
+      matched. Native receipt IDs and versions are never invented.
+    derivation: "A valid signature and a matching trace describe different properties."
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §§1.3 and 5.3."
+
+  - id: LIFE-RECONCILE
+    classification: invariant
+    rule: >-
+      The reconciler reads pinned execution claims and origin facts and writes
+      only report. Compare propositions at their actual scope and knowledge
+      boundary. A stopped claim alone does not assert that an already dispatched
+      origin transaction cannot commit.
+    consequence: >-
+      Close-time outcome_unknown is compatible with a later commitment. A claim
+      that no commitment occurred anywhere in the attempt is contradicted by a
+      valid commitment for that attempt. A claim limited to an earlier boundary
+      is not contradicted merely because a receipt arrived later.
+    derivation: "The cancellation corpus distinguishes honest uncertainty from a definite false cancellation guarantee."
+    x-status: extracted
+    x-source: *h
+
+  - id: LIFE-REPORT-COVERAGE
+    classification: proposed_mechanism
+    rule: >-
+      Every claim and application assertion in the pinned execution publication
+      is accounted for by a comparison or an explicit scope/uncertainty limitation.
+      Any proved contradiction makes report.state contradicted, even if other
+      comparisons remain incomplete. With no contradiction, complete comparisons
+      yield reconciled; unresolved comparisons yield Missing with reason.
+      No applicable subject claims yield not_applicable coverage, not a fabricated
+      successful comparison.
+    consequence: >-
+      not_comparable can be a complete scope determination, such as execution
+      completion making no application claim. It is not proof of the claim's
+      truth. Consumers must display coverage and limitations with the verdict.
+    rationale: "A binary decided verdict must not turn undecidable evidence into a pass."
+    flip_condition: >-
+      Revise the representation only if corpus cases cannot distinguish a decided
+      comparison from incomplete or inapplicable comparison without another
+      explicitly versioned field; never weaken the claim/fact separation.
+    x-status: proposed
+    x-source: *w
+
+  - id: LIFE-LATE-EVIDENCE
+    classification: invariant
+    rule: >-
+      Evidence received after observation closure is appended at the current
+      journal head. Publish new owner revisions and a new report over new input
+      pins; preserve every prior seal, publication, and diagnostic. A current
+      snapshot may legitimately contain newer facts than its latest report used.
+    consequence: >-
+      Report freshness is determined by comparing its input pins with the
+      snapshot's source pins. A stale report is not silently applied to newer
+      facts, and publication does not wait for synchronous reconciliation.
+    derivation: "Asynchronous publication and immutable close-time knowledge must both remain true."
+    x-status: inferred
+    x-source: "2-state-bank-crawler-blueprint.json Decision 8; 3-hellscape-blueprint.md §§5.5 and 10.7."
+
+  - id: LIFE-LINEAGE
+    classification: invariant
+    rule: >-
+      kind is immutable. Laboratory fixtures are practice and held_in; employer
+      origins are held_out and production requires an employer origin.
+      derived_from is same-kind and acyclic. rehearsal_of points from practice
+      to an already commissioned production identity; performance_of points
+      from production to an already commissioned practice identity.
+    consequence: >-
+      Empty arrays are valid. Reciprocal mutation of an earlier commission is
+      not required: readers can derive incoming links. Links establish lineage,
+      not inherited commitment, native capability, or origin representativeness.
+      Practice success never triggers production dispatch automatically.
+    derivation: "Practice-as-production reproduces the laboratory overfitting failure."
+    x-status: inferred
+    x-source: *s
+
+  - id: LIFE-MANUAL
+    classification: invariant
+    rule: >-
+      Manual mode requires no automation subject, native run ID, connector
+      version, or native binding version. Its dispatch and execution slots stay
+      at revision zero with not_applicable. The recorder owns observation and
+      journals human actions with manual provenance.
+    consequence: >-
+      The origin fact recorder can accept a separately verified employer receipt.
+      The reconciler does not manufacture a subject claim to compare with it.
+      A real application with pending confirmation remains a tracked attempt;
+      absence of infrastructure is not a reason to lose its evidence.
+    derivation: "Human assistance is not unattended completion, but manual work must serve the portfolio from day one."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Parts VII–IX; 3-hellscape-blueprint.md §4.4; 5-browser-qualification.md."
+
+  - id: LIFE-TIME
+    classification: invariant
+    rule: >-
+      All measured durations use Measurement with clock_id, boot_id, origin,
+      discriminated estimate, and censoring. Endpoint subtraction requires one
+      registered clock/boot/origin and ordered endpoints; exact zero is valid.
+      UTC annotations and receipt order cannot establish cross-clock occurrence
+      order. Opaque origin revisions are not lexically ordered as timestamps.
+    consequence: >-
+      A restart interrupts the old observation epoch; do not reconstruct elapsed
+      downtime by subtracting new-boot offsets or UTC. Configured DurationLimit
+      values are declarations, not measurements or native capability evidence.
+    derivation: "The zero-duration defect and restart ambiguity require explicit timing provenance."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; contracts/00-evidence-kernel.yaml."
+
+x-transition-rules:
+  dispatch:
+    states: [not_started, prepared, dispatching, accepted, rejected, uncertain]
+    allowed:
+      - {from: unpublished, to: [not_started, prepared, rejected]}
+      - {from: not_started, to: [prepared, rejected]}
+      - {from: prepared, to: [dispatching, rejected]}
+      - {from: dispatching, to: [accepted, rejected, uncertain]}
+      - {from: uncertain, to: [uncertain, accepted, rejected]}
+      - {from: accepted, to: [accepted]}
+      - {from: rejected, to: [rejected]}
+    guards:
+      - "dispatching requires durable local handle, request identity, and dispatch intent before wire delivery."
+      - "accepted requires correlated native acceptance/result evidence, not merely local Start acknowledgement."
+      - "rejected after possible delivery requires evidence of native non-acceptance; a lost response is uncertain."
+      - "Same-state revisions may add evidence but cannot authorize a new logical execution."
+      - "Authorized same-key native resume preserves accepted as the logical dispatch state and journals every additional delivery."
+      - "Manual dispatch has no state transition; its slot is explicitly inapplicable."
+    x-status: proposed
+    x-source: *w
+
+  observation:
+    states: [not_opened, open, draining, closed]
+    allowed:
+      - {from: unpublished, to: [not_opened, open, closed]}
+      - {from: not_opened, to: [open, closed]}
+      - {from: open, to: [open, draining, closed]}
+      - {from: draining, to: [draining, closed]}
+      - {from: closed, to: [closed]}
+    guards:
+      - "A closed-first publication is allowed for translation, launch, or infrastructure failure."
+      - "Transport closure can occur while the observation window is open or draining."
+      - "closed requires a journaled closure boundary and a close-time knowledge snapshot."
+      - "closed-to-closed may append late observations or cleanup evidence but preserves the original closure fields."
+      - "Active/drain/cleanup waiting must remain within the commissioned local bounds."
+    x-status: proposed
+    x-source: *w
+
+  execution:
+    rule: >-
+      Append authenticated, correlated claims. Do not impose a truth-state
+      machine on what a subject is allowed to claim: a contradictory claim is
+      evidence to retain, not a reason to replace or suppress the previous claim.
+      Existing claim IDs and contents cannot change.
+    x-status: inferred
+    x-source: *d
+
+  application:
+    rule: >-
+      Append accepted, correlated origin facts; existing fact IDs and contents
+      cannot change. An as-of absence and later commitment can both be valid.
+      Apparently conflicting final facts or multiple origin commitments require
+      explicit report issues and preserved evidence, never latest-value erasure.
+    x-status: proposed
+    x-source: *w
+
+  report:
+    rule: >-
+      Publish new immutable assessments. Input revision pins must not regress
+      relative to this report domain's previous publication. Historical replay
+      may reproduce old reports as artifacts without replacing the current
+      report domain. New facts may make a prior report stale or a prior
+      reconciled verdict contradicted; prior bytes remain intact.
+    x-status: proposed
+    x-source: *w
+
+x-reconciler-algorithm:
+  steps:
+    - >-
+      Verify the commission, source owner publications, source checks, all input
+      pins, and their journal support. Retain unresolved source conflicts as
+      issues; do not repair an input axis.
+    - >-
+      Enumerate the subject claims and each explicit application assertion from
+      the pinned execution revision. A primitive or lifecycle claim without an
+      application assertion receives not_comparable with its narrow scope stated.
+    - >-
+      Match application facts only to the same attempt, kind, target, candidate,
+      and job. Establish temporal relation using a common clock, evidenced
+      causality, or a documented origin sequence; otherwise record unknown.
+    - >-
+      Compare explicit outcome_unknown with known facts as compatible uncertainty,
+      not a prediction of no future commitment. Later commitment alone never
+      contradicts it. If no relevant fact is available, preserve indeterminacy.
+    - >-
+      Compare committed with a matching positive fact or an authoritative absence
+      covering the claimed interval. An earlier as-of absence cannot disprove
+      later commitment, and absence of a receipt cannot prove non-commitment.
+    - >-
+      Compare not_committed over entire_attempt against any verified commitment
+      for that attempt. For at_boundary or after_boundary, require temporal
+      evidence covering that boundary; a later receipt timestamp alone is
+      insufficient. Verification of a future no-commit guarantee requires
+      origin-owned finality, not local observation closure.
+    - >-
+      Produce comparisons, coverage, issues, and the decided or reasoned-missing
+      report state. Publish only the report domain and any separately derived
+      diagnostic artifact, preserving all source records.
+  x-status: proposed
+  x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§4.5–4.6."
+
+x-open-evidence:
+  - missing: >-
+      The sources do not provide current per-origin production receipt,
+      authentication, correlation, or final-absence mappings.
+    resolution: >-
+      Pin each admitted origin's mapping from documented semantics and retained,
+      operator-authorized receipt observations. Until established, retain raw
+      observations and leave application knowledge unresolved; do not require
+      this reconnaissance for unrelated jobs or manual recording.
+    x-status: uncertain
+    x-source: "3-hellscape-blueprint.md §§4.6 and 11.1; 6-get-a-job.xml.txt docs/external/README.md."
+  - missing: >-
+      Raw historical cancellation artifacts and a current-version native
+      cancellation/cleanup contract are not supplied.
+    resolution: >-
+      Preserve historical descriptions as unscored documentary evidence, and
+      test lifecycle behavior with synthetic backends. A new subject version
+      starts unknown until its own capability evidence is collected.
+    x-status: uncertain
+    x-source: "3-hellscape-blueprint.md §§1.3, 4.3, 5.3."
+
+oneOf:
+  - $ref: "#/$defs/AttemptCommission"
+  - $ref: "#/$defs/AxisRevision"
+  - $ref: "#/$defs/AttemptSnapshot"
+
+$defs:
+  SchemaVersion:
+    const: application-attempt-lifecycle/0.1.0
+    x-status: proposed
+    x-source: *w
+
+  Identifier:
+    type: string
+    minLength: 1
+    x-status: extracted
+    x-source: *k
+
+  Revision:
+    type: integer
+    minimum: 0
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  PositiveInteger:
+    type: integer
+    minimum: 1
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  Digest:
+    type: string
+    pattern: '^sha256:[0-9a-f]{64}$'
+    x-status: extracted
+    x-source: *k
+
+  Missing:
+    type: object
+    additionalProperties: false
+    required: [value, reason]
+    properties:
+      value: {type: "null", x-status: extracted, x-source: *k}
+      reason:
+        enum: [not_enabled, not_applicable, not_observed, observation_lost, unsupported_by_subject, manual_override]
+        x-status: extracted
+        x-source: *h
+      detail: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Inapplicable:
+    allOf:
+      - $ref: "#/$defs/Missing"
+      - properties: {reason: {const: not_applicable}}
+    x-status: extracted
+    x-source: *k
+
+  MaybeString:
+    oneOf:
+      - $ref: "#/$defs/Identifier"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  MaybeDigest:
+    oneOf:
+      - $ref: "#/$defs/Digest"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  EvidenceRef:
+    type: object
+    additionalProperties: false
+    required: [journal_id, sequence, event_id, event_hash, pointer]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      event_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      event_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      pointer:
+        type: string
+        pattern: '^(?:/(?:[^~/]|~[01])*)*$'
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  MaybeEvidenceRef:
+    oneOf:
+      - $ref: "#/$defs/EvidenceRef"
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  EvidenceRefs:
+    type: array
+    uniqueItems: true
+    items: {$ref: "#/$defs/EvidenceRef"}
+    x-status: extracted
+    x-source: *k
+
+  SupportRefs:
+    allOf:
+      - $ref: "#/$defs/EvidenceRefs"
+      - minItems: 1
+    x-status: extracted
+    x-source: *k
+
+  JournalPrefix:
+    type: object
+    additionalProperties: false
+    required: [journal_id, last_sequence, head_hash]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      last_sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      head_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ArtifactReference:
+    type: object
+    additionalProperties: false
+    required: [digest, size_bytes, media_type, owner_domain, access]
+    properties:
+      digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      size_bytes: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *k}
+      media_type: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      access: {enum: [public, restricted], x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  VersionPin:
+    type: object
+    additionalProperties: false
+    required: [id, version, artifact_digest]
+    properties:
+      id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      artifact_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  MeasurementOrigin:
+    enum: [engine_measured, browser_measured, subject_reported, manual_reference]
+    x-status: extracted
+    x-source: *k
+
+  Scope:
+    type: object
+    additionalProperties: false
+    required: [kind, id]
+    properties:
+      kind:
+        enum: [run, session, connector_call, workflow_step, application_operation, native_primitive, recovery, discovery, capability, resource]
+        x-status: extracted
+        x-source: *k
+      id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  TimePoint:
+    type: object
+    additionalProperties: false
+    required: [clock_id, boot_id, origin, monotonic_offset_ms, utc_annotation]
+    properties:
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      origin: {$ref: "#/$defs/MeasurementOrigin", x-status: extracted, x-source: *k}
+      monotonic_offset_ms: {type: number, minimum: 0, x-status: extracted, x-source: *k}
+      utc_annotation:
+        oneOf:
+          - {type: string, format: date-time}
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  MaybeTimePoint:
+    oneOf:
+      - $ref: "#/$defs/TimePoint"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  Estimate:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: exact, x-status: extracted, x-source: *k}
+          value: {type: number, x-status: extracted, x-source: *k}
+      - type: object
+        additionalProperties: false
+        required: [kind, lower_bound, upper_bound]
+        properties:
+          kind: {const: bounded, x-status: extracted, x-source: *k}
+          lower_bound:
+            oneOf:
+              - {type: number}
+              - $ref: "#/$defs/Missing"
+            x-status: extracted
+            x-source: *k
+          upper_bound:
+            oneOf:
+              - {type: number}
+              - $ref: "#/$defs/Missing"
+            x-status: extracted
+            x-source: *k
+        anyOf:
+          - properties: {lower_bound: {type: number}}
+          - properties: {upper_bound: {type: number}}
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: unavailable, x-status: extracted, x-source: *k}
+          value: {$ref: "#/$defs/Missing", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Measurement:
+    type: object
+    additionalProperties: false
+    required:
+      - measurement_id
+      - name
+      - scope
+      - quantity
+      - unit
+      - origin
+      - clock_id
+      - boot_id
+      - method
+      - start
+      - end
+      - estimate
+      - resolution
+      - censoring
+      - comparability_group
+    properties:
+      measurement_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      name: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      scope: {$ref: "#/$defs/Scope", x-status: extracted, x-source: *k}
+      quantity: {enum: [duration, scalar], x-status: extracted, x-source: *k}
+      unit: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      origin: {$ref: "#/$defs/MeasurementOrigin", x-status: extracted, x-source: *k}
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      method:
+        enum: [endpoint_difference, source_value, evidence_bound, unavailable]
+        x-status: extracted
+        x-source: *k
+      start: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *k}
+      end: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *k}
+      estimate: {$ref: "#/$defs/Estimate", x-status: extracted, x-source: *k}
+      resolution:
+        oneOf:
+          - {type: number, minimum: 0}
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *k
+      censoring:
+        enum: [none, left, right, both, unavailable]
+        x-status: extracted
+        x-source: *k
+      comparability_group: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {quantity: {const: duration}}}
+        then:
+          properties:
+            unit: {const: ms}
+            estimate:
+              properties:
+                value: {minimum: 0}
+                lower_bound: {minimum: 0}
+                upper_bound: {minimum: 0}
+      - if: {properties: {estimate: {properties: {kind: {const: exact}}}}}
+        then:
+          properties:
+            method: {enum: [endpoint_difference, source_value]}
+            censoring: {const: none}
+      - if: {properties: {estimate: {properties: {kind: {const: bounded}}}}}
+        then:
+          properties:
+            method: {const: evidence_bound}
+            censoring: {enum: [none, left, right, both]}
+      - if: {properties: {estimate: {properties: {kind: {const: unavailable}}}}}
+        then:
+          properties:
+            method: {const: unavailable}
+            censoring: {const: unavailable}
+      - if: {properties: {method: {const: endpoint_difference}}}
+        then:
+          properties:
+            quantity: {const: duration}
+            start: {$ref: "#/$defs/TimePoint"}
+            end: {$ref: "#/$defs/TimePoint"}
+            estimate: {properties: {kind: {const: exact}}}
+    x-status: extracted
+    x-source: *k
+
+  MeasurementEvidence:
+    type: object
+    additionalProperties: false
+    required: [measurement, evidence_refs]
+    properties:
+      measurement: {$ref: "#/$defs/Measurement", x-status: extracted, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ComponentIdentity:
+    type: object
+    additionalProperties: false
+    required: [component, reported_version, build_digest, configuration_digest]
+    properties:
+      component: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      reported_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      build_digest: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *k}
+      configuration_digest: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  SubjectIdentity:
+    type: object
+    additionalProperties: false
+    required: [subject_id, subject_version, revision_basis, native_revision, configured_mode, interface_surface, configuration_digest, stack]
+    properties:
+      subject_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      subject_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      revision_basis:
+        enum: [native_revision, source_digest, operator_attestation, unknown]
+        x-status: extracted
+        x-source: *k
+      native_revision: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      configured_mode: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      interface_surface: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      configuration_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      stack:
+        type: array
+        items: {$ref: "#/$defs/ComponentIdentity"}
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  AssistanceRecord:
+    type: object
+    additionalProperties: false
+    required: [planning_owner, assistance_track, planner_identity, plan, online_replanning, description]
+    properties:
+      planning_owner:
+        enum: [subject, external_planner, operator, none]
+        x-status: extracted
+        x-source: *k
+      assistance_track: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      planner_identity: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      plan:
+        oneOf:
+          - $ref: "#/$defs/ArtifactReference"
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *k
+      online_replanning: {type: boolean, x-status: extracted, x-source: *k}
+      description: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ExecutionDescriptor:
+    type: object
+    additionalProperties: false
+    required: [mode, subject, connector_version, binding_version, assistance]
+    properties:
+      mode: {enum: [manual, subject], x-status: proposed, x-source: *w}
+      subject:
+        oneOf:
+          - $ref: "#/$defs/SubjectIdentity"
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *k
+      connector_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      binding_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      assistance: {$ref: "#/$defs/AssistanceRecord", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {mode: {const: manual}}}
+        then:
+          properties:
+            subject: {$ref: "#/$defs/Inapplicable"}
+            connector_version: {$ref: "#/$defs/Inapplicable"}
+            binding_version: {$ref: "#/$defs/Inapplicable"}
+        else:
+          properties:
+            subject: {$ref: "#/$defs/SubjectIdentity"}
+            connector_version: {$ref: "#/$defs/Identifier"}
+            binding_version: {$ref: "#/$defs/Identifier"}
+    x-status: proposed
+    x-source: *w
+
+  AttemptReference:
+    type: object
+    additionalProperties: false
+    required: [attempt_id, kind]
+    properties:
+      attempt_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      kind: {enum: [practice, production], x-status: extracted, x-source: *h}
+    x-status: extracted
+    x-source: *k
+
+  AttemptContext:
+    type: object
+    additionalProperties: false
+    required: [attempt_id, kind, target_class, target_id, evaluation_partition, rehearsal_of, performance_of, derived_from]
+    properties:
+      attempt_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      kind: {enum: [practice, production], x-status: extracted, x-source: *h}
+      target_class: {enum: [laboratory_fixture, employer_origin], x-status: extracted, x-source: *k}
+      target_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      evaluation_partition: {enum: [held_in, held_out], x-status: extracted, x-source: *k}
+      rehearsal_of:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: extracted
+        x-source: *k
+      performance_of:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: extracted
+        x-source: *k
+      derived_from:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: extracted
+        x-source: *k
+    allOf:
+      - if: {properties: {target_class: {const: laboratory_fixture}}}
+        then:
+          properties:
+            kind: {const: practice}
+            evaluation_partition: {const: held_in}
+      - if: {properties: {target_class: {const: employer_origin}}}
+        then:
+          properties: {evaluation_partition: {const: held_out}}
+      - if: {properties: {kind: {const: practice}}}
+        then:
+          properties:
+            performance_of: {maxItems: 0}
+            rehearsal_of: {items: {properties: {kind: {const: production}}}}
+            derived_from: {items: {properties: {kind: {const: practice}}}}
+        else:
+          properties:
+            target_class: {const: employer_origin}
+            rehearsal_of: {maxItems: 0}
+            performance_of: {items: {properties: {kind: {const: practice}}}}
+            derived_from: {items: {properties: {kind: {const: production}}}}
+    x-status: extracted
+    x-source: *k
+
+  AuthorityBinding:
+    type: object
+    additionalProperties: false
+    required: [role, source_id, writer_id, owner_domain, publication_policy]
+    properties:
+      role:
+        enum: [connector, subject, origin, reconciler]
+        x-status: extracted
+        x-source: *h
+      source_id:
+        $ref: "#/$defs/MaybeString"
+        description: Semantic authority; not necessarily the process storing its evidence.
+        x-status: proposed
+        x-source: *w
+      writer_id:
+        $ref: "#/$defs/MaybeString"
+        description: Exactly one authorized publication principal, or inapplicable for no manual subject.
+        x-status: proposed
+        x-source: *w
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *o}
+      publication_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+    description: >-
+      The five logical domains are distinct even when a runtime implements
+      multiple roles. These fields declare bindings; ingestion verifies them
+      against authenticated registrations and never trusts a caller's role label.
+    x-status: proposed
+    x-source: *w
+
+  OwnerBindings:
+    type: object
+    additionalProperties: false
+    required: [dispatch, observation, execution, application, report]
+    properties:
+      dispatch:
+        allOf:
+          - $ref: "#/$defs/AuthorityBinding"
+          - properties: {role: {const: connector}}
+        x-status: extracted
+        x-source: *h
+      observation:
+        allOf:
+          - $ref: "#/$defs/AuthorityBinding"
+          - properties: {role: {const: connector}}
+        x-status: extracted
+        x-source: *h
+      execution:
+        allOf:
+          - $ref: "#/$defs/AuthorityBinding"
+          - properties: {role: {const: subject}}
+        x-status: extracted
+        x-source: *h
+      application:
+        allOf:
+          - $ref: "#/$defs/AuthorityBinding"
+          - properties: {role: {const: origin}}
+        x-status: extracted
+        x-source: *h
+      report:
+        allOf:
+          - $ref: "#/$defs/AuthorityBinding"
+          - properties: {role: {const: reconciler}}
+        x-status: extracted
+        x-source: *h
+    x-status: proposed
+    x-source: *w
+
+  DurationLimit:
+    type: object
+    additionalProperties: false
+    required: [kind, unit, value]
+    properties:
+      kind: {const: exact, x-status: proposed, x-source: *w}
+      unit: {const: ms, x-status: proposed, x-source: *w}
+      value:
+        type: number
+        minimum: 0
+        description: Declared finite local bound; zero requests an immediate boundary, not missingness.
+        x-status: proposed
+        x-source: *w
+    description: Configuration, not an elapsed measurement or native cancellation guarantee.
+    x-status: proposed
+    x-source: *w
+
+  ObservationPolicy:
+    type: object
+    additionalProperties: false
+    required: [active_limit, drain_limit, native_cancel_wait_limit, cleanup_wait_limit, fixture_close_action]
+    properties:
+      active_limit: {$ref: "#/$defs/DurationLimit", x-status: proposed, x-source: *d}
+      drain_limit: {$ref: "#/$defs/DurationLimit", x-status: proposed, x-source: *d}
+      native_cancel_wait_limit: {$ref: "#/$defs/DurationLimit", x-status: proposed, x-source: *d}
+      cleanup_wait_limit: {$ref: "#/$defs/DurationLimit", x-status: proposed, x-source: *d}
+      fixture_close_action:
+        enum: [seal_after_drain, not_applicable]
+        x-status: inferred
+        x-source: *d
+    description: >-
+      No default durations are supplied. An employer's mutation authority cannot
+      be sealed by this recorder; employer_origin requires not_applicable.
+    x-status: proposed
+    x-source: *w
+
+  JobReference:
+    type: object
+    additionalProperties: false
+    required: [job_id, source_target, source_job_id, snapshot]
+    properties:
+      job_id:
+        $ref: "#/$defs/Identifier"
+        description: Portfolio-local identity; may be allocated for a manually discovered job.
+        x-status: proposed
+        x-source: *j
+      source_target: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *o}
+      source_job_id: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *o}
+      snapshot: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+    description: >-
+      Pins the job content used for the decision. Company/title matching alone
+      is not an application identity, and a job content snapshot does not
+      establish employer-form representativeness.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part III; 6-get-a-job.xml.txt docs/contracts/firestore-collections.md."
+
+  AttemptCommission:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - kernel_version
+      - commission_id
+      - run_id
+      - journal_id
+      - manifest_hash
+      - admission_ref
+      - commissioned_by
+      - commissioned_at
+      - attempt
+      - candidate_id
+      - candidate_profile
+      - job
+      - selection_evidence
+      - task
+      - task_semantic_hash
+      - initial_materials
+      - execution
+      - owners
+      - idempotency_key
+      - authorization_refs
+      - recovery_review_refs
+      - observation_policy
+      - origin_policy
+    properties:
+      record_type: {const: attempt_commission, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      kernel_version: {const: evidence-kernel/0.1.0, x-status: extracted, x-source: *k}
+      commission_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      run_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      manifest_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      admission_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      commissioned_by: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      commissioned_at: {$ref: "#/$defs/TimePoint", x-status: proposed, x-source: *w}
+      attempt: {$ref: "#/$defs/AttemptContext", x-status: extracted, x-source: *k}
+      candidate_id:
+        $ref: "#/$defs/Identifier"
+        description: Opaque reference to the one candidate, not embedded personal data.
+        x-status: proposed
+        x-source: *j
+      candidate_profile:
+        oneOf:
+          - $ref: "#/$defs/ArtifactReference"
+          - $ref: "#/$defs/Missing"
+        description: Profile version used, or honest missingness; no scoring service is required for manual work.
+        x-status: proposed
+        x-source: *j
+      job: {$ref: "#/$defs/JobReference", x-status: proposed, x-source: *w}
+      selection_evidence:
+        oneOf:
+          - $ref: "#/$defs/ArtifactReference"
+          - $ref: "#/$defs/Missing"
+        description: Recorded evaluation or human decision, not a fabricated reranker score.
+        x-status: inferred
+        x-source: *j
+      task: {$ref: "#/$defs/ArtifactReference", x-status: extracted, x-source: *k}
+      task_semantic_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      initial_materials:
+        type: array
+        items: {$ref: "#/$defs/ArtifactReference"}
+        description: Initially available materials; later generated or actually submitted versions are journaled separately.
+        x-status: proposed
+        x-source: *j
+      execution: {$ref: "#/$defs/ExecutionDescriptor", x-status: inferred, x-source: *d}
+      owners: {$ref: "#/$defs/OwnerBindings", x-status: inferred, x-source: *h}
+      idempotency_key: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *n}
+      authorization_refs:
+        $ref: "#/$defs/SupportRefs"
+        description: Operator or admitted policy authority for the task; not credentials and not a fixed universal approval workflow.
+        x-status: proposed
+        x-source: *w
+      recovery_review_refs:
+        $ref: "#/$defs/EvidenceRefs"
+        description: Required by LIFE-IDEMPOTENCY when a prior unresolved/committed attempt creates resubmission risk.
+        x-status: proposed
+        x-source: *w
+      observation_policy: {$ref: "#/$defs/ObservationPolicy", x-status: proposed, x-source: *d}
+      origin_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+    allOf:
+      - if:
+          properties: {attempt: {properties: {target_class: {const: employer_origin}}}}
+        then:
+          properties:
+            observation_policy:
+              properties: {fixture_close_action: {const: not_applicable}}
+      - if:
+          properties: {execution: {properties: {mode: {const: manual}}}}
+        then:
+          properties:
+            owners:
+              properties:
+                execution:
+                  properties:
+                    source_id: {$ref: "#/$defs/Inapplicable"}
+                    writer_id: {$ref: "#/$defs/Inapplicable"}
+        else:
+          properties:
+            owners:
+              properties:
+                execution:
+                  properties:
+                    source_id: {$ref: "#/$defs/Identifier"}
+                    writer_id: {$ref: "#/$defs/Identifier"}
+    description: >-
+      Other applicable owner source_id/writer_id fields must be present.
+      application.source_id equals attempt.target_id; subject-mode
+      execution.source_id equals execution.subject.subject_id, at its pinned
+      version. The commission references the already admitted manifest, and its
+      own artifact registration follows construction to avoid a hash cycle.
+    x-status: proposed
+    x-source: *w
+
+  DomainPin:
+    type: object
+    additionalProperties: false
+    required: [revision, record_digest]
+    properties:
+      revision: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *o}
+      record_digest: {$ref: "#/$defs/MaybeDigest", x-status: proposed, x-source: *w}
+    allOf:
+      - if: {properties: {revision: {const: 0}}}
+        then:
+          properties: {record_digest: {$ref: "#/$defs/Missing"}}
+        else:
+          properties: {record_digest: {$ref: "#/$defs/Digest"}}
+    description: Revision zero means no publication, not an unknown numeric revision.
+    x-status: proposed
+    x-source: *w
+
+  ReportInputPins:
+    type: object
+    additionalProperties: false
+    required: [dispatch, observation, execution, application]
+    properties:
+      dispatch: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+      observation: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+      execution: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+      application: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  CloseInputPins:
+    type: object
+    additionalProperties: false
+    required: [dispatch, execution, application, report]
+    properties:
+      dispatch: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+      execution: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+      application: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+      report: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+    description: Knowledge available at closure; excludes the closing publication itself.
+    x-status: proposed
+    x-source: *w
+
+  VersionVector:
+    type: object
+    additionalProperties: false
+    required: [dispatch, observation, execution, application, report]
+    properties:
+      dispatch: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *o}
+      observation: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *o}
+      execution: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *o}
+      application: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *o}
+      report: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *o}
+    x-status: proposed
+    x-source: *w
+
+  SealPoint:
+    type: object
+    additionalProperties: false
+    required: [seal_id, name, versions, evidence_refs]
+    properties:
+      seal_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      name:
+        enum: [commissioned, observation_closed, evidence_updated]
+        x-status: proposed
+        x-source: *w
+      versions: {$ref: "#/$defs/VersionVector", x-status: inferred, x-source: *h}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+    description: >-
+      Pins every owner revision in the composed snapshot. observation_closed
+      requires a closed observation publication. evidence_updated does not
+      rewrite or unseal the original close-time snapshot.
+    x-status: proposed
+    x-source: *w
+
+  SourceChecks:
+    type: object
+    additionalProperties: false
+    required: [authentication, correlation, trace_correlation, verification_policy, matched_by, evidence_refs]
+    properties:
+      authentication:
+        enum: [verified, failed, unknown]
+        description: Verification of the source/channel identity, not a claim that a website login succeeded.
+        x-status: proposed
+        x-source: *d
+      correlation: {enum: [matched, mismatched, unknown], x-status: inferred, x-source: *d}
+      trace_correlation:
+        enum: [matched, mismatched, not_observed, not_applicable]
+        x-status: inferred
+        x-source: *d
+      verification_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      matched_by:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        description: Names the actual correlation inputs; values and checks are retained in evidence.
+        x-status: proposed
+        x-source: *w
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *d}
+    x-status: proposed
+    x-source: *w
+
+  VerifiedSourceChecks:
+    allOf:
+      - $ref: "#/$defs/SourceChecks"
+      - properties:
+          authentication: {const: verified}
+          correlation: {const: matched}
+          matched_by: {minItems: 1}
+    description: >-
+      A necessary representation for accepted owner evidence, not sufficient
+      proof by assertion. Unverified or uncorrelated observations remain in the
+      journal and cannot enter the accepted claim/fact histories.
+    x-status: proposed
+    x-source: *w
+
+  CapabilityReference:
+    type: object
+    additionalProperties: false
+    required: [descriptor_digest, capability_id, evidence_ref]
+    properties:
+      descriptor_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      capability_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      evidence_ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *k}
+    description: Descriptor must match this commissioned subject/version/mode/surface, without inheritance.
+    x-status: extracted
+    x-source: *k
+
+  Opportunity:
+    type: object
+    additionalProperties: false
+    required: [state, evidence_refs, rationale]
+    properties:
+      state: {enum: [exposed, unexposed, blocked], x-status: extracted, x-source: *h}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+      rationale: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ControlObservation:
+    type: object
+    additionalProperties: false
+    required:
+      - control_event_id
+      - operation_id
+      - operation
+      - target_scope
+      - disposition
+      - at
+      - authorization_ref
+      - capability_ref
+      - opportunity
+      - request_ref
+      - response_ref
+      - response_checks
+      - native_claim_refs
+      - effect_refs
+      - affected_attempts
+      - measurements
+      - limitations
+    properties:
+      control_event_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      operation_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      operation:
+        enum: [RequestNativeCancel, CloseObservationConnection, ReleaseNativeContext, Contain]
+        x-status: extracted
+        x-source: *h
+      target_scope:
+        enum: [native_execution, observation_connection, native_context, fixture_mutation_authority, local_process, deployment_slot, harness_resources]
+        x-status: proposed
+        x-source: *w
+      disposition:
+        enum: [not_requested, unsupported, requested, acknowledged, effect_observed, unknown]
+        description: Observation of this control operation, not a requirement-assessment result or application outcome.
+        x-status: proposed
+        x-source: *w
+      at: {$ref: "#/$defs/TimePoint", x-status: inferred, x-source: *d}
+      authorization_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      capability_ref:
+        oneOf:
+          - $ref: "#/$defs/CapabilityReference"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      opportunity: {$ref: "#/$defs/Opportunity", x-status: inferred, x-source: *h}
+      request_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: proposed, x-source: *w}
+      response_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: proposed, x-source: *w}
+      response_checks:
+        oneOf:
+          - $ref: "#/$defs/SourceChecks"
+          - $ref: "#/$defs/Missing"
+        x-status: proposed
+        x-source: *w
+      native_claim_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+      effect_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+      affected_attempts:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        description: Known impact scope; incomplete knowledge must be disclosed in limitations.
+        x-status: proposed
+        x-source: *w
+      measurements:
+        type: array
+        items: {$ref: "#/$defs/MeasurementEvidence"}
+        x-status: inferred
+        x-source: *d
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: inferred
+        x-source: *d
+    allOf:
+      - if: {properties: {operation: {const: RequestNativeCancel}}}
+        then:
+          properties: {target_scope: {const: native_execution}}
+      - if: {properties: {operation: {const: CloseObservationConnection}}}
+        then:
+          properties: {target_scope: {const: observation_connection}}
+      - if: {properties: {operation: {const: ReleaseNativeContext}}}
+        then:
+          properties: {target_scope: {const: native_context}}
+      - if: {properties: {operation: {const: Contain}}}
+        then:
+          properties:
+            target_scope:
+              enum: [fixture_mutation_authority, local_process, deployment_slot, harness_resources]
+      - if: {properties: {disposition: {const: acknowledged}}}
+        then:
+          properties:
+            response_ref: {$ref: "#/$defs/EvidenceRef"}
+            response_checks: {$ref: "#/$defs/VerifiedSourceChecks"}
+      - if: {properties: {disposition: {const: effect_observed}}}
+        then:
+          properties: {effect_refs: {minItems: 1}}
+    description: >-
+      Append a new control_event_id for each observation of an operation;
+      operation_id groups its request, acknowledgement, effect, and timeout.
+      Unsupported mapping is not automatically native capability absence.
+      Capability availability, opportunity, and diagnostic result remain separate.
+    x-status: proposed
+    x-source: *w
+
+  DispatchValue:
+    type: object
+    additionalProperties: false
+    required: [state, local_handle, native_run_id, request_digest, delivery_refs, acceptance_refs, recovery_authorization_refs, reason]
+    properties:
+      state:
+        enum: [not_started, prepared, dispatching, accepted, rejected, uncertain]
+        x-status: proposed
+        x-source: *w
+      local_handle: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *d}
+      native_run_id: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *d}
+      request_digest: {$ref: "#/$defs/MaybeDigest", x-status: inferred, x-source: *d}
+      delivery_refs:
+        $ref: "#/$defs/EvidenceRefs"
+        description: Intent and actual delivery observations; intent alone proves neither delivery nor native acceptance.
+        x-status: proposed
+        x-source: *w
+      acceptance_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+      recovery_authorization_refs: {$ref: "#/$defs/EvidenceRefs", x-status: proposed, x-source: *w}
+      reason: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+    allOf:
+      - if: {properties: {state: {enum: [dispatching, accepted, uncertain]}}}
+        then:
+          properties:
+            local_handle: {$ref: "#/$defs/Identifier"}
+            request_digest: {$ref: "#/$defs/Digest"}
+            delivery_refs: {minItems: 1}
+      - if: {properties: {state: {const: prepared}}}
+        then:
+          properties: {request_digest: {$ref: "#/$defs/Digest"}}
+      - if: {properties: {state: {const: accepted}}}
+        then:
+          properties: {acceptance_refs: {minItems: 1}}
+      - if: {properties: {state: {const: not_started}}}
+        then:
+          properties:
+            native_run_id: {$ref: "#/$defs/Missing"}
+            delivery_refs: {maxItems: 0}
+            acceptance_refs: {maxItems: 0}
+    x-status: proposed
+    x-source: *w
+
+  CloseSnapshot:
+    type: object
+    additionalProperties: false
+    required: [closure_id, boundary_ref, known_versions, execution_knowledge, execution_evidence_refs, application_knowledge, application_evidence_refs, limitations]
+    properties:
+      closure_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      boundary_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *d}
+      known_versions: {$ref: "#/$defs/CloseInputPins", x-status: proposed, x-source: *w}
+      execution_knowledge:
+        enum: [running, terminal, unknown, not_applicable]
+        description: Connector knowledge at this boundary, not a new subject claim.
+        x-status: extracted
+        x-source: *d
+      execution_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+      application_knowledge:
+        enum: [committed, not_committed, unknown]
+        description: Derived from the cited origin evidence at its scope; silence yields unknown.
+        x-status: proposed
+        x-source: *w
+      application_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+    description: >-
+      Only evidence available at boundary_ref may support this snapshot.
+      An earlier running claim need not establish running at closure, and an
+      earlier as-of absence need not establish absence at closure.
+    x-status: inferred
+    x-source: *d
+
+  CloseReason:
+    enum: [normal_completion, operator_stop, local_deadline, translation_failure, launch_failure, subject_terminal, connection_lost, infrastructure_interruption]
+    description: Reason for ending local observation, never a native or application verdict.
+    x-status: proposed
+    x-source: *d
+
+  ObservationValue:
+    type: object
+    additionalProperties: false
+    required:
+      - state
+      - window_id
+      - opened_at
+      - active_deadline
+      - drain_started_at
+      - drain_deadline
+      - closed_at
+      - close_reason
+      - at_close
+      - control_observations
+      - late_evidence_refs
+      - measurements
+    properties:
+      state: {enum: [not_opened, open, draining, closed], x-status: proposed, x-source: *w}
+      window_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      opened_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *d}
+      active_deadline: {$ref: "#/$defs/MaybeTimePoint", x-status: proposed, x-source: *w}
+      drain_started_at: {$ref: "#/$defs/MaybeTimePoint", x-status: proposed, x-source: *w}
+      drain_deadline: {$ref: "#/$defs/MaybeTimePoint", x-status: proposed, x-source: *w}
+      closed_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *d}
+      close_reason:
+        oneOf:
+          - $ref: "#/$defs/CloseReason"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      at_close:
+        oneOf:
+          - $ref: "#/$defs/CloseSnapshot"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      control_observations:
+        type: array
+        items: {$ref: "#/$defs/ControlObservation"}
+        x-status: proposed
+        x-source: *w
+      late_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+      measurements:
+        type: array
+        items: {$ref: "#/$defs/MeasurementEvidence"}
+        x-status: extracted
+        x-source: *d
+    allOf:
+      - if: {properties: {state: {const: not_opened}}}
+        then:
+          properties:
+            opened_at: {$ref: "#/$defs/Missing"}
+            active_deadline: {$ref: "#/$defs/Missing"}
+      - if: {properties: {state: {enum: [open, draining]}}}
+        then:
+          properties:
+            opened_at: {$ref: "#/$defs/TimePoint"}
+            active_deadline: {$ref: "#/$defs/TimePoint"}
+      - if: {properties: {state: {const: draining}}}
+        then:
+          properties:
+            drain_started_at: {$ref: "#/$defs/TimePoint"}
+            drain_deadline: {$ref: "#/$defs/TimePoint"}
+            close_reason: {$ref: "#/$defs/CloseReason"}
+      - if: {properties: {state: {const: closed}}}
+        then:
+          properties:
+            closed_at: {$ref: "#/$defs/TimePoint"}
+            close_reason: {$ref: "#/$defs/CloseReason"}
+            at_close: {$ref: "#/$defs/CloseSnapshot"}
+        else:
+          properties:
+            closed_at: {$ref: "#/$defs/Inapplicable"}
+            at_close: {$ref: "#/$defs/Inapplicable"}
+    description: >-
+      Control history is append-only by control_event_id. Deadlines are computed
+      within their registered clock epochs from the commissioned local limits.
+      Unused drain coordinates carry reasoned missingness. Closing across a
+      restart cannot create an exact cross-boot elapsed duration.
+    x-status: proposed
+    x-source: *w
+
+  ExecutionState:
+    enum: [running, completed, failed, stopped, unknown]
+    description: What the subject claimed, not an independently verified execution fact.
+    x-status: extracted
+    x-source: *d
+
+  CommitmentAssertion:
+    type: object
+    additionalProperties: false
+    required: [assertion_id, value, span, boundary_ref, evidence_refs]
+    properties:
+      assertion_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      value:
+        enum: [committed, not_committed, outcome_unknown]
+        x-status: proposed
+        x-source: *d
+      span:
+        enum: [at_boundary, after_boundary, entire_attempt]
+        description: Exact asserted temporal scope; never inferred from the word stopped alone.
+        x-status: proposed
+        x-source: *w
+      boundary_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: proposed, x-source: *w}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *d}
+    allOf:
+      - if: {properties: {span: {const: entire_attempt}}}
+        then:
+          properties: {boundary_ref: {$ref: "#/$defs/Inapplicable"}}
+        else:
+          properties: {boundary_ref: {$ref: "#/$defs/EvidenceRef"}}
+    x-status: proposed
+    x-source: *w
+
+  ExecutionClaim:
+    type: object
+    additionalProperties: false
+    required:
+      - claim_id
+      - scope
+      - state
+      - application_assertions
+      - native_run_id
+      - native_message_id
+      - native_report
+      - mapping
+      - source_checks
+      - made_at
+      - received_at
+      - evidence_available_to_claimant
+      - evidence_refs
+      - limitations
+    properties:
+      claim_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      scope:
+        enum: [primitive, application_postcondition, execution_lifecycle, unknown]
+        x-status: extracted
+        x-source: *d
+      state:
+        oneOf:
+          - $ref: "#/$defs/ExecutionState"
+          - $ref: "#/$defs/Missing"
+        description: Missing is no mapped task-execution statement; unknown is an actual mapped subject statement.
+        x-status: inferred
+        x-source: *d
+      application_assertions:
+        type: array
+        items: {$ref: "#/$defs/CommitmentAssertion"}
+        x-status: proposed
+        x-source: *w
+      native_run_id: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *d}
+      native_message_id: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+      native_report: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *d}
+      mapping: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *d}
+      source_checks: {$ref: "#/$defs/VerifiedSourceChecks", x-status: proposed, x-source: *w}
+      made_at: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *d}
+      received_at: {$ref: "#/$defs/TimePoint", x-status: extracted, x-source: *d}
+      evidence_available_to_claimant: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *d}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+    allOf:
+      - if: {properties: {scope: {const: primitive}}}
+        then:
+          properties:
+            state: {$ref: "#/$defs/Inapplicable"}
+            application_assertions: {maxItems: 0}
+      - if: {properties: {scope: {const: unknown}}}
+        then:
+          properties:
+            state: {$ref: "#/$defs/Missing"}
+            application_assertions: {maxItems: 0}
+    description: >-
+      A compound task report may include independently supported application
+      assertions, but the mapping must cite the actual source semantics.
+      Native reported durations remain unchanged kernel Measurements in the
+      supporting journal; this type does not fabricate primitive timings.
+    x-status: proposed
+    x-source: *w
+
+  ExecutionValue:
+    type: object
+    additionalProperties: false
+    required: [claims]
+    properties:
+      claims:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/ExecutionClaim"}
+        description: Cumulative immutable accepted claims; claim IDs are unique within the attempt.
+        x-status: proposed
+        x-source: *w
+    description: >-
+      No scalar latest-state field hides conflicting or delayed claims.
+      The observation owner separately records its knowledge at closure.
+    x-status: proposed
+    x-source: *w
+
+  OriginFact:
+    type: object
+    additionalProperties: false
+    required:
+      - fact_id
+      - origin_id
+      - candidate_id
+      - job_id
+      - state
+      - coverage
+      - boundary_ref
+      - origin_application_id
+      - origin_revision
+      - receipt
+      - verification_kind
+      - source_checks
+      - authority_seal_ref
+      - occurred_at
+      - received_at
+      - evidence_refs
+    properties:
+      fact_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      origin_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      candidate_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      job_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *j}
+      state:
+        enum: [not_committed, committed]
+        description: Origin-backed proposition; an unknown observation is not a negative fact.
+        x-status: proposed
+        x-source: *h
+      coverage:
+        enum: [at_boundary, final_for_attempt]
+        x-status: proposed
+        x-source: *w
+      boundary_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      origin_application_id: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+      origin_revision: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *f}
+      receipt: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *d}
+      verification_kind:
+        enum: [local_origin_transaction, verified_origin_receipt]
+        x-status: proposed
+        x-source: *w
+      source_checks: {$ref: "#/$defs/VerifiedSourceChecks", x-status: proposed, x-source: *w}
+      authority_seal_ref:
+        $ref: "#/$defs/MaybeEvidenceRef"
+        description: Origin-owned finality evidence; not the connector's observation-close event.
+        x-status: proposed
+        x-source: *w
+      occurred_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *d}
+      received_at: {$ref: "#/$defs/TimePoint", x-status: inferred, x-source: *d}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+    allOf:
+      - if:
+          properties:
+            state: {const: not_committed}
+            coverage: {const: final_for_attempt}
+        then:
+          properties: {authority_seal_ref: {$ref: "#/$defs/EvidenceRef"}}
+    description: >-
+      All identities must match the commission and verified receipt correlation.
+      Employer facts use verified_origin_receipt; this portfolio does not own
+      their transaction. An origin's post-commit recruiting decision is not
+      normalized into not_committed.
+    x-status: proposed
+    x-source: *w
+
+  ApplicationValue:
+    type: object
+    additionalProperties: false
+    required: [facts]
+    properties:
+      facts:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/OriginFact"}
+        description: Cumulative immutable accepted facts; fact IDs are unique within the attempt.
+        x-status: proposed
+        x-source: *w
+    description: >-
+      Preserve temporal absences, commitments, corroborating receipts, and
+      conflicting evidence. A later publication does not erase a previously
+      established commitment merely by presenting a newer negative response.
+    x-status: inferred
+    x-source: *d
+
+  TemporalRelation:
+    type: object
+    additionalProperties: false
+    required: [relation, basis, evidence_refs]
+    properties:
+      relation:
+        enum: [before, at, after, unknown, not_applicable]
+        x-status: proposed
+        x-source: *w
+      basis:
+        enum: [same_clock, causal_evidence, origin_sequence, not_established, not_applicable]
+        x-status: proposed
+        x-source: *w
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *h}
+    allOf:
+      - if: {properties: {relation: {enum: [before, at, after]}}}
+        then:
+          properties:
+            basis: {enum: [same_clock, causal_evidence, origin_sequence]}
+            evidence_refs: {minItems: 1}
+      - if: {properties: {relation: {const: unknown}}}
+        then:
+          properties: {basis: {const: not_established}}
+      - if: {properties: {relation: {const: not_applicable}}}
+        then:
+          properties: {basis: {const: not_applicable}}
+    description: Relation of the relevant origin fact to the assertion boundary, not merely receipt order.
+    x-status: proposed
+    x-source: *w
+
+  ClaimComparison:
+    type: object
+    additionalProperties: false
+    required: [claim_id, assertion_id, claim_ref, fact_ids, fact_refs, result, temporal_relation, rationale, limitations]
+    properties:
+      claim_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      assertion_id:
+        $ref: "#/$defs/MaybeString"
+        description: Inapplicable for a narrow execution/primitive claim with no application assertion.
+        x-status: proposed
+        x-source: *w
+      claim_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *h}
+      fact_ids:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: proposed
+        x-source: *w
+      fact_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *h}
+      result:
+        enum: [consistent, contradicted, not_comparable, indeterminate]
+        x-status: extracted
+        x-source: *d
+      temporal_relation: {$ref: "#/$defs/TemporalRelation", x-status: proposed, x-source: *w}
+      rationale: {type: string, minLength: 1, x-status: extracted, x-source: *d}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+    allOf:
+      - if: {properties: {result: {enum: [consistent, contradicted]}}}
+        then:
+          properties:
+            fact_ids: {minItems: 1}
+            fact_refs: {minItems: 1}
+    description: IDs and references resolve within the exact pinned input publications and their supporting evidence.
+    x-status: proposed
+    x-source: *w
+
+  ReconciliationIssue:
+    type: object
+    additionalProperties: false
+    required: [kind, detail, evidence_refs]
+    properties:
+      kind:
+        enum: [origin_fact_conflict, subject_claim_conflict, insufficient_evidence, incomparable_scope, untrusted_observation, mapping_error, multiple_origin_commitments]
+        x-status: proposed
+        x-source: *w
+      detail: {type: string, minLength: 1, x-status: proposed, x-source: *w}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+    description: Source conflicts are not resolved by editing either source or automatically accusing the subject.
+    x-status: proposed
+    x-source: *w
+
+  ReportValue:
+    type: object
+    additionalProperties: false
+    required: [state, coverage, inputs, evaluator, comparisons, issues, limitations, diagnostic]
+    properties:
+      state:
+        oneOf:
+          - enum: [reconciled, contradicted]
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *h
+      coverage:
+        enum: [complete, incomplete, not_applicable]
+        x-status: proposed
+        x-source: *w
+      inputs: {$ref: "#/$defs/ReportInputPins", x-status: inferred, x-source: *o}
+      evaluator: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *d}
+      comparisons:
+        type: array
+        items: {$ref: "#/$defs/ClaimComparison"}
+        x-status: inferred
+        x-source: *d
+      issues:
+        type: array
+        items: {$ref: "#/$defs/ReconciliationIssue"}
+        x-status: proposed
+        x-source: *w
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+      diagnostic:
+        oneOf:
+          - $ref: "#/$defs/ArtifactReference"
+          - $ref: "#/$defs/Missing"
+        description: Optional already-journaled diagnostic; it cannot cyclically cite this unpublished report.
+        x-status: proposed
+        x-source: *w
+    allOf:
+      - if:
+          properties:
+            comparisons:
+              contains: {properties: {result: {const: contradicted}}}
+        then:
+          properties: {state: {const: contradicted}}
+      - if: {properties: {state: {const: contradicted}}}
+        then:
+          properties:
+            comparisons:
+              contains: {properties: {result: {const: contradicted}}}
+      - if: {properties: {state: {const: reconciled}}}
+        then:
+          properties:
+            coverage: {const: complete}
+            comparisons:
+              minItems: 1
+              items:
+                properties: {result: {enum: [consistent, not_comparable]}}
+      - if: {properties: {coverage: {const: complete}}}
+        then:
+          properties:
+            state: {enum: [reconciled, contradicted]}
+            comparisons:
+              minItems: 1
+              items:
+                properties: {result: {enum: [consistent, contradicted, not_comparable]}}
+      - if: {properties: {coverage: {const: not_applicable}}}
+        then:
+          properties:
+            state: {$ref: "#/$defs/Inapplicable"}
+            comparisons: {maxItems: 0}
+      - if:
+          properties:
+            coverage: {const: incomplete}
+            comparisons:
+              not:
+                contains: {properties: {result: {const: contradicted}}}
+        then:
+          properties:
+            state:
+              allOf:
+                - $ref: "#/$defs/Missing"
+                - properties:
+                    reason: {enum: [not_observed, observation_lost]}
+    description: >-
+      A complete not_comparable finding accounts for scope without proving
+      execution or application success. Unknown claim semantics or relevant
+      source conflicts remain incomplete. No-claim manual attempts may have
+      committed origin facts and an inapplicable subject-comparison report.
+    x-status: proposed
+    x-source: *w
+
+  AxisRevision:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - attempt
+      - commission_digest
+      - axis
+      - owner_domain
+      - writer_id
+      - revision
+      - previous_revision
+      - evidence_prefix
+      - evidence_refs
+      - value
+    properties:
+      record_type: {const: attempt_axis_revision, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      attempt: {$ref: "#/$defs/AttemptReference", x-status: inferred, x-source: *h}
+      commission_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      axis:
+        enum: [dispatch, observation, execution, application, report]
+        x-status: extracted
+        x-source: *h
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *o}
+      writer_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      revision: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *o}
+      previous_revision: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *o}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *h}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+      value:
+        type: object
+        x-status: proposed
+        x-source: *w
+    allOf:
+      - if: {properties: {axis: {const: dispatch}}}
+        then:
+          properties: {value: {$ref: "#/$defs/DispatchValue"}}
+      - if: {properties: {axis: {const: observation}}}
+        then:
+          properties: {value: {$ref: "#/$defs/ObservationValue"}}
+      - if: {properties: {axis: {const: execution}}}
+        then:
+          properties: {value: {$ref: "#/$defs/ExecutionValue"}}
+      - if: {properties: {axis: {const: application}}}
+        then:
+          properties: {value: {$ref: "#/$defs/ApplicationValue"}}
+      - if: {properties: {axis: {const: report}}}
+        then:
+          properties: {value: {$ref: "#/$defs/ReportValue"}}
+    description: >-
+      Owner-authenticated publication, not an untrusted patch request.
+      Verify writer_id/owner_domain against the commission, enforce the
+      per-axis transition rules, and check revision fencing before acceptance.
+      Header identifiers do not grant authority.
+    x-status: proposed
+    x-source: *w
+
+  UnpublishedAxis:
+    type: object
+    additionalProperties: false
+    required: [revision, value]
+    properties:
+      revision: {const: 0, x-status: proposed, x-source: *w}
+      value: {$ref: "#/$defs/Missing", x-status: inferred, x-source: *h}
+    description: >-
+      No publication at this seal, or a permanently inapplicable manual axis.
+      It cannot replace a previously available publication to erase evidence.
+      manual_override cannot alter a source-authored claim or origin fact.
+    x-status: proposed
+    x-source: *w
+
+  DispatchSlot:
+    oneOf:
+      - $ref: "#/$defs/UnpublishedAxis"
+      - allOf:
+          - $ref: "#/$defs/AxisRevision"
+          - properties: {axis: {const: dispatch}}
+    x-status: proposed
+    x-source: *w
+
+  ObservationSlot:
+    oneOf:
+      - $ref: "#/$defs/UnpublishedAxis"
+      - allOf:
+          - $ref: "#/$defs/AxisRevision"
+          - properties: {axis: {const: observation}}
+    x-status: proposed
+    x-source: *w
+
+  ExecutionSlot:
+    oneOf:
+      - $ref: "#/$defs/UnpublishedAxis"
+      - allOf:
+          - $ref: "#/$defs/AxisRevision"
+          - properties: {axis: {const: execution}}
+    x-status: proposed
+    x-source: *w
+
+  ApplicationSlot:
+    oneOf:
+      - $ref: "#/$defs/UnpublishedAxis"
+      - allOf:
+          - $ref: "#/$defs/AxisRevision"
+          - properties: {axis: {const: application}}
+    x-status: proposed
+    x-source: *w
+
+  ReportSlot:
+    oneOf:
+      - $ref: "#/$defs/UnpublishedAxis"
+      - allOf:
+          - $ref: "#/$defs/AxisRevision"
+          - properties: {axis: {const: report}}
+    x-status: proposed
+    x-source: *w
+
+  AttemptSnapshot:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - attempt
+      - commission
+      - commission_digest
+      - input_prefix
+      - dispatch
+      - observation
+      - execution
+      - application
+      - report
+      - seal_point
+    properties:
+      record_type: {const: application_attempt_snapshot, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      attempt: {$ref: "#/$defs/AttemptContext", x-status: extracted, x-source: *k}
+      commission: {$ref: "#/$defs/AttemptCommission", x-status: proposed, x-source: *w}
+      commission_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      input_prefix:
+        $ref: "#/$defs/JournalPrefix"
+        description: Composition prefix registering the commission and complete owner publications, including validated imports.
+        x-status: proposed
+        x-source: *w
+      dispatch: {$ref: "#/$defs/DispatchSlot", x-status: extracted, x-source: *h}
+      observation: {$ref: "#/$defs/ObservationSlot", x-status: extracted, x-source: *h}
+      execution: {$ref: "#/$defs/ExecutionSlot", x-status: extracted, x-source: *h}
+      application: {$ref: "#/$defs/ApplicationSlot", x-status: extracted, x-source: *h}
+      report: {$ref: "#/$defs/ReportSlot", x-status: extracted, x-source: *h}
+      seal_point: {$ref: "#/$defs/SealPoint", x-status: inferred, x-source: *h}
+    allOf:
+      - if:
+          properties:
+            commission:
+              properties:
+                execution:
+                  properties: {mode: {const: manual}}
+        then:
+          properties:
+            dispatch:
+              allOf:
+                - $ref: "#/$defs/UnpublishedAxis"
+                - properties: {value: {$ref: "#/$defs/Inapplicable"}}
+            execution:
+              allOf:
+                - $ref: "#/$defs/UnpublishedAxis"
+                - properties: {value: {$ref: "#/$defs/Inapplicable"}}
+      - if:
+          properties:
+            seal_point:
+              properties: {name: {const: observation_closed}}
+        then:
+          properties:
+            observation:
+              allOf:
+                - $ref: "#/$defs/AxisRevision"
+                - properties:
+                    axis: {const: observation}
+                    value:
+                      properties: {state: {const: closed}}
+    description: >-
+      A derived read composition, never a whole-row write command. attempt must
+      equal commission.attempt; commission_digest must hash the complete embedded
+      commission; every publication must identify that commission and attempt.
+      Seal vector entries equal their slots' revisions, and all publication
+      digests resolve to registered immutable bytes within input_prefix.
+      Compare report input pins with these source publications before presenting
+      it as current. No single overall status, qualification flag, or automatic
+      production-dispatch trigger is present.
+    x-status: proposed
+    x-source: *w

@@ -1,0 +1,29 @@
+# Review: conformance/04-owner-separated-write-domains.md (turn 10)
+
+## Overall assessment
+
+The file is a complete, well-structured conformance suite for the accepted owner-separated-write-domains contract, covering structural, ownership, publication, job-semantics, archive/replacement, crash-recovery, retention, attempt/session composition, and deployment-isolation cases with a usable reviewer checklist (§11). It is acceptable as-is for its purpose; one concerning citation-accuracy issue and one cosmetic traceability gap should be recorded as notes. No downstream turns reference this file, so nothing is blocked.
+
+## Concerns
+
+- **Concerning — aggregate report statuses renamed but tagged `[extracted]`.**
+  Location: §2.3, line 69 ("The aggregate report uses `QUALIFIED`, `NOT_QUALIFIED`, `INCOMPLETE`, `INCOMPARABLE`, or `HARNESS_ERROR`" tagged `[extracted: 5-browser-qualification.md, report statuses and qualification scope]`).
+  Why: the source's actual statuses are `QUALIFIED_FOR_DECLARED_SCOPE` / `NOT_QUALIFIED_FOR_DECLARED_SCOPE` / `INCOMPLETE_EVIDENCE` / `INCOMPARABLE_CONTROLS` / `HARNESS_ERROR` (5-browser-qualification.md, "Qualification statuses"). The abbreviated names are a reasonable suite-local choice, and the accompanying scope sentence ("always names the tested profile and exact scope") does match the source's intent — but presenting renamed values under an extraction marker is a citation-accuracy failure (a claimed extraction is a factual claim per the review rubric). The neighboring per-case dispositions (`PASS`/`FAIL`/`BLOCKED`/`INCOMPLETE`/`HARNESS_ERROR`, line 67) are correctly tagged `[proposed]`, and the exit codes (line 71: 0/1/2/3/4/130) match the source's exit-code block exactly, so this is isolated to the one line. Fix: retag line 69 as `[proposed: ...]` or restore the source's full status names.
+  Severity: concerning (should fix; semantics unaffected).
+
+- **Cosmetic — two contract mechanism IDs never cited.**
+  Location: whole-file traceability (A06/A07, P02/C05).
+  Why: the contract defines 16 `OWD-*` semantic rules plus two proposed mechanisms, `OWD-EXTENT-ENCODING` and `OWD-READ-ROOT` (x-proposed-mechanisms). A rule-ID census of the suite shows every semantic rule cited at least twice, but neither mechanism ID appears. Their behaviors are covered (A06–A07 physical-extent/root-identity checks; P02/C05 atomic-install checks), so this is traceability only, not a coverage hole. Fix: append the mechanism IDs to the A06/A07/P02 case headers on the next touch.
+  Severity: cosmetic.
+
+## What was verified
+
+- **Protocol compliance.** The raw deliverable (`runs/turn8-20/deliverables/turn10.md`) uses a single `markdown:conformance/04-owner-separated-write-domains.md` fence with the correct path and ends with `<!-- TURN_END:10 -->`; nothing outside the fence except the marker. The tree file matches the fenced content and ends at a coherent boundary (§11 checklist).
+- **Structure and completeness.** Organized S/O/P/J/A/C/G/T/H/D case families with identifiable rule references and oracles; crash matrix C01–C06 with identical-retry recovery; §10 deployment experiments with predeclared-limit measurement protocol; §11 gate criteria distinguishing logical vs. deployment profiles.
+- **Epistemic discipline.** Substantive claims carry `[extracted]`/`[inferred]`/`[proposed]` tags throughout; implementation-interface commands (§2.1) are explicitly marked as interfaces to implement, not existing-repo claims; genuinely unresolved deployment baselines use honest incomplete-qualification handling (§10.2) rather than invented numbers.
+- **Cross-file consistency (spot-checked).** Embedded `AxisRevision` pinned to `application-attempt-lifecycle/0.1.0` (§1.1), `kernel-jcs-sha256/1` + RFC 8785 canonicalization (§3.1), archive-root-hashes-manifest semantics (§3.1, A06), `A_full`/`B` fetch-key framing (§6 J08–J09), six-reason `Missing` envelopes (§4 S03, matching the kernel's six reasons), same-key freshness limitation preserved as expected behavior (J11, §11), and `SessionDiagnosticValue` supplement scoping (§9) all agree with the accepted turn 9/1/3 contracts.
+- **Scope and amendment discipline.** All three required entity families (job, attempt, Hellscape session) are exercised; the suite states it introduces no handoff amendment and keeps adapter vocabulary separate from portfolio runtime contracts (§2.1).
+
+## Recommendation
+
+**Accept with notes** — proceed; record the §2.3 status-renaming retag and the mechanism-ID traceability pass for the next touch of this file. No downstream re-evaluation needed (no downstream turns reference this file).

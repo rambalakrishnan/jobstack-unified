@@ -1,0 +1,50 @@
+# Verification review — conformance/01-application-attempt-lifecycle.md (turn 4)
+
+## Overall assessment
+
+The file is a complete, well-structured conformance suite for the pinned `application-attempt-lifecycle/0.1.0` contract that exercises all 17 LIFE rules through organized, layer-annotated test cases with consistent epistemic tagging. Spot-checked extractions against both prior accepted contracts verify exactly (dispatch/observation transition relations, control-operation names, issue codes, Missing reasons, EK-ASSESSMENT semantics, exit-code vocabulary). The file is acceptable as-is; one cosmetic tagging note is recorded below.
+
+## Protocol compliance
+
+The raw deliverable (`runs/turn8-20/extract/turn4_deliverable.md`) wraps the content in a single path-annotated fenced block (`markdown:conformance/01-application-attempt-lifecycle.md`) with no content outside the fence except the closing fence. The tree file inner content matches the raw inner content on every spot-checked section (§§1–13, including the §10–§13 tail). The tree file ends at a coherent boundary (§13.3, shipping-independence close), not mid-thought. No truncation.
+
+## Completeness and structure
+
+The suite covers structure/commissioning (S01–S05), owner publications and snapshots (W01–W07), dispatch/idempotency/recovery (D01–D07 plus crash-cut oracle), baseline lifecycles (H01–H03), cancellation/late-commitment corpus (X01–X09), observation/controls/timing (O01–O06, T01–T03), source checks/origin (A01–A06), claim normalization/reconciliation (R01–R06 plus report-coverage oracle), manual/lineage/accounting (M01–M06), a coverage index mapping every contract rule to cases, and an evidence-package/final-gate section. Case IDs use the stable `LIFE01-` prefix; every case carries class (H/B/F) and layer (S/I/B/D/R) annotations; layers and verdict vocabulary are explicitly inherited from the evidence-kernel suite rather than redefined.
+
+## Epistemic discipline
+
+Every substantive paragraph and table row carries an epistemic tag (`[extracted: …]`, `[inferred: …]`, `[proposed: …]`, or `[uncertain: …]`). Proposals (fixture families, runner hooks, CLI target, notation, oracles) are consistently marked `[proposed: …]` and never presented as source facts. The one documented historical gap (original `cancellation-fixed.jsonl` / `isolation-fixed.jsonl` / `FINDINGS-v2.md` bytes) is handled with an explicit `[uncertain: …]` marker plus a statement that the corpus below is synthetic reconstruction, not fabricated historical capture — the correct discipline.
+
+## Fabrication spot-checks (all pass)
+
+- **Dispatch transition relation (§5.1):** all 7 rows match `contracts/01-application-attempt-lifecycle.yaml` `x-transition-rules.dispatch.allowed` exactly, including `uncertain → [uncertain, accepted, rejected]` and self-loop-only `accepted`/`rejected`. Guards (evidence-adding self-transitions, non-acceptance evidence for post-delivery rejection) match the contract guards.
+- **Observation transition relation (§8.1):** all 5 rows match the contract's observation `allowed` map exactly, including `unpublished → [not_opened, open, closed]` and closed-first semantics.
+- **Control operations (§8.1):** the four names (`RequestNativeCancel`, `CloseObservationConnection`, `ReleaseNativeContext`, `Contain`) match the contract `ControlObservation.operation` enum.
+- **Issue/result codes:** `multiple_origin_commitments` and `origin_fact_conflict` match the contract issue-kind enum; `consistent/contradicted/not_comparable/indeterminate` match the comparison-result enum; `M(not_observed)`, `M(observation_lost)`, `M(not_applicable)` reasons are all valid kernel `Missing` reasons.
+- **EK-ASSESSMENT usage (§7.2, X08):** `native_absence` for a required evidenced gap and `not_exercised` for unexposed opportunity match the kernel `EK-ASSESSMENT` rule text; both `EK-REPLAY` and `EK-ARTIFACTS` references resolve to real kernel rule IDs.
+- **`service` mode rejection (S02):** consistent with the lifecycle contract's `ExecutionDescriptor.mode: [manual, subject]` restriction and its `application_restriction` note that kernel `service` mode remains valid only for non-application work.
+- **Source grounding:** the §1.1 cancellation-experiment row (disconnect → continued work → later authenticated callback) matches the Hellscape blueprint's documented `cancellation-fixed.jsonl` row; the §13.2 exit-code discipline (`0/1/2/3/4/130`) matches the kernel conformance suite's stated exit contract.
+- **Coverage index (§12):** maps all 17 contract rule IDs (COMMISSION through TIME) to principal cases with no omissions.
+
+## Scope and cross-file consistency
+
+The file stays on its manifest item (lifecycle conformance) without drifting into connector, binding, fix-registry, or PRD concerns. Wire version (`application-attempt-lifecycle/0.1.0`), kernel dependency (`evidence-kernel/0.1.0`), five-axis ownership table, and mirrored-type reuse statement are all consistent with the two prior accepted contracts. No handoff amendment is introduced or required; the §13.3 stop condition correctly routes representability failures to contract review rather than silent weakening.
+
+## Concerns
+
+### 1. Watchdog sentence marked extracted though the cited source shows no watchdog text
+- **Location:** §8.2, "A runner watchdog is separate from every commissioned lifecycle deadline…" — tagged `[extracted: 5-browser-qualification.md, Evidence discipline]`.
+- **Why:** a grep over `5-browser-qualification.md` finds no "watchdog" language, and the sentence's normative content (runner watchdog expiry must not be reported as native timeout/cancellation/closure) reads as a sound corpus proposal rather than a source extraction. The substance is correct and consistent with the evidence discipline; only the tag overclaims.
+- **Severity:** cosmetic.
+- **Fix (optional):** retag as `[proposed: …]` or `[inferred: 5-browser-qualification.md, Evidence discipline]`.
+
+No other concerns. No blocking or concerning-severity findings.
+
+## Recommendation
+
+**Accept as-is**, with the single cosmetic tagging note above left to a future touch-up pass. No revision or regeneration is warranted; the file's transition oracles, coverage index, and epistemic markings are exactly what downstream contract and conformance work needs.
+
+## Downstream impact
+
+None — per the dependency brief, no downstream turn references this file, so no re-evaluation is triggered in any direction.

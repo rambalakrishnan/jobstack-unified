@@ -1,0 +1,43 @@
+# Review — prd/02-crawler.md (turn 16)
+
+## Overall assessment
+
+The file is a coherent, well-scoped Crawler PRD for the Illinois first slice with honest-provenance discipline throughout. Protocol, epistemic tagging, source fidelity on every spot-check, and consistency with the provided priors (evidence kernel, owner-separated write domains, HA-01 through HA-03 / P-02 / P-03 / P-08 / P-13, integration PRD) are all strong. It is acceptable as-is; no revision is needed before proceeding.
+
+## Protocol compliance
+
+The raw deliverable (`runs/turn8-20/deliverables/turn16.md`) wraps the content in a single ````markdown:prd/02-crawler.md` fence and ends with `<!-- TURN_END:16 -->` with nothing outside the fence except the marker. The tree file is byte-identical to the fenced interior (diff confirms the only delta is the stripped closing fence). Manifest item number is correct. The document ends at a coherent boundary (§9.2 closing synthesis, line 327), not mid-thought.
+
+## Structure and scope
+
+The file matches the shape of a PRD: product purpose and first useful outcome (§1), boundaries and contract responsibilities (§2), Illinois first-slice activation (§3), acquisition/processing workflow (§4), coverage and cursor correctness (§5), job records/ownership/replacement (§6), runtime/recovery/evidence (§7), delivery sequence and acceptance cases (§8), operating measures and unresolved-evidence backlog (§9). It stays on the crawler manifest item — discovery, enumeration honesty, and publication — and explicitly places evaluation, materials, selection, commissioning, and execution with job-hunter and the executors. No drift into Ringmaster/Circus Tent packaging or job-hunter policy beyond boundary statements.
+
+## Epistemic discipline and fabrication spot-checks
+
+Tagging is dense and consistent: every substantive paragraph or table row carries `[extracted: …]`, `[inferred: …]`, `[proposed: …]`, or `[uncertain: …]`. Concrete details checked against sources all trace:
+
+- Nine connector verbs in §2 (`Describe` … `Contain`) match the handoff brief's verbatim verb list.
+- §3.1 Illinois allocation — `HttpClient`, `bootstrap_mode='none'`, synthetic 32-hex `_session_id` with structured JSON, `classification_surface='phase_a_full_description'`, dormant IL-B, stateless/no-shard topology, zero browser pool, deterministic per-run ordering, 10,000-match ceiling with tail clamping and county/`work_type` facets — matches the blueprint's transport matrix, §7 coverage rows, and allocation table.
+- §4.1 pipeline **Extract → Description Classify → Finalize** with `pending_finalize` transition matches the blueprint's phase table and state matrix; `seen_ids` updated only on eligible `ready`/`vetoed` detail (§6.3) matches the blueprint's `seen_ids` invariant and bypass-semantics rows.
+- Six render verdicts (`Pass`, `ThinShell`, `RenderIncomplete`, `EdgeBlock`, `SensorFail`, `ChallengeIncomplete`) match the owner-separated contract's `RenderVerdict` enum; the HTTP → optional `Page::from_html` (no network) → cold-navigation escalation in §4.3 matches the blueprint's hybrid-pattern table.
+- Fetch-key profile paraphrase in §6.3 (B = target/phase/job/canonical-request; A_full = target/`A_full`/job/listing-source-URL; same-key no-op including after changed bytes or failed render) matches the contract's `crawler-fetch-key/1` formulas and lookup rules.
+- Salary/license/bachelor guidance in §1.1 (no invented threshold, no inferred license, flag-don't-drop bachelor's postings) matches `job_search_queries.txt` hard/soft blocker and substitution-language policy.
+- `empty_unproven` zero-observation rule (§5.1) matches the blueprint's zero-observation row and coverage status enum.
+- §3.2 and §9.2 honestly mark absent endpoint URLs, selectors, signatures, solver/proof-source/cursor/veto evidence, and all nine deployment assumptions as `[uncertain]` with retrieval obligations rather than inventing them. No fabricated URLs, endpoints, timeouts, or signatures were found.
+
+The §5.1 coverage algebra (`O_P`, `U_P`, `T_P`) is explicitly labeled `[proposed]` presentation of the existing ledger and disclaims new wire fields — legitimate synthesis, not an invented enumeration. Coverage statuses, null handling (reasoned missingness, no zero-as-missing), clock/provenance/replay rules, and lease/fencing rules all restate prior-contract obligations without weakening them.
+
+## Cross-file consistency
+
+- Contract baseline (§2, §§6–8) correctly reflects kernel journaling/provenance/lease/time/artifact rules, connector read-only and verb semantics, binding browser-specificity (no shared `ElementHandle`), and crawler-vs-`downstream` write separation including full-row archive with transitive retention.
+- Decision baseline (retain Rust/BrowserOxide, Illinois-first, HA-01 through HA-04, no new amendment) matches the decisions file; HA-01 (blueprint already BrowserOxide-oriented), HA-02 (core grows around exercised facilities; IL ships without DOM/action work), HA-03 (manual lane parallels crawler work), and P-08's flip condition are applied accurately in §§2–3 and §8.1.
+- Integration PRD references (§1 day-one lane, §5.1 per-partition usefulness of valid postings under incomplete enumeration, §8/§9 measures separation) are faithful.
+- §9.2 backlog (four `INCOMPLETE` markers, nine `ASSUMED` values) mirrors the decisions file §§7–8 without closing any marker by scope reduction.
+
+## Concerns
+
+No concerns. One cosmetic note for future turns, not requiring action here: the contract-baseline sentence names "the six shared `0.1.0` contract drafts" but cites four contracts plus the decisions file inline; the remaining two contracts (lifecycle, fix-registry) are cited where used later in the document, so nothing is lost, but a fully enumerated citation would have been tidier.
+
+## Recommendation
+
+**Accept as-is.** No changes requested.

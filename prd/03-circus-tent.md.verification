@@ -1,0 +1,41 @@
+# Verification — prd/03-circus-tent.md (turn 17)
+
+## Overall assessment
+
+The file is a coherent, well-disciplined Circus Tent PRD that implements the developer prompt's Products direction (compatibility route versus Firefox-extension target, ModCDP pattern without porting Stagehand) while preserving the shared-contract and decision baselines without silent amendment. Epistemic tagging is thorough and spot-checks against sources and prior accepted files pass. Acceptable with only a cosmetic note; no revision needed before prd/04-ringmaster.md proceeds.
+
+## Protocol, completeness, structure
+
+- Raw deliverable (`runs/turn8-20/deliverables/turn17.md`) wraps content in a single fenced block annotated `markdown:prd/03-circus-tent.md` and closes with `<!-- TURN_END:17 -->`; no content outside the fence except the marker. Compliant.
+- Tree file ends at a coherent boundary (§9 table plus closing success sentence); not truncated.
+- Structure matches a PRD: purpose and exclusions (§1), architecture with compatibility-versus-target routes (§2), execution behavior (§3), connector/lifecycle mapping (§4), profiles/resources/secrets (§5), evidence/learning (§6), conformance and acceptance with retained benchmarks (§7), delivery sequence (§8), open decisions with flip conditions (§9).
+
+## Epistemic discipline and fabrication spot-checks
+
+- Every substantive paragraph, table row, and benchmark carries an epistemic tag; `uncertain` markers are used where the file admits absent evidence (extension transport/packaging, capability inventory, legacy deployment certification, operating counts). No bare concrete detail found without a tag.
+- Claimed extractions verified against cited sources:
+  - Nine connector verbs (`Describe` … `Contain`) match the `Operation` enum in `contracts/02-external-connector.yaml`.
+  - `CF-ROUTE`, `CF-SYNC`, `CF-PROFILE`, `CF-STATE`, `CF-STRUCTURE`, `CF-INPUT`, `CF-IMAGE`, `CF-TIME`, `CF-EVIDENCE`, `CF-CAPS` all exist in `contracts/03-internal-browser-binding.yaml`; `LIFE-AXES`, `LIFE-DISPATCH`, `LIFE-SOURCE-CHECKS`, `LIFE-LATE-EVIDENCE`, `LIFE-MANUAL` and `EXT-DECLARE-NOT-ASSESS`, `EXT-PREPARATION-PIN`, `EXT-IDEMPOTENCY`, `EXT-RESUME`, `EXT-STATE-POLICY` all exist in their cited contracts.
+  - `/run` consumes explicit steps not goals: present in `3-hellscape-blueprint.md` M0 audit row. Missing native contracts (run-query, cancellation, fresh-context creation, context release, revision, artifact-download) match the §5.3 unsupported list. REST surface (`/run`, `/extract`, `/health`, `/shards`, `/metrics`, MCP optional) matches `4-circus-tent-arch.md` §§3–5.
+  - Resource baselines (12 tabs/shard, 3 tasks/account, back-pressure above 1,000, recycle at 500 pages) and all eight §8 benchmark targets (fingerprint stability, 500×150KB p95<200ms/RSS<2GB, 20% mutation >85% heal, 100×20 fairness, 500-page recycle, 20-session MFA, 2×-cap back-pressure, zero-match secret scan) match `4-circus-tent-arch.md` §§2/4/8–9. The file correctly frames these as fixture targets to be re-pinned, not measured results.
+  - Provider handling (§3.4) names Crawl4AI/LiteLLM and refers to "named heal/vision providers" without freezing DeepSeek/model versions into portfolio constants — consistent with the arch blueprint and appropriately cautious.
+- No fabricated citations, invented enumerations, or collapsed distinctions found. The "older blueprint's 'no Juggler layer' description does not govern" sentence follows the developer prompt's higher-authority Products statement; it is not a silent re-litigation. The "no further handoff amendment" declaration holds: no contract shape is changed through this PRD.
+
+## Cross-file consistency and scope
+
+- Scope stays on Circus Tent; Ringmaster is consistently treated as a separate sibling product, and the file refuses a shared driver/common `ElementHandle`, matching the decision register (P-03/P-04, INV-04/INV-05) and `prd/00-integration.md` §3.
+- Decision references check out: P-04 extension direction, P-14 human-controlled production, HA-03 manual lane, INV-29/INV-30 healing-versus-registry distinction, P-10 M3 registry deferral.
+- No invariant/provisional confusion; §9 flip conditions preserve their invariants.
+
+## Concerns
+
+### Out-of-dependency contract citations — cosmetic
+- Location: §§6–7 (e.g., `contracts/00-evidence-kernel.yaml`, `contracts/04-owner-separated-write-domains.yaml`, `contracts/05-suggested-fix-registry.yaml` citations).
+- Why: this turn's listed dependencies are lifecycle/connector/binding/decisions/integration, so the model cites three contract files outside its direct dependency slice. The cited content (six null reasons, five-axis ownership, fix-record semantics) is corroborated through the decisions and integration priors the model did hold, and the citations are substantively accurate, so this is not a fabrication — but downstream Ringmaster should verify those cross-links against the actual contract files rather than treating this PRD as their authority.
+- Severity: cosmetic.
+
+No blocking or concerning issues. No other concerns.
+
+## Recommendation
+
+**Accept with notes.** The cosmetic note above is for the operator's awareness only; no change to this file is required. `prd/04-ringmaster.md` may proceed on the basis that Circus Tent owns Camoufox-only execution behind the shared connector, targets (but does not yet possess) the Firefox-extension route, and retains the documented configuration baselines and benchmark targets as reviewable starting points rather than shared constants.

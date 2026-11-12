@@ -1,0 +1,136 @@
+# Review — turn 5: contracts/02-external-connector.yaml
+
+## Overall assessment
+
+The file is a complete, well-disciplined contract for the shared async
+task-shaped connector surface: nine verbs with full request/response shapes,
+21 EXT rules with derivations, 98 local `$defs` with zero dangling or unused
+references, and 590 epistemic tags. Every citation spot-check passed against
+the full source texts, and all mirrored kernel/lifecycle types match the
+prior accepted files exactly. The file is acceptable with only cosmetic notes.
+
+## Protocol compliance
+
+The raw deliverable (`runs/turn8-20/extract/turn5_deliverable.md`) opens with
+exactly ```` ```yaml:contracts/02-external-connector.yaml ````, closes with a
+plain fence, and has nothing outside the fence. Its inner content is
+byte-identical to the tree file (verified by diff). There is no `TURN_END`
+marker, but turn 5 predates marker enforcement: the turn 7 and turn 9 inputs
+contain zero `TURN_END` mentions, and the enforcement instruction first
+appears in the turn 8 input. No protocol concern.
+
+## Completeness and structure
+
+The file ends at a coherent boundary — the `ConnectorResponse`
+operation/result discrimination matrix (L2675–2774) — with no truncation or
+placeholders. Structure matches a contract schema: `x-contract`,
+`x-compatibility`, `x-ownership`, `x-operations` (9 verbs), `x-reference-carrier`,
+`x-hashing`, `x-minimum-capability-ids`, `x-invariants` (20 invariants + 1
+proposed mechanism), `x-native-reconciliation`, `x-open-evidence`, and `$defs`
+(98 types). The YAML parses; every `x-operations` request/result pointer
+resolves.
+
+## Epistemic discipline and fabrication spot-checks
+
+Tag counts: 263 extracted, 94 inferred, 231 proposed, 2 uncertain. Spot-checks
+against full sources all pass:
+
+- The nine-verb list (`Operation`, L1476–1479, tagged extracted) is verbatim
+  in 1-handoff-brief.txt ("The external connector") and matches the
+  3-hellscape-blueprint.md §5.2 verb table row for row.
+- EXT-SURFACE's Stagehand-on-Juggler derivation is the governing constraint
+  in handoff Part III; the forbidden abstractions (`Page`, `ElementHandle`,
+  selector engine, DOM node handle) appear only in prohibitions.
+- EXT-DESCRIBE's no-inheritance rule and EXT-DECLARE-NOT-ASSESS's
+  "connector declares; Hellscape assesses" are verbatim handoff Part VI.
+- EXT-READ-ONLY's derivation cites the crawler blueprint's Oregon passage,
+  verified present: the `self-refer-step1-validate.cfm` POST is outside
+  extraction capability, "the `usemyssn=No` checkbox does not make that POST
+  read-only," and the write-action stub returns a non-executing result —
+  which directly supports the rule's "HTTP method alone does not determine
+  whether an operation is read-only."
+- EXT-NORMALIZE's "initially map audited circus-tent /run completed to
+  execution completion only" is verbatim hellscape ("For circus-tent
+  specifically, `/run status=completed` is mapped initially to **execution
+  completion**").
+- `task_semantic_hash` / `delivered_task_hash` / `native_request_hash`
+  (L1740–1751) are in hellscape §4.2; the native-reconciliation endpoint
+  inventory (`POST /run`, `POST /extract`, health/shards, seven
+  not-established endpoints) matches hellscape §5.3; idempotency/checkpoint
+  mechanics match 4-circus-tent-arch.md §5.6; the six null reasons and the
+  `_elapsed()`-returns-zero derivation are verbatim handoff Part VI.
+- The ten minimum capability IDs and all wire mechanics (carrier,
+  discriminators, pagination, limits, error codes, grounding/task-type enums)
+  are honestly tagged `proposed` under the `*w` alias, whose text states
+  exactly that these are proposals, not claims about deployed interfaces.
+  The two `uncertain` tags name concrete missing reconnaissance (audited
+  native bodies/callback contract; per-version capability evidence) with
+  resolutions.
+
+The sole raw `null` in the file is `Missing.value` (L724); all other
+missingness uses reasoned `Missing`. No invented enumeration is presented as
+extracted; no collapsed distinctions (capability vs. assessment, claim vs.
+fact, the five lifecycle axes, close vs. cancel vs. release vs. contain).
+
+## Cross-file consistency
+
+All 15 kernel-mirrored types (`SubjectIdentity`, `TimePoint`, `Measurement`,
+`Estimate`, `ClockDescriptor`, `EvidenceRef`, `JournalPrefix`,
+`ArtifactReference`, `ArtifactSlot`, `VersionPin`, `Missing`,
+`CapabilityDescriptor`, `CapabilityRecord`, `ComponentIdentity`,
+`AttemptContext`) match the kernel file's required-fields and property sets
+exactly, and all 7 lifecycle-mirrored types (`SourceChecks`,
+`CommitmentAssertion`, `ExecutionClaim`, `ControlObservation`, `Opportunity`,
+`DurationLimit`, `ObservationPolicy`) match the lifecycle file exactly,
+including enum values (`ExecutionClaim.scope`, `ControlObservation`
+operation/scope/disposition, `Opportunity.state`, `SourceChecks`
+authentication, `CommitmentAssertion.value`). Wire versions pin correctly
+(`external-connector/0.1.0`, `evidence-kernel/0.1.0`,
+`application-attempt-lifecycle/0.1.0`), and the `binding_version` ↔
+`ConfigurationPin.binding.version` correspondence is stated explicitly in
+`x-compatibility`.
+
+## Scope, invariants, amendments
+
+Scope stays on the shared surface: Ringmaster packaging is explicitly not
+selected, manual execution bypasses Prepare/Start with no fabricated
+descriptor, and discovery uses kernel observations rather than fabricated
+lifecycle publications. All 20 invariants carry derivations; EXT-OBSERVE and
+the reference carrier carry rationale plus flip conditions;
+`handoff_amendments: none` is explicit with an explanation. No silent
+re-litigation.
+
+## Concerns
+
+- **Describe semantics tagged `extracted` though partly synthetic
+  (cosmetic).** `x-operations.Describe` (L101–110) is tagged `extracted`
+  against hellscape §§4–5. The core (return versioned capabilities, native
+  mappings) is verbatim §5.2, but the negations ("do not … probe speculative
+  endpoints, start a browser, or certify the subject") synthesize §5.2 with
+  declare-not-assess and evidence discipline. `inferred` would be more
+  precise. No fabrication — every element is sourced.
+- **Unused source anchors (cosmetic).** The `product` anchor (`&j`, L20) is
+  declared but never cited, and the `qualification` alias (`&q`, L19) is
+  never used — 5-browser-qualification.md is cited only via free-text
+  strings (e.g. EXT-CONTROLS, EXT-FAILURE). Verified: no `*j` or `*q`
+  references in the file. A later pass could drop them or convert the
+  free-text citations to the alias.
+- **AssistanceRecord.plan spelling differs from the lifecycle file
+  (cosmetic).** Here (L1162) `plan` is `$ref: MaybeArtifact`; in
+  01-application-attempt-lifecycle.yaml it is an inline
+  `oneOf: [ArtifactReference, Missing]`. The wire shapes are identical, so
+  the meaning-preservation rule holds; additionally the local `MaybeArtifact`
+  alias is itself tagged `proposed` while `plan` is tagged `extracted`, a
+  harmless tag-strength wrinkle. Noted only so turn 13's synthesis does not
+  read the two spellings as two types.
+- **Nested if/then constraint properties untagged (cosmetic).** Properties
+  inside `allOf` if/then discrimination clauses (e.g. `Measurement`,
+  `ExecutionClaim` scope branches, `ConnectorRequest` payload dispatch) lack
+  `x-status`/`x-source`. These restate already-tagged fields as schema
+  constraint logic, not new substantive claims; benign and consistent with
+  YAML practice.
+
+## Recommendation
+
+**Accept with notes** — proceed; the four cosmetic notes above need no action
+before downstream turns.

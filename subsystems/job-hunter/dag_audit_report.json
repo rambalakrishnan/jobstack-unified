@@ -1,0 +1,10 @@
+{
+  "subsystem": "job-hunter",
+  "dag_file": "/home/whipsthellamasass/workspace/unification/tree/subsystems/job-hunter/module-graph-0.1.0.dag",
+  "node_count": 33,
+  "passed": true,
+  "coverage_mode": "count_based",
+  "conformance_row_count": 69,
+  "error_count": 0,
+  "errors": []
+}

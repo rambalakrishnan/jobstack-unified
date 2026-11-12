@@ -1,0 +1,34 @@
+# Verification — prd/04-ringmaster.md (turn 18)
+
+## Overall assessment
+
+The file is a complete, well-disciplined Ringmaster PRD that directly answers the developer prompt's Products requirement: it compares the three packaging alternatives (in-process/FFI, separate Rust worker, extension-plus-controller) on native-surface fidelity and failure containment, and recommends the separate supervised Rust worker as an evidence-conditional hypothesis with explicit flip conditions rather than presuming it. Epistemic tagging is thorough — every substantive paragraph and table row carries exactly one of extracted/inferred/proposed/uncertain — and the cited contract, decision, and integration references spot-check clean against the prior accepted files. Accept as-is; there are no downstream dependents.
+
+## Protocol compliance
+
+The raw deliverable (`runs/turn8-20/deliverables/turn18.md`) wraps the content in a single fenced block annotated `markdown:prd/04-ringmaster.md` with no content outside the fence except `<!-- TURN_END:18 -->`, matching the manifest item number. The tree file strips fence and marker correctly and ends at a coherent boundary (§9 plus two closing synthesis sentences). No truncation.
+
+## Structure and scope
+
+Nine sections (purpose/boundary, packaging decision with alternatives and responsibility sketch, native binding and sessions, learn-run-verify-heal execution with tiered resolution and DOM reduction, connector/lifecycle verb table, evidence/safety/learning, acceptance and silo gate with native-access experiment, delivery slices, open decisions) give a sibling-symmetric counterpart to `prd/03-circus-tent.md` at the same depth. The file stays on Ringmaster throughout: it distinguishes Ringmaster from Circus Tent internals, the crawler, job-hunter commissioning, and Hellscape practice, and correctly refuses to invent a native HTTP/RPC service, shared `ElementHandle`, or cross-browser driver.
+
+## Epistemic discipline (spot-checks)
+
+- §2.1's ModCDP-proximity claim tagged `[extracted: current request, Products]` reproduces the developer prompt's Products paragraph faithfully ("BrowserOxide already provides direct DOM/V8 access without CDP indirection, which puts Ringmaster closer to the ModCDP model").
+- The nine-verb table in §5 (Describe through Contain) matches EXT-SURFACE's verb list in `contracts/02-external-connector.yaml` exactly, and per-verb obligations cite the correct EXT rule IDs (EXT-DESCRIBE, EXT-PREPARE/PREPARATION-PIN, EXT-START, EXT-OBSERVE/NORMALIZE, EXT-CONTROLS, EXT-CLOSE, EXT-ARTIFACTS, EXT-RESUME, EXT-IDEMPOTENCY).
+- Contract IDs cited (BO-THREAD, BO-DOM, BO-NATIVE, BO-HTTP, BO-OFFLINE, BO-REUSE, BO-CAPS, BO-INPUT, BO-EVIDENCE, BO-TIME, BOMapping/BOPrimitive including `bo.assign_files`) all exist in `contracts/03-internal-browser-binding.yaml`; lifecycle IDs (LIFE-AXES, LIFE-CLAIMS, LIFE-ORIGIN, LIFE-LATE-EVIDENCE, LIFE-TIME, LIFE-DISPATCH, LIFE-PUBLICATION) all exist in `contracts/01-application-attempt-lifecycle.yaml`.
+- Decision citations (P-02, P-05, P-10, P-12, P-14, HA-02, HA-03, INV-23, INV-29, INV-30, Contract baseline) all resolve in `decisions/invariants-and-provisionals.md`; the P-05 packaging treatment correctly defers to the decisions file's §6.1 comparison rather than re-litigating it.
+- `uncertain` tags state both the gap and the reconnaissance (e.g., §3.2 action-mapping coverage, §7.1 benchmarks, §9 capability/receipt gaps) rather than filling values.
+- `prd/00-integration.md, §2` citations (§1 manual lane, §8 assisted-vs-manual recording) match that section's actual content.
+
+## Cross-file consistency
+
+Contract baseline correctly states six `0.1.0` shared contracts (version verified in the contract files). The file preserves the no-shared-implementation boundary (Rust re-implementation of learn-run-heal tiers, no import of Circus Tent Python machinery, providers, cache formats, quotas, or tab-count constants), the connector-declares/consumer-assesses rule, per-subject capability non-inheritance, and the P-14 human-controlled production policy with practice-success-never-flips language. No handoff amendment is introduced, stated explicitly in the decision baseline — amendment discipline satisfied.
+
+## Concerns
+
+No concerns. No fabrication, vague extraction, silent re-litigation, invented enumeration, or collapsed distinction was found in the sampled citations. (The Illinois HTTP-first/dormant-Phase-B characterization in §2.4 is inherited from the accepted HA-01/HA-02 findings and cited to them jointly with the blueprint; consistent with the state the producing model was working from.)
+
+## Recommendation
+
+Accept as-is.

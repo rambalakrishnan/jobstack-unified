@@ -1,0 +1,1819 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: urn:job-application:contracts:suggested-fix-registry:0.1.0
+title: Suggested-fix registry
+description: >-
+  Review draft for evidence-backed, scoped recommendations that turn recorded
+  application and laboratory findings into actionable improvements. A suggestion
+  is not an implemented change, a verification result, or permission to execute
+  another application. This file specifies records and validation rules only.
+x-status: proposed
+x-source: "1-handoff-brief.txt, Parts VII–IX."
+
+x-source-index:
+  handoff: &h "1-handoff-brief.txt, Parts VI–IX"
+  boundaries: &b "1-handoff-brief.txt, Parts III–V and X"
+  diagnosis: &d "3-hellscape-blueprint.md, §§4, 6.6, and 7"
+  history: &e "3-hellscape-blueprint.md, §§1.3, 4.3–4.6, and 7.1"
+  replay: &r "3-hellscape-blueprint.md, §§6.5 and 10.7–10.8"
+  storage: &s "2-state-bank-crawler-blueprint.json, §11 and Decision 8"
+  native: &n "4-circus-tent-arch.md, §§5.6–5.8"
+  qualification: &q "5-browser-qualification.md, Evidence discipline"
+  product: &p "6-get-a-job.xml.txt, capability_profile.txt, job_search_queries.txt, and AGENTS.md"
+  kernel: &k "contracts/00-evidence-kernel.yaml, evidence-kernel/0.1.0"
+  lifecycle: &l "contracts/01-application-attempt-lifecycle.yaml, application-attempt-lifecycle/0.1.0"
+  wire: &w >-
+    Proposed Step 0 wire design implementing the handoff's suggested-fix
+    registry. Record names, review revisions, evidence-check vocabulary,
+    catalog structure, and verification receipts are proposals, not claims
+    about existing registry software or verified repairs.
+
+x-contract:
+  name: suggested-fix-registry
+  version: 0.1.0
+  maturity: review_draft
+  owner: contracts
+  consumers: [Hellscape, Circus Tent, Ringmaster, crawler, job-hunter]
+  conformance_suite: conformance/05-suggested-fix-registry.md
+  validation_gate: structural_validation_and_FIX_rules
+  implementation:
+    step_0: Schemas_and_conformance_specification_only
+    before_M3: Manually_authored_and_reviewed_records_may_be_cited
+    M3: Reviewed_registry_matching_and_verification_workflow
+    not_required_for:
+      - Recording a real manual production application.
+      - Producing a diagnostic with a reasoned null suggestion.
+      - Hellscape M1 acceptance.
+      - Independently shipping another conforming component.
+  purpose: >-
+    Preserve an actionable learning path from a diagnostic finding to a
+    product-specific change proposal and a falsifiable verification plan,
+    without making that learning machinery a prerequisite for applying to jobs.
+  x-status: inferred
+  x-source: "1-handoff-brief.txt Parts VII–IX; 3-hellscape-blueprint.md §§4.7 and 7."
+
+x-compatibility:
+  schema_references: All_$ref_values_are_local
+  common_types: >-
+    Identifiers, digests, Missing, evidence references, journal prefixes,
+    artifact references, version pins, component identities, subject identities,
+    and capability references preserve evidence-kernel/0.1.0 wire meanings.
+  diagnostic_link: >-
+    FixReference exactly preserves the kernel Finding.suggested_fix reference
+    shape: registry, rule_instance_id, evidence_refs, and verification_plan.
+    RegistrySnapshot supplies the artifact pinned by FixReference.registry.
+  registry_pin: >-
+    VersionPin.id equals RegistrySnapshot.registry_id; VersionPin.version equals
+    registry_version; artifact_digest hashes the complete canonical snapshot.
+    The snapshot contains no digest of itself.
+  instance_lookup: >-
+    A snapshot contains at most one revision of each rule_instance_id.
+    Therefore the kernel reference resolves one exact immutable instance
+    without adding an instance_revision field to the kernel wire shape.
+  plan_lookup: >-
+    FixReference.verification_plan must identify the same complete plan artifact
+    as the selected RuleInstance.verification_plan.
+  measurements: >-
+    This contract stores no measured durations or measured numeric outcomes.
+    Verification cites journaled kernel Measurements, diagnostics, and native
+    evidence. Integer counts here declare required evidence or record revisions;
+    they are not measured performance claims.
+  canonicalization: >-
+    Use kernel-jcs-sha256/1: UTF-8 RFC 8785 canonical JSON and SHA-256 encoded as
+    sha256:<64 lowercase hexadecimal digits>. Artifact digests identify exact
+    stored bytes. Redacted exports have new identities.
+  x-status: proposed
+  x-source: *k
+
+x-ownership:
+  rule_classes:
+    writer: registry_curator
+    authority: >-
+      Defines a proposed intervention family, its evidence requirements,
+      contraindications, and verification obligations. Model-authored material
+      remains a recorded proposal until adopted by this authenticated writer.
+  class_reviews:
+    writer: authenticated_human_reviewer
+    authority: >-
+      Approves, rejects, or revokes one exact class version. The operator may
+      occupy this role; a second human or separate service is not required.
+      A model, connector, or subject cannot self-issue human approval.
+  rule_instances:
+    writer: registry_curator
+    authority: >-
+      Records a concrete proposal and its evidence assessments. It cannot
+      rewrite the cited diagnostic, subject claim, origin fact, or capability.
+  catalog:
+    writer: registry_publisher
+    authority: >-
+      Publishes a complete immutable selection of class, review, and instance
+      revisions. Publication is an owner-local effect, not a transaction over
+      diagnostic or execution owners.
+  recommendations:
+    writer: consumer_assessor
+    authority: >-
+      Hellscape or another authorized diagnostic consumer decides whether a
+      rule instance matches its evidence. A connector declares observations
+      and capabilities; it does not assess its own qualification.
+  verification:
+    writer: verification_assessor
+    authority: >-
+      Assesses a pinned plan against independent retained evidence. Native
+      product test output may be evidence, but is not self-certifying judgment.
+  implementation:
+    writer: target_product_owner
+    authority: >-
+      Changes source, configuration, or operating procedures under that
+      product's authorization. No registry record performs this write.
+  x-status: inferred
+  x-source: "1-handoff-brief.txt Parts VI and IX; 3-hellscape-blueprint.md §§3.2, 4.7, and 6.6."
+
+x-source-reconciliation:
+  - decision: >-
+      The handoff fixes the registry schema at Step 0 and defers implementation
+      to M3. Hellscape's M3 registry milestone therefore supplies later matching,
+      counterfactual, minimization, and verification implementation, not a
+      reason to postpone the reference format.
+    x-status: extracted
+    x-source: "1-handoff-brief.txt Parts VII–VIII; 3-hellscape-blueprint.md §7."
+
+  - decision: >-
+      Human approval attaches to an exact rule class version, as specified by
+      the handoff's outer loop. Instances still require their own diagnostic
+      support, scope match, contraindication checks, and verification plan.
+      Class approval is neither instance verification nor execution authority.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part IX; 3-hellscape-blueprint.md §6.6."
+
+  - decision: >-
+      Native learn-run-heal cache changes remain execution-layer behavior.
+      An immediate selector-cache update described by Circus Tent is not
+      automatically a reviewed fix-registry instance or proof of improvement.
+      Conversely, this registry does not impose human approval on every
+      already-authorized native healing action.
+    x-status: inferred
+    x-source: "4-circus-tent-arch.md §5.6; 1-handoff-brief.txt Parts V and IX."
+
+  - decision: >-
+      Historical cancellation, timing, and isolation descriptions may inform
+      rule proposals, but do not certify a current subject revision. In
+      particular, the invalid isolation write control cannot support a
+      confirmed non-isolation diagnosis or a remedy premised on that diagnosis.
+    x-status: extracted
+    x-source: *e
+
+  - decision: >-
+      A fix may target the subject, connector, planner, fixture, environment, or
+      policy according to supported attribution. An adapter overclaim or a
+      fixture defect must not be relabeled as a subject defect to fit a rule.
+    x-status: extracted
+    x-source: *d
+
+  - decision: >-
+      The registry does not contain a universal patch representation or a
+      cross-browser primitive API. A class may describe a common problem, but
+      Circus Tent and Ringmaster receive separate product-specific instances
+      and verification evidence.
+    x-status: inferred
+    x-source: *b
+
+  - decision: >-
+      No handoff amendment is introduced. Review, catalog, and verification
+      record shapes below are proposed mechanisms for its existing commitments.
+    x-status: proposed
+    x-source: *w
+
+x-validation:
+  requirements:
+    - >-
+      Decode YAML into JSON-compatible values. Reject duplicate keys, non-finite
+      numbers, undeclared fields, unknown record versions, and unresolved local
+      schema references. Enforce JSON Schema 2020-12.
+    - >-
+      Structural validity is necessary but insufficient. Enforce all applicable
+      FIX rules, evidence-kernel rules, and lifecycle scope/authority rules.
+      Caller-supplied writer IDs, evidence labels, or review decisions do not
+      authenticate themselves.
+    - >-
+      Only Missing.value may contain serialized null. Required fields cannot
+      disappear to evade missingness. Empty arrays mean an established empty
+      collection, not unknown contents.
+    - >-
+      Resolve and hash-check every artifact and evidence reference. Verify
+      copied diagnostic IDs, analysis revisions, input prefixes, finding IDs,
+      subject identities, and capability scopes against their actual records.
+    - >-
+      Text predicates are reviewed declarative requirements, not executable
+      expressions. Procedures and oracles are immutable referenced artifacts.
+      This schema does not authorize loading code from a rule or executing a
+      model-generated command.
+  x-status: proposed
+  x-source: *w
+
+x-semantic-rules:
+  - id: FIX-JOURNAL
+    classification: invariant
+    rule: >-
+      Every citable class, review, instance, plan, catalog, and verification
+      receipt is immutable and registered in the journal. Its evidence_prefix
+      contains its support and locally journaled imports, not its own later
+      artifact-registration event. Retain original source scope and provenance
+      through imports.
+    consequence: >-
+      A finding citation resolves a published diagnostic and a finding within
+      that diagnostic's pinned input prefix. Unjournaled notes, mutable source
+      files, current web pages, or a plausible model explanation are not evidence.
+    derivation: "Anything not journaled cannot be cited, and retroactive evidence destroys replay."
+    x-status: extracted
+    x-source: *h
+
+  - id: FIX-VERSIONS
+    classification: invariant
+    rule: >-
+      Record identities and revisions are immutable. Reusing an identity/version
+      or identity/revision with different bytes is an integrity conflict.
+      Revision chains start at 1 and advance by one. Supersession preserves
+      previous bytes and resolves to the immediately preceding compatible record.
+    consequence: >-
+      A changed class definition requires a new class version and fresh human
+      review. A new target revision, subject version, configured mode, interface,
+      or applicability cell requires a new instance identity and its own
+      evidence assessment. Prior verification cannot be inherited.
+    derivation: "A prior-version finding must not become a current-version assumption."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; contracts/00-evidence-kernel.yaml EK-CAPABILITY."
+
+  - id: FIX-CLASS-REVIEW
+    classification: invariant
+    rule: >-
+      An eligible recommendation resolves to an approved review of the exact
+      class artifact in its pinned registry snapshot. Verify the reviewer as an
+      authenticated human under the pinned review policy. First reviews may
+      approve or reject; revocation names a prior approved review chain.
+    consequence: >-
+      Model proposals, approvals of a different class version, and instance-only
+      approvals do not satisfy this rule. A later rejection or revocation
+      changes future catalog eligibility without editing historical diagnostics.
+      Deliberately selecting an older catalog to evade a visible revocation is
+      prohibited.
+    derivation: "The reviewed outer loop approves rule classes; the judged component cannot approve itself."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part IX; 3-hellscape-blueprint.md §6.6."
+
+  - id: FIX-CATALOG
+    classification: invariant
+    rule: >-
+      A registry snapshot pins complete class, current review, and instance
+      artifacts at a named prefix. Publish it only after all referenced bytes
+      are durable and validated. Readers see one complete old or new snapshot,
+      never partial entries.
+    consequence: >-
+      A catalog may contain pending or rejected proposals for inspection; their
+      presence is not recommendation eligibility. A new diagnostic uses the
+      catalog head evidenced at its selection boundary. Exact re-derivation
+      uses the recorded snapshot, not today's head or review state.
+    derivation: "Asynchronous publication and deterministic diagnostic replay require immutable input cuts."
+    x-status: inferred
+    x-source: "2-state-bank-crawler-blueprint.json Decision 8; contracts/00-evidence-kernel.yaml EK-DIAGNOSTIC."
+
+  - id: FIX-SCOPE
+    classification: invariant
+    rule: >-
+      An instance targets one product and one evidenced component version key.
+      Every applicability cell pins task, environment, execution mode, subject
+      identity when present, assistance, state policies, and attempt scope.
+      A recommendation must name and match an existing cell; matching a symptom
+      string alone is insufficient.
+    consequence: >-
+      A shared rule class does not share native implementation. A Circus Tent
+      instance cannot supply a Ringmaster repair or vice versa. Native-binding
+      remedies refer to the particular product's native surface without
+      introducing a shared ElementHandle or primitive signature.
+    derivation: "Cross-browser internal unification repeats the Stagehand-on-Juggler failure."
+    x-status: inferred
+    x-source: *b
+
+  - id: FIX-REQUIRED-EVIDENCE
+    classification: invariant
+    rule: >-
+      Instances reproduce every class evidence requirement unchanged and may add
+      requirements. For each requirement and applicability cell, record exactly
+      one EvidenceCheck. met requires the declared predicate, minimum distinct
+      evidence units, allowed source scopes, and exact target/version support.
+      Unsupported or missing observations remain indeterminate.
+    consequence: >-
+      Count independently identified attempts, artifacts, or fixture
+      configurations, not duplicate callbacks, duplicate imports, or multiple
+      findings from the same unit. Evidence labels are checked against ingestion,
+      not trusted because a proposal supplies them.
+    derivation: "Repeated delivery and documentary claims must not manufacture experimental support."
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §§4.3–4.7 and 6.6; contracts/00-evidence-kernel.yaml."
+
+  - id: FIX-ATTRIBUTION
+    classification: invariant
+    rule: >-
+      Keep symptom, causal hypothesis, defect locus, and proposed intervention
+      distinct. A concrete remedy requires confirmed or supported attribution
+      at the scope it claims. Native absence, an observed violation, and an
+      indeterminate result cannot substitute for one another.
+    consequence: >-
+      Unknown causes may be retained as suspected proposals for investigation,
+      but do not produce an eligible suggested_fix. Invalid controls, unexposed
+      work, missing dependencies, or an unmapped connector operation cannot
+      establish the corresponding subject defect. Preserve contrary evidence.
+    derivation: "Naming an internal selector or isolation defect without valid controls is unsupported attribution."
+    x-status: extracted
+    x-source: "3-hellscape-blueprint.md §§1.3, 4.1, 4.3–4.7; 5-browser-qualification.md."
+
+  - id: FIX-CONTRAINDICATIONS
+    classification: invariant
+    rule: >-
+      Instances reproduce every class contraindication unchanged and may add
+      contraindications. Record exactly one check per contraindication and
+      applicability cell. An eligible recommendation requires evidenced absence
+      of each applicable contraindication.
+    consequence: >-
+      present and unknown both withhold the suggestion. Silence is not absence.
+      A human class approval cannot waive missing controls, incompatible native
+      surfaces, conflicting facts, or a contraindication named by the class.
+    derivation: "Evidence-backed recommendations must state where their reasoning or intervention is unsafe."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VIII; 3-hellscape-blueprint.md §6.6."
+
+  - id: FIX-RECOMMEND
+    classification: invariant
+    rule: >-
+      Emit FixReference only when the exact class is approved, the target and
+      cell match, required evidence checks are met, contraindications are absent,
+      attribution is supported, and a complete falsifiable plan is registered.
+      The consumer independently verifies these conditions rather than trusting
+      a proposal's confidence label.
+    consequence: >-
+      No completed verification receipt is required to recommend an unimplemented
+      change. Without an eligible rule, emit Missing with a kernel reason and
+      useful detail. M1 may use not_enabled; insufficient evidence uses
+      not_observed or observation_lost, not a new null-reason vocabulary.
+    derivation: "A suggestion must be justified, but requiring a repair to be verified before suggesting it is circular."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VII; 3-hellscape-blueprint.md §§4.4, 4.7, and 6.6."
+
+  - id: FIX-PRACTICE
+    classification: invariant
+    rule: >-
+      Preserve practice/production and held_in/held_out in every application
+      scope. Hellscape is practice and held_in; employer origins are held_out.
+      Diagnostic and verification references retain their original attempt
+      kinds. Historical and synthetic evidence remain explicitly labeled.
+    consequence: >-
+      A laboratory result can motivate an execution-layer improvement but cannot
+      establish production commitment, origin representativeness, or held-out
+      transfer. A production recommendation needs its declared production-scope
+      support; a practice-only check remains practice-only.
+    derivation: "Tuning against Hellscape is not qualification for a real employer's forms."
+    x-status: extracted
+    x-source: *b
+
+  - id: FIX-PLAN
+    classification: invariant
+    rule: >-
+      The plan names the baseline target, exact applicability cells, verification
+      methods, immutable procedures and oracles, pass/fail predicates, evidence
+      requirements, declared budgets, and stop conditions. It includes every
+      class-required verification role and identifies controlled differences
+      for comparisons.
+    consequence: >-
+      Candidate evaluation and regression checks are required by this proposed
+      schema. A plan claiming improvement must include a defensible baseline;
+      a plan claiming transfer must include that transfer scope. An absent or
+      unresolved procedure cannot be replaced by "rerun until it works."
+    derivation: "A recommendation without a falsifiable verification path is not actionable learning."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VIII; 3-hellscape-blueprint.md §§6.6 and 7.2."
+
+  - id: FIX-VERIFY
+    classification: invariant
+    rule: >-
+      Verification receipts identify the exact instance and plan, actual target
+      revision, realized scopes, assessor, and evidence for every planned check.
+      Preserve invalid controls, incomparability, skipped checks, and contrary
+      results. A newly tested subject version requires its own capability
+      descriptors and observations.
+    consequence: >-
+      criterion_met describes a plan oracle, not application success or native
+      capability presence. Underlying diagnostic assessments retain capability,
+      opportunity, and result separately. Missing required checks prevent a
+      claim that the plan was satisfied. No portfolio-wide qualified flag exists.
+    derivation: "A skipped required step is not a pass, and verification cannot inherit a predecessor's capability."
+    x-status: inferred
+    x-source: "5-browser-qualification.md; 1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §6.6."
+
+  - id: FIX-NO-AUTO-PATCH
+    classification: invariant
+    rule: >-
+      Class approval, recommendation, implementation, and verification are
+      separate facts with separate authorities. No record here invokes a
+      browser, patches a product, changes an active task, promotes a subject
+      version, or commissions an application.
+    consequence: >-
+      The autonomous fixture-variant loop does not gain authority to activate
+      execution-layer fixes. Implementation follows the product owner's change
+      process. Production work still requires its own commission and permissions.
+    derivation: "Hellscape diagnoses the framework; it does not silently repair the subject or become the job pipeline."
+    x-status: extracted
+    x-source: "1-handoff-brief.txt Parts III and IX; 3-hellscape-blueprint.md §§1.2 and 3.2."
+
+  - id: FIX-SAFE-VERIFICATION
+    classification: invariant
+    rule: >-
+      Offline fixture replay and diagnostic re-derivation invoke no subject,
+      browser, or external mutation. They cannot by themselves demonstrate
+      changed native execution behavior. Browser or origin observations are
+      separately authorized new attempts, not exact replay.
+    consequence: >-
+      A plan cannot resolve uncertain delivery by resubmitting with a fresh key,
+      switching executors, or forcing a second production application as an A/B
+      control. Preserve lifecycle duplicate-risk review and same-kind lineage.
+      A plan's mutation_policy is a restriction, never an authorization grant.
+    derivation: "External commitment cannot be rolled back by local replay or observer termination."
+    x-status: inferred
+    x-source: "contracts/01-application-attempt-lifecycle.yaml LIFE-IDEMPOTENCY; 3-hellscape-blueprint.md §§6.5 and 10.8."
+
+  - id: FIX-TIME-NULL
+    classification: invariant
+    rule: >-
+      Measurements cited by evidence or verification retain the kernel's origin,
+      clock_id, boot_id, exact/bounded/unavailable estimate, and censoring.
+      Compare matching semantic intervals or defensible bounds; never subtract
+      across clocks or boots, and never use UTC annotations as elapsed time.
+    consequence: >-
+      A subject-reported exact zero remains zero, not missing and not independent
+      proof of fast execution. Missing native timing remains unavailable.
+      manual_override missingness requires an authenticated journaled decision
+      and cannot erase an original claim or fact.
+    derivation: "The _elapsed() defect and ambiguous nulls are paid-for integration failures."
+    x-status: extracted
+    x-source: *k
+
+  - id: FIX-RETENTION
+    classification: invariant
+    rule: >-
+      Retained recommendations pin their registry, instance, class review, plan,
+      diagnostic, and evidence dependencies transitively. Supersession or
+      revocation does not permit deleting bytes needed by historical reports.
+      Restrict artifacts containing candidate data, native bodies, or credentials.
+    consequence: >-
+      A public rule description contains no secret or unnecessary personal data.
+      Artifact loss produces an integrity incident and honest missing evidence,
+      never reconstruction of different bytes under the old digest.
+    derivation: "A reproducible learning event requires durable evidence, not mutable links."
+    x-status: inferred
+    x-source: "contracts/00-evidence-kernel.yaml EK-ARTIFACTS; 6-get-a-job.xml.txt AGENTS.md."
+
+x-reference-order:
+  sequence:
+    - Publish the source diagnostic with its original finding and reasoned null or earlier recommendation.
+    - Register the class definition, its human review, and the change proposal artifacts.
+    - Register the verification plan, naming the planned rule_instance_id but not the future instance digest.
+    - Register the rule instance citing the already published diagnostic and plan.
+    - Publish the immutable registry snapshot containing that instance.
+    - A later diagnostic revision may cite the snapshot and instance through FixReference.
+    - Later verification receipts cite the exact instance digest and newly collected evidence.
+  constraints:
+    - Never edit the source diagnostic to attach its newly created recommendation.
+    - An instance cannot use the diagnostic that first introduces that same instance as its own causal support.
+    - A plan does not contain the digest of the instance that contains the plan reference.
+    - A verification receipt does not retroactively become evidence available when the proposal was made.
+  x-status: proposed
+  x-source: "contracts/00-evidence-kernel.yaml EK-DIAGNOSTIC; 3-hellscape-blueprint.md §§4.7 and 10.7."
+
+x-provisionals:
+  - decision: Exact applicability cells rather than an executable wildcard-matching language.
+    rationale: >-
+      Step 0 can validate scope and evidence without inventing a rule engine.
+      Manual assessment and later deterministic matchers can consume the same
+      records. Broad rule classes remain reusable; instances remain accountable.
+    flip_condition: >-
+      Add a versioned predicate language only when recurring reviewed instances
+      demonstrate necessary matching semantics that finite cells cannot express
+      economically, with equivalent evidence and scope conformance.
+    x-status: proposed
+    x-source: *w
+
+  - decision: Verification receipts have per-check results and no aggregate repair-success status.
+    rationale: >-
+      This keeps regression, comparability, transfer, and missing checks visible.
+      A read-side summary may be derived from the complete pinned plan and receipt.
+    flip_condition: >-
+      Add a derived summary in a new version only if consumers repeatedly
+      implement inconsistent reductions and a common reduction preserves all
+      scope, validity, and missing-evidence distinctions.
+    x-status: proposed
+    x-source: *w
+
+x-open-evidence:
+  - missing: No executable reviewed fix registry or complete rule catalog is supplied.
+    resolution: >-
+      Seed only manually reviewed classes backed by retained findings and
+      verification procedures. Do not manufacture repairs, source locations,
+      native primitive signatures, or confidence probabilities to populate it.
+      An empty catalog is valid.
+    x-status: uncertain
+    x-source: "1-handoff-brief.txt Part VII; 3-hellscape-blueprint.md §§4.7 and 6.6."
+
+  - missing: The raw historical cancellation, isolation, and timing artifacts are not included.
+    resolution: >-
+      Import originals when available with their source identities and hashes.
+      Until then, the blueprint descriptions are documentary historical
+      evidence, not executed current-version observations.
+    x-status: uncertain
+    x-source: *e
+
+oneOf:
+  - $ref: "#/$defs/RuleClass"
+  - $ref: "#/$defs/ClassReview"
+  - $ref: "#/$defs/RuleInstance"
+  - $ref: "#/$defs/VerificationPlan"
+  - $ref: "#/$defs/RegistrySnapshot"
+  - $ref: "#/$defs/VerificationReceipt"
+
+$defs:
+  SchemaVersion:
+    const: suggested-fix-registry/0.1.0
+    x-status: proposed
+    x-source: *w
+
+  Identifier:
+    type: string
+    minLength: 1
+    x-status: extracted
+    x-source: *k
+
+  Revision:
+    type: integer
+    minimum: 0
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  PositiveInteger:
+    type: integer
+    minimum: 1
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  Digest:
+    type: string
+    pattern: '^sha256:[0-9a-f]{64}$'
+    x-status: extracted
+    x-source: *k
+
+  Missing:
+    type: object
+    additionalProperties: false
+    required: [value, reason]
+    properties:
+      value: {type: "null", x-status: extracted, x-source: *k}
+      reason:
+        enum: [not_enabled, not_applicable, not_observed, observation_lost, unsupported_by_subject, manual_override]
+        x-status: extracted
+        x-source: *h
+      detail: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Inapplicable:
+    allOf:
+      - $ref: "#/$defs/Missing"
+      - properties: {reason: {const: not_applicable}}
+    x-status: extracted
+    x-source: *k
+
+  MaybeString:
+    oneOf:
+      - $ref: "#/$defs/Identifier"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  MaybeDigest:
+    oneOf:
+      - $ref: "#/$defs/Digest"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  EvidenceRef:
+    type: object
+    additionalProperties: false
+    required: [journal_id, sequence, event_id, event_hash, pointer]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      event_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      event_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      pointer:
+        type: string
+        pattern: '^(?:/(?:[^~/]|~[01])*)*$'
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  EvidenceRefs:
+    type: array
+    uniqueItems: true
+    items: {$ref: "#/$defs/EvidenceRef"}
+    x-status: extracted
+    x-source: *k
+
+  SupportRefs:
+    allOf:
+      - $ref: "#/$defs/EvidenceRefs"
+      - minItems: 1
+    x-status: extracted
+    x-source: *k
+
+  MaybeEvidenceRef:
+    oneOf:
+      - $ref: "#/$defs/EvidenceRef"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *l
+
+  JournalPrefix:
+    type: object
+    additionalProperties: false
+    required: [journal_id, last_sequence, head_hash]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      last_sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      head_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ArtifactReference:
+    type: object
+    additionalProperties: false
+    required: [digest, size_bytes, media_type, owner_domain, access]
+    properties:
+      digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      size_bytes: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *k}
+      media_type: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      access: {enum: [public, restricted], x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  MaybeArtifact:
+    oneOf:
+      - $ref: "#/$defs/ArtifactReference"
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  VersionPin:
+    type: object
+    additionalProperties: false
+    required: [id, version, artifact_digest]
+    properties:
+      id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      artifact_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ComponentIdentity:
+    type: object
+    additionalProperties: false
+    required: [component, reported_version, build_digest, configuration_digest]
+    properties:
+      component: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      reported_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      build_digest: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *k}
+      configuration_digest: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  SubjectIdentity:
+    type: object
+    additionalProperties: false
+    required: [subject_id, subject_version, revision_basis, native_revision, configured_mode, interface_surface, configuration_digest, stack]
+    properties:
+      subject_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      subject_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      revision_basis:
+        enum: [native_revision, source_digest, operator_attestation, unknown]
+        x-status: extracted
+        x-source: *k
+      native_revision: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      configured_mode: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      interface_surface: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      configuration_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      stack:
+        type: array
+        items: {$ref: "#/$defs/ComponentIdentity"}
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  CapabilityReference:
+    type: object
+    additionalProperties: false
+    required: [descriptor_digest, capability_id, evidence_ref]
+    properties:
+      descriptor_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      capability_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      evidence_ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *k}
+    description: Resolves to the exact tested subject/version/mode/surface, with no inheritance.
+    x-status: extracted
+    x-source: *k
+
+  ProductName:
+    enum: [circus_tent, ringmaster, crawler, hellscape, job_hunter]
+    x-display-names:
+      circus_tent: Circus Tent
+      ringmaster: Ringmaster
+      crawler: crawler
+      hellscape: Hellscape
+      job_hunter: job-hunter
+    x-status: proposed
+    x-source: *w
+
+  DefectLocus:
+    enum: [subject, external_planner, connector, fixture, environment, policy]
+    description: >-
+      Supported intervention locus. unknown and not_applicable may remain in
+      source findings, but cannot identify the target of a concrete remedy.
+    x-status: inferred
+    x-source: *d
+
+  InterventionKind:
+    enum: [code_change, configuration_change, mapping_change, workflow_change]
+    description: Proposed change category, not an executable operation.
+    x-status: proposed
+    x-source: *w
+
+  FixTarget:
+    type: object
+    additionalProperties: false
+    required: [product, component, version_key, defect_locus, change_surface, identity_evidence_refs]
+    properties:
+      product: {$ref: "#/$defs/ProductName", x-status: proposed, x-source: *w}
+      component: {$ref: "#/$defs/ComponentIdentity", x-status: inferred, x-source: *k}
+      version_key:
+        $ref: "#/$defs/Identifier"
+        description: >-
+          Immutable evidence-scope key for the target revision/configuration.
+          An operator-attested key is not an invented native revision endpoint.
+        x-status: proposed
+        x-source: *w
+      defect_locus: {$ref: "#/$defs/DefectLocus", x-status: inferred, x-source: *d}
+      change_surface:
+        enum: [implementation, native_binding, external_connector, planner, configuration, fixture, policy]
+        x-status: proposed
+        x-source: *w
+      identity_evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    description: >-
+      One product target. For a subject remedy, its identity must agree with the
+      subject in each applicability cell. For a connector or fixture remedy,
+      preserve the distinction between the changed component and the subject
+      whose behavior exposed the defect.
+    x-status: proposed
+    x-source: *w
+
+  AttemptScope:
+    type: object
+    additionalProperties: false
+    required: [kind, target_class, target_id, evaluation_partition]
+    properties:
+      kind: {enum: [practice, production], x-status: extracted, x-source: *h}
+      target_class: {enum: [laboratory_fixture, employer_origin], x-status: extracted, x-source: *k}
+      target_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      evaluation_partition: {enum: [held_in, held_out], x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {target_class: {const: laboratory_fixture}}}
+        then:
+          properties:
+            kind: {const: practice}
+            evaluation_partition: {const: held_in}
+      - if: {properties: {target_class: {const: employer_origin}}}
+        then:
+          properties: {evaluation_partition: {const: held_out}}
+      - if: {properties: {kind: {const: production}}}
+        then:
+          properties: {target_class: {const: employer_origin}}
+    description: >-
+      Applicability restriction, not an attempt commission. Actual diagnostics
+      resolve to commissioned attempts with their original identities and lineage.
+    x-status: proposed
+    x-source: *w
+
+  ExecutionScope:
+    type: object
+    additionalProperties: false
+    required: [mode, subject, assistance_track]
+    properties:
+      mode: {enum: [manual, subject, service], x-status: extracted, x-source: *k}
+      subject:
+        oneOf:
+          - $ref: "#/$defs/SubjectIdentity"
+          - $ref: "#/$defs/Inapplicable"
+        x-status: inferred
+        x-source: *k
+      assistance_track: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {mode: {const: subject}}}
+        then: {properties: {subject: {$ref: "#/$defs/SubjectIdentity"}}}
+        else: {properties: {subject: {$ref: "#/$defs/Inapplicable"}}}
+    description: Manual fixture evidence cannot be credited to a nonexistent automation subject.
+    x-status: inferred
+    x-source: *k
+
+  RuleScope:
+    type: object
+    additionalProperties: false
+    required:
+      - scope_id
+      - activity
+      - attempt
+      - execution
+      - task_family
+      - task_definition
+      - environment
+      - browser_state_policy
+      - learning_state_policy
+    properties:
+      scope_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      activity:
+        enum: [application_attempt, discovery, kernel_conformance]
+        x-status: extracted
+        x-source: *k
+      attempt:
+        oneOf:
+          - $ref: "#/$defs/AttemptScope"
+          - $ref: "#/$defs/Inapplicable"
+        x-status: proposed
+        x-source: *w
+      execution: {$ref: "#/$defs/ExecutionScope", x-status: proposed, x-source: *w}
+      task_family: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *d}
+      task_definition:
+        $ref: "#/$defs/ArtifactReference"
+        description: Pins the task-family definition and covered task parameters; not just a title.
+        x-status: proposed
+        x-source: *w
+      environment: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *d}
+      browser_state_policy: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *d}
+      learning_state_policy: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *d}
+    allOf:
+      - if: {properties: {activity: {const: application_attempt}}}
+        then:
+          properties:
+            attempt: {$ref: "#/$defs/AttemptScope"}
+            execution:
+              properties: {mode: {enum: [manual, subject]}}
+        else:
+          properties: {attempt: {$ref: "#/$defs/Inapplicable"}}
+    description: >-
+      A finite applicability cell. Unknown state-policy realization limits
+      matching; a missing policy is not a wildcard. Browser state and framework
+      learning state remain separate even when both are inapplicable.
+    x-status: proposed
+    x-source: *w
+
+  DiagnosticReference:
+    type: object
+    additionalProperties: false
+    required: [diagnostic_id, analysis_revision, content, input_prefix, publication_ref]
+    properties:
+      diagnostic_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      analysis_revision: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      content: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *k}
+      input_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *k}
+      publication_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+    description: >-
+      Identifies an immutable kernel DiagnosticDocument. publication_ref
+      registers its content; input_prefix identifies the earlier evidence it
+      analyzed. These are different boundaries and must both resolve.
+    x-status: proposed
+    x-source: *w
+
+  FindingCitation:
+    type: object
+    additionalProperties: false
+    required: [diagnostic, finding_id, scope_id, evidence_refs]
+    properties:
+      diagnostic: {$ref: "#/$defs/DiagnosticReference", x-status: inferred, x-source: *d}
+      finding_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      scope_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+    description: >-
+      finding_id resolves inside the pinned diagnostic. Its evidence, contrary
+      evidence, attribution, validity, attempt, and subject scope remain
+      authoritative inputs; this citation cannot replace them with stronger
+      labels. scope_id resolves in the instance's applicability cells.
+    x-status: proposed
+    x-source: *w
+
+  EvidenceBasis:
+    enum:
+      - diagnostic_finding
+      - capability_descriptor
+      - source_inspection
+      - native_observation
+      - origin_fact
+      - measurement
+      - validity_control
+      - paired_comparison
+      - regression_result
+    x-status: proposed
+    x-source: *w
+
+  EvidenceRequirement:
+    type: object
+    additionalProperties: false
+    required: [requirement_id, basis, predicate, minimum_distinct_units, independence_key, allowed_evidence_scopes]
+    properties:
+      requirement_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      basis: {$ref: "#/$defs/EvidenceBasis", x-status: proposed, x-source: *w}
+      predicate:
+        type: string
+        minLength: 1
+        description: Reviewable evidence condition, not executable code or a statement that it is already met.
+        x-status: proposed
+        x-source: *w
+      minimum_distinct_units:
+        $ref: "#/$defs/PositiveInteger"
+        description: Explicit rule-specific requirement; this schema supplies no empirical sample-size default.
+        x-status: proposed
+        x-source: *w
+      independence_key:
+        enum: [attempt, source_artifact, fixture_configuration]
+        x-status: proposed
+        x-source: *w
+      allowed_evidence_scopes:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {enum: [current_run, historical_unscored, synthetic]}
+        x-status: inferred
+        x-source: *k
+    description: >-
+      Capability declarations can establish scoped availability, not behavioral
+      success. Source inspection can support a causal hypothesis without
+      pretending that a live opportunity was exercised.
+    x-status: proposed
+    x-source: *w
+
+  EvidenceUnit:
+    type: object
+    additionalProperties: false
+    required: [unit_key, basis, evidence_scope, evidence_refs]
+    properties:
+      unit_key:
+        $ref: "#/$defs/Identifier"
+        description: >-
+          Canonical identity resolved from evidence: the actual attempt identity,
+          source-artifact digest, or fixture-configuration digest selected by
+          the requirement. It is not a fresh ID per delivery.
+        x-status: proposed
+        x-source: *w
+      basis: {$ref: "#/$defs/EvidenceBasis", x-status: proposed, x-source: *w}
+      evidence_scope:
+        enum: [current_run, historical_unscored, synthetic]
+        x-status: extracted
+        x-source: *k
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    description: Resolve labels and identity against journal evidence before counting the unit.
+    x-status: proposed
+    x-source: *w
+
+  EvidenceCheck:
+    type: object
+    additionalProperties: false
+    required: [requirement_id, scope_id, state, units, evidence_refs, contrary_evidence_refs, rationale]
+    properties:
+      requirement_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      scope_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      state:
+        enum: [met, unmet, indeterminate]
+        description: Curator assessment of this evidence predicate, not a native requirement result.
+        x-status: proposed
+        x-source: *w
+      units:
+        type: array
+        items: {$ref: "#/$defs/EvidenceUnit"}
+        x-status: proposed
+        x-source: *w
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *k}
+      contrary_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+      rationale: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+    allOf:
+      - if: {properties: {state: {const: met}}}
+        then:
+          properties:
+            units: {minItems: 1}
+            evidence_refs: {minItems: 1}
+      - if: {properties: {state: {const: unmet}}}
+        then:
+          properties: {evidence_refs: {minItems: 1}}
+    description: >-
+      Unit keys are unique within the check. Every unit matches the requirement's
+      basis, allowed scope, independence key, and applicability cell. met also
+      requires the declared minimum count and predicate, checked semantically.
+    x-status: proposed
+    x-source: *w
+
+  Contraindication:
+    type: object
+    additionalProperties: false
+    required: [contraindication_id, condition, required_exclusion_evidence, unknown_policy]
+    properties:
+      contraindication_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      condition: {type: string, minLength: 1, x-status: inferred, x-source: *h}
+      required_exclusion_evidence:
+        type: string
+        minLength: 1
+        description: What would establish that the limiting condition does not apply.
+        x-status: proposed
+        x-source: *w
+      unknown_policy: {const: withhold, x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  ContraindicationCheck:
+    type: object
+    additionalProperties: false
+    required: [contraindication_id, scope_id, presence, evidence_refs, rationale]
+    properties:
+      contraindication_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      scope_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      presence: {enum: [present, absent, unknown], x-status: proposed, x-source: *w}
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *k}
+      rationale: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+    allOf:
+      - if: {properties: {presence: {enum: [present, absent]}}}
+        then:
+          properties: {evidence_refs: {minItems: 1}}
+    description: An empty trace cannot prove absent; unknown blocks recommendation in this cell.
+    x-status: proposed
+    x-source: *w
+
+  VerificationRole:
+    enum: [baseline_reproduction, candidate_evaluation, negative_control, regression, transfer]
+    x-status: proposed
+    x-source: *w
+
+  ClassReference:
+    type: object
+    additionalProperties: false
+    required: [rule_class_id, class_version, content, registration_ref]
+    properties:
+      rule_class_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      class_version: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      content: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      registration_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+    description: All fields resolve to one immutable RuleClass; a matching class name alone is insufficient.
+    x-status: proposed
+    x-source: *w
+
+  RuleClass:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - rule_class_id
+      - class_version
+      - class_revision
+      - supersedes
+      - writer_id
+      - title
+      - purpose
+      - allowed_products
+      - allowed_defect_loci
+      - allowed_interventions
+      - required_evidence
+      - contraindications
+      - minimum_verification_roles
+      - evidence_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: fix_rule_class, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      rule_class_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      class_version: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      class_revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      supersedes: {$ref: "#/$defs/MaybeDigest", x-status: proposed, x-source: *w}
+      writer_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      title: {type: string, minLength: 1, x-status: proposed, x-source: *w}
+      purpose: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+      allowed_products:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {$ref: "#/$defs/ProductName"}
+        x-status: proposed
+        x-source: *w
+      allowed_defect_loci:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {$ref: "#/$defs/DefectLocus"}
+        x-status: inferred
+        x-source: *d
+      allowed_interventions:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {$ref: "#/$defs/InterventionKind"}
+        x-status: proposed
+        x-source: *w
+      required_evidence:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/EvidenceRequirement"}
+        x-status: inferred
+        x-source: *h
+      contraindications:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/Contraindication"}
+        x-status: inferred
+        x-source: *h
+      minimum_verification_roles:
+        type: array
+        minItems: 2
+        uniqueItems: true
+        items: {$ref: "#/$defs/VerificationRole"}
+        allOf:
+          - contains: {const: candidate_evaluation}
+          - contains: {const: regression}
+        x-status: proposed
+        x-source: *w
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    allOf:
+      - if: {properties: {class_revision: {const: 1}}}
+        then: {properties: {supersedes: {$ref: "#/$defs/Inapplicable"}}}
+        else: {properties: {supersedes: {$ref: "#/$defs/Digest"}}}
+    description: >-
+      Requirement and contraindication IDs are unique within the class.
+      Revision advances create distinct class_version identities. The class
+      contains no approval flag; human review is a separate immutable record.
+    x-status: proposed
+    x-source: *w
+
+  ClassReview:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - review_id
+      - review_revision
+      - previous_review
+      - rule_class
+      - decision
+      - reviewer_id
+      - review_policy
+      - rationale
+      - evidence_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: fix_class_review, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      review_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      review_revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      previous_review: {$ref: "#/$defs/MaybeDigest", x-status: proposed, x-source: *w}
+      rule_class: {$ref: "#/$defs/ClassReference", x-status: inferred, x-source: *h}
+      decision: {enum: [approved, rejected, revoked], x-status: proposed, x-source: *w}
+      reviewer_id:
+        $ref: "#/$defs/Identifier"
+        description: Authenticated human principal established by the control-plane evidence.
+        x-status: inferred
+        x-source: *h
+      review_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      rationale: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    allOf:
+      - if: {properties: {review_revision: {const: 1}}}
+        then:
+          properties:
+            previous_review: {$ref: "#/$defs/Inapplicable"}
+            decision: {enum: [approved, rejected]}
+        else:
+          properties: {previous_review: {$ref: "#/$defs/Digest"}}
+    description: >-
+      review_id identifies the review chain for one exact class artifact.
+      Reapproval after revocation requires another explicit human decision.
+      Review cannot rewrite the class or certify an instance's observed effect.
+    x-status: proposed
+    x-source: *w
+
+  Intervention:
+    type: object
+    additionalProperties: false
+    required: [kind, summary, intended_effect, change_specification, non_goals, risks]
+    properties:
+      kind: {$ref: "#/$defs/InterventionKind", x-status: proposed, x-source: *w}
+      summary: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+      intended_effect:
+        type: string
+        minLength: 1
+        description: Prediction to verify, not a statement of achieved improvement.
+        x-status: inferred
+        x-source: *d
+      change_specification:
+        $ref: "#/$defs/ArtifactReference"
+        description: >-
+          Product-specific proposed change, affected behavior, and implementation
+          boundary. May be a reviewed design or patch proposal; its presence
+          does not establish that code exists, was applied, or was executed.
+        x-status: proposed
+        x-source: *w
+      non_goals:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: proposed
+        x-source: *w
+      risks:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: inferred
+        x-source: *d
+    x-status: proposed
+    x-source: *w
+
+  Confidence:
+    type: object
+    additionalProperties: false
+    required: [level, rationale, evidence_refs, contrary_evidence_refs]
+    properties:
+      level:
+        enum: [confirmed, supported, suspected, unknown]
+        description: Evidentiary attribution, not an invented calibrated probability.
+        x-status: inferred
+        x-source: *d
+      rationale: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+      contrary_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+    allOf:
+      - if: {properties: {level: {enum: [confirmed, supported]}}}
+        then:
+          properties: {evidence_refs: {minItems: 1}}
+    x-status: inferred
+    x-source: *d
+
+  RuleInstance:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - rule_instance_id
+      - instance_revision
+      - supersedes
+      - rule_class
+      - writer_id
+      - target
+      - scope_cells
+      - diagnostic_findings
+      - causal_hypothesis
+      - intervention
+      - confidence
+      - required_evidence
+      - evidence_checks
+      - contraindications
+      - contraindication_checks
+      - verification_plan
+      - plan_registration_ref
+      - limitations
+      - evidence_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: fix_rule_instance, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      rule_instance_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      instance_revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      supersedes: {$ref: "#/$defs/MaybeDigest", x-status: proposed, x-source: *w}
+      rule_class: {$ref: "#/$defs/ClassReference", x-status: inferred, x-source: *h}
+      writer_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      target: {$ref: "#/$defs/FixTarget", x-status: inferred, x-source: *h}
+      scope_cells:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/RuleScope"}
+        x-status: inferred
+        x-source: *h
+      diagnostic_findings:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/FindingCitation"}
+        x-status: extracted
+        x-source: *h
+      causal_hypothesis:
+        type: string
+        minLength: 1
+        description: Explicit explanation with uncertainty retained; not private subject reasoning inferred from silence.
+        x-status: inferred
+        x-source: *d
+      intervention: {$ref: "#/$defs/Intervention", x-status: inferred, x-source: *d}
+      confidence: {$ref: "#/$defs/Confidence", x-status: inferred, x-source: *d}
+      required_evidence:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/EvidenceRequirement"}
+        x-status: extracted
+        x-source: *h
+      evidence_checks:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/EvidenceCheck"}
+        x-status: proposed
+        x-source: *w
+      contraindications:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/Contraindication"}
+        x-status: extracted
+        x-source: *h
+      contraindication_checks:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/ContraindicationCheck"}
+        x-status: proposed
+        x-source: *w
+      verification_plan: {$ref: "#/$defs/ArtifactReference", x-status: extracted, x-source: *k}
+      plan_registration_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    allOf:
+      - if: {properties: {instance_revision: {const: 1}}}
+        then: {properties: {supersedes: {$ref: "#/$defs/Inapplicable"}}}
+        else: {properties: {supersedes: {$ref: "#/$defs/Digest"}}}
+    description: >-
+      A proposal, including one that is currently ineligible. All IDs are unique
+      in their collections and all cross-references resolve. The target product,
+      locus, and intervention are allowed by the exact class. Class requirements
+      and contraindications cannot be omitted or weakened. Each cell has complete
+      check matrices, including explicit indeterminate/unknown entries.
+      The plan resolves to this instance ID, class, target, and scope cells.
+      No approval, implementation, or verified-success field is inferred.
+    x-status: proposed
+    x-source: *w
+
+  VerificationCheckSpec:
+    type: object
+    additionalProperties: false
+    required:
+      - check_id
+      - role
+      - scope_id
+      - execution_method
+      - procedure
+      - oracle
+      - pass_criterion
+      - fail_criterion
+      - minimum_distinct_trials
+      - mutation_policy
+      - required_evidence
+      - budget_policy
+      - stop_conditions
+    properties:
+      check_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      role: {$ref: "#/$defs/VerificationRole", x-status: proposed, x-source: *w}
+      scope_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      execution_method:
+        enum:
+          - diagnostic_rederivation
+          - exact_fixture_replay
+          - synthetic_backend
+          - browser_fixture
+          - authorized_origin_observation
+          - source_inspection
+        x-status: proposed
+        x-source: *w
+      procedure:
+        $ref: "#/$defs/ArtifactReference"
+        description: >-
+          Immutable procedure specifying inputs, observation boundaries,
+          controls, evidence capture, and eligible trials. It can be a manual
+          procedure; no invented executable command or live endpoint is required.
+        x-status: proposed
+        x-source: *w
+      oracle:
+        $ref: "#/$defs/VersionPin"
+        description: Versioned predicates and interpretation rules, not the tested subject's success flag.
+        x-status: inferred
+        x-source: *d
+      pass_criterion: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+      fail_criterion: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+      minimum_distinct_trials:
+        $ref: "#/$defs/PositiveInteger"
+        description: Explicit plan requirement; offline trials are not counted as live applications.
+        x-status: proposed
+        x-source: *w
+      mutation_policy:
+        enum: [no_external_mutation, practice_only, commissioned_production_only]
+        x-status: proposed
+        x-source: *w
+      required_evidence:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/EvidenceRequirement"}
+        x-status: inferred
+        x-source: *h
+      budget_policy:
+        $ref: "#/$defs/ArtifactReference"
+        description: >-
+          Pinned finite local observation, action, drain, and resource limits as
+          applicable. These are declarations, not measured elapsed time or
+          native cancellation guarantees.
+        x-status: inferred
+        x-source: *l
+      stop_conditions:
+        type: array
+        minItems: 1
+        items: {type: string, minLength: 1}
+        x-status: proposed
+        x-source: *w
+    allOf:
+      - if:
+          properties:
+            execution_method:
+              enum: [diagnostic_rederivation, exact_fixture_replay, source_inspection]
+        then:
+          properties: {mutation_policy: {const: no_external_mutation}}
+      - if: {properties: {execution_method: {const: browser_fixture}}}
+        then:
+          properties: {mutation_policy: {enum: [no_external_mutation, practice_only]}}
+    description: >-
+      scope_id resolves in the plan. exact_fixture_replay and browser_fixture
+      cannot claim a held-out employer form. A production mutation requires a
+      separately authorized commission; this field grants none. Honest
+      uncertainty reporting may satisfy an oracle without demonstrating native
+      cancellation or application completion.
+    x-status: proposed
+    x-source: *w
+
+  VerificationPlan:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - plan_id
+      - plan_version
+      - rule_instance_id
+      - rule_class
+      - writer_id
+      - baseline_target
+      - scope_cells
+      - comparability_policy
+      - controlled_changes
+      - checks
+      - evidence_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: fix_verification_plan, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      plan_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      plan_version: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      rule_instance_id:
+        $ref: "#/$defs/Identifier"
+        description: Planned stable instance ID; no future instance digest creates a reference cycle.
+        x-status: proposed
+        x-source: *w
+      rule_class: {$ref: "#/$defs/ClassReference", x-status: inferred, x-source: *h}
+      writer_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      baseline_target: {$ref: "#/$defs/FixTarget", x-status: proposed, x-source: *w}
+      scope_cells:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/RuleScope"}
+        x-status: inferred
+        x-source: *d
+      comparability_policy:
+        $ref: "#/$defs/VersionPin"
+        description: >-
+          Defines required matched controls, baseline/candidate pairing, and
+          treatment of changed task, environment, assistance, browser state, or
+          learning state. Unknown comparability cannot establish improvement.
+        x-status: inferred
+        x-source: *d
+      controlled_changes:
+        type: array
+        minItems: 1
+        items: {type: string, minLength: 1}
+        description: Intended intervention differences, not permission for undisclosed assistance or fixture changes.
+        x-status: proposed
+        x-source: *w
+      checks:
+        type: array
+        minItems: 2
+        items: {$ref: "#/$defs/VerificationCheckSpec"}
+        allOf:
+          - contains:
+              properties: {role: {const: candidate_evaluation}}
+          - contains:
+              properties: {role: {const: regression}}
+        x-status: inferred
+        x-source: *h
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    description: >-
+      Check IDs and scope IDs are unique. Baseline target and cells match the
+      instance; every class-required role is represented. Planned target
+      revisions are not presented as implemented. Execution of the plan later
+      records the actual candidate and realized scopes in a separate receipt.
+    x-status: proposed
+    x-source: *w
+
+  RegistryClassEntry:
+    type: object
+    additionalProperties: false
+    required: [rule_class, current_review, review_ref]
+    properties:
+      rule_class: {$ref: "#/$defs/ClassReference", x-status: proposed, x-source: *w}
+      current_review: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+      review_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: proposed, x-source: *w}
+    allOf:
+      - if: {properties: {current_review: {required: [digest]}}}
+        then: {properties: {review_ref: {$ref: "#/$defs/EvidenceRef"}}}
+        else: {properties: {review_ref: {$ref: "#/$defs/Missing"}}}
+    description: >-
+      current_review is the latest review in the exact class's chain available
+      at the catalog prefix, or honest missingness if unreviewed. It must resolve
+      to ClassReview for this exact class artifact. Presence does not imply approval.
+    x-status: proposed
+    x-source: *w
+
+  RegistryInstanceEntry:
+    type: object
+    additionalProperties: false
+    required: [rule_instance_id, instance_revision, content, registration_ref]
+    properties:
+      rule_instance_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      instance_revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      content: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      registration_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+    description: >-
+      Resolves to one complete RuleInstance; its exact class must also occur in
+      this snapshot. Duplicate instance IDs, even at different revisions, are
+      prohibited within one snapshot.
+    x-status: proposed
+    x-source: *w
+
+  RegistrySnapshot:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - registry_id
+      - registry_version
+      - registry_revision
+      - previous_registry
+      - writer_id
+      - classes
+      - instances
+      - evidence_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: fix_registry_snapshot, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      registry_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *k}
+      registry_version: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *k}
+      registry_revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      previous_registry: {$ref: "#/$defs/MaybeDigest", x-status: proposed, x-source: *w}
+      writer_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      classes:
+        type: array
+        items: {$ref: "#/$defs/RegistryClassEntry"}
+        x-status: proposed
+        x-source: *w
+      instances:
+        type: array
+        items: {$ref: "#/$defs/RegistryInstanceEntry"}
+        x-status: proposed
+        x-source: *w
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    allOf:
+      - if: {properties: {registry_revision: {const: 1}}}
+        then: {properties: {previous_registry: {$ref: "#/$defs/Inapplicable"}}}
+        else: {properties: {previous_registry: {$ref: "#/$defs/Digest"}}}
+    description: >-
+      Complete immutable catalog, including a valid empty catalog. Class keys
+      (rule_class_id, class_version) are unique. A new registry_revision uses a
+      new registry_version. Removing an entry from a later catalog does not
+      erase old artifacts or their evidence dependencies.
+    x-status: proposed
+    x-source: *w
+
+  FixReference:
+    type: object
+    additionalProperties: false
+    required: [registry, rule_instance_id, evidence_refs, verification_plan]
+    properties:
+      registry: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *k}
+      rule_instance_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+      verification_plan: {$ref: "#/$defs/ArtifactReference", x-status: extracted, x-source: *k}
+    description: >-
+      Kernel-compatible recommendation reference. Evidence must establish
+      eligibility and the matched cell at the consumer's analysis prefix.
+      This is not a verification receipt, patch command, or production credential.
+    x-status: extracted
+    x-source: *k
+
+  Recommendation:
+    oneOf:
+      - $ref: "#/$defs/FixReference"
+      - $ref: "#/$defs/Missing"
+    description: >-
+      Consumer-facing suggested_fix value, validated separately from durable
+      registry records. A withheld suggestion retains an enumerated reason and
+      detail identifying the unresolved scope, evidence, approval, or
+      contraindication. A model guess is not a substitute for missing evidence.
+    x-status: inferred
+    x-source: "contracts/00-evidence-kernel.yaml Finding; 3-hellscape-blueprint.md §4.4."
+
+  VerificationCheckResult:
+    type: object
+    additionalProperties: false
+    required:
+      - check_id
+      - actual_scope_id
+      - target_role
+      - comparison_validity
+      - oracle_result
+      - diagnostics
+      - capability_refs
+      - trial_units
+      - measurement_refs
+      - evidence_refs
+      - contrary_evidence_refs
+      - rationale
+      - limitations
+    properties:
+      check_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      actual_scope_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      target_role: {enum: [baseline, candidate], x-status: proposed, x-source: *w}
+      comparison_validity:
+        enum: [valid, invalid, incomplete, not_applicable]
+        description: not_applicable is allowed only for a genuinely non-comparative check.
+        x-status: inferred
+        x-source: *d
+      oracle_result:
+        enum: [criterion_met, criterion_not_met, indeterminate, not_exercised]
+        description: >-
+          Assessor result for this plan predicate. It does not replace a
+          diagnostic's capability, opportunity, requirement result, execution
+          claim, or authoritative application fact.
+        x-status: proposed
+        x-source: *w
+      diagnostics:
+        type: array
+        items: {$ref: "#/$defs/DiagnosticReference"}
+        x-status: inferred
+        x-source: *d
+      capability_refs:
+        type: array
+        items: {$ref: "#/$defs/CapabilityReference"}
+        x-status: inferred
+        x-source: *k
+      trial_units:
+        type: array
+        items: {$ref: "#/$defs/EvidenceUnit"}
+        x-status: proposed
+        x-source: *w
+      measurement_refs:
+        $ref: "#/$defs/EvidenceRefs"
+        description: >-
+          References to actual kernel Measurements, retaining source clocks,
+          origins, estimates, and censoring. No duration is inferred from
+          receipt order or divided from aggregate runtime.
+        x-status: inferred
+        x-source: *k
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *k}
+      contrary_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+      rationale: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+    allOf:
+      - if:
+          properties:
+            comparison_validity: {enum: [invalid, incomplete]}
+        then:
+          properties: {oracle_result: {enum: [indeterminate, not_exercised]}}
+      - if:
+          properties:
+            oracle_result: {enum: [criterion_met, criterion_not_met]}
+        then:
+          properties:
+            trial_units: {minItems: 1}
+            evidence_refs: {minItems: 1}
+    description: >-
+      check_id resolves to exactly one planned check. Actual scope and target
+      role must match that check's purpose and comparability policy.
+      criterion_met requires every planned evidence requirement and minimum
+      trial count; duplicates do not count. criterion_not_met requires a valid
+      observed failing predicate, not merely a missing run.
+    x-status: proposed
+    x-source: *w
+
+  VerificationReceipt:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - verification_id
+      - verifier_id
+      - evaluator
+      - registry
+      - rule_instance_id
+      - instance_digest
+      - verification_plan
+      - candidate_target
+      - implementation_evidence_refs
+      - actual_scopes
+      - checks
+      - limitations
+      - evidence_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: fix_verification_receipt, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      verification_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      verifier_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      evaluator: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *d}
+      registry: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *k}
+      rule_instance_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      instance_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      verification_plan: {$ref: "#/$defs/ArtifactReference", x-status: extracted, x-source: *k}
+      candidate_target:
+        oneOf:
+          - $ref: "#/$defs/FixTarget"
+          - $ref: "#/$defs/Missing"
+        description: Actual identified changed component, or explicit missingness if no candidate was established.
+        x-status: proposed
+        x-source: *w
+      implementation_evidence_refs:
+        $ref: "#/$defs/EvidenceRefs"
+        description: >-
+          Evidence identifying the actual applied change and candidate revision.
+          A proposed patch or planned version string alone proves neither.
+        x-status: inferred
+        x-source: *d
+      actual_scopes:
+        type: array
+        items: {$ref: "#/$defs/RuleScope"}
+        description: >-
+          Realized execution cells, including fresh subject-version identities.
+          Differences from planned cells are evaluated, never silently normalized.
+        x-status: inferred
+        x-source: *d
+      checks:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/VerificationCheckResult"}
+        x-status: proposed
+        x-source: *w
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    description: >-
+      Immutable assessor output. Registry lookup must resolve instance_digest
+      and the identical plan. Include exactly one result for every planned
+      check, using not_exercised when it did not run; no checks may disappear.
+      Each actual_scope_id resolves in actual_scopes, with unique IDs.
+
+      Candidate checks cannot be criterion_met without an identified candidate,
+      implementation evidence appropriate to the change, and the candidate's
+      own observed results. Baseline checks use the pinned baseline identity.
+      Comparative conclusions require valid controlled comparisons; source
+      inspection and offline replay alone cannot prove new native behavior.
+
+      The receipt has no aggregate application, qualification, approval, or
+      deployment status. Later evidence creates another immutable receipt.
+      Plan satisfaction, if displayed, is derived from all required checks and
+      remains limited to their exact tested scopes.
+    x-status: proposed
+    x-source: *w

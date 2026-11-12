@@ -1,0 +1,51 @@
+# Verification review — conformance/05-suggested-fix-registry.md (turn 12)
+
+## Overall assessment
+
+The file is a complete, well-disciplined conformance suite for `contracts/05-suggested-fix-registry.yaml` (`suggested-fix-registry/0.1.0`). Protocol, structure, epistemic tagging, fixture design, case inventory, and rule-coverage mapping all meet the manifest item's requirements. Spot-checked extractions verify against their cited sources. The file is acceptable with one cosmetic citation note; no revision is needed.
+
+## Protocol compliance
+
+- Raw deliverable (`runs/turn8-20/deliverables/turn12.md`) wraps content in a single fenced block annotated `markdown:conformance/05-suggested-fix-registry.md` with no content outside the fence except `<!-- TURN_END:12 -->`. Marker number matches the manifest item (12). Pass.
+- File under review is the inner content only, ending at a coherent sign-off boundary (evidence bundle, sign-off gate, no-amendment statement). Not truncated. Pass.
+
+## Completeness and structure
+
+- Delivers what a conformance suite should: scope/acceptance boundary, deterministic runner and result discipline, assertion surfaces, validation layers, fixture construction (shared mechanics, `BASE-CF` graph, registration order, companion fixtures), organized test vectors (`S01–S04`, `H01–H06`, `J01–J05`, `V01–V02`, `C01–C03`, `R01–R04`, `E01–E08`, `P01–P11`, `T01–T06`, `A01–A07`), full `FIX-*` rule-coverage mapping, and evidence-bundle/sign-off requirements. Each vector states input/mutation plus required oracle. Pass.
+
+## Epistemic discipline
+
+- Every substantive paragraph/row carries an epistemic tag (`[extracted: …]`, `[inferred: …]`, or `[proposed: …]`). Proposed runner mechanics, oracle notation (`ACCEPT`/`REJECT`/`EMIT`/`WITHHOLD`), exit dispositions, and synthetic fixtures are explicitly marked as proposals or suite notation, never as extracted facts. The file repeatedly guards against overclaiming (e.g., §1 execution-status disclaimer, §2.1 runner as "implementation target", §2.2 labels as "suite notation, not additions to the registry wire schema", §3 synthetic-only evidence). Pass.
+
+## Fabrication spot-checks (all pass)
+
+- Exit `130` / operator interruption `[extracted: 5-browser-qualification.md, exit codes]` — confirmed in `runs/turn8-20/sources/5-browser-qualification.md` ("130 interrupted").
+- Contract version `suggested-fix-registry/0.1.0` — confirmed in contract `$id` and `SchemaVersion` const.
+- Six top-level record types — confirmed in contract `oneOf` (RuleClass, ClassReview, RuleInstance, VerificationPlan, RegistrySnapshot, VerificationReceipt); `S01` correctly notes `FixReference` is a local definition rejected at the root union.
+- Six `Missing` reasons (`not_enabled`, `not_applicable`, `not_observed`, `observation_lost`, `unsupported_by_subject`, `manual_override`) — confirmed in evidence-kernel `Missing.reason` enum and contract `Missing` definition.
+- Integer boundaries in `S03` (Revision 0–9007199254740991, PositiveInteger ≥ 1) — consistent with contract `Revision`/`PositiveInteger` definitions.
+- Scope matrix in `P01` (laboratory→practice/held-in; employer→held-out; production requires employer origin) — consistent with `contracts/01-application-attempt-lifecycle.yaml` scope constraints.
+- Registration order (§3.3) and no-self/future-dependency constraints — consistent with contract `x-reference-order` sequence and constraints.
+- Rule-coverage table (§10) maps all 16 contract `FIX-*` rules (JOURNAL through RETENTION). No rule omitted; no invented rule added.
+
+## Cross-file consistency
+
+- Terminology (`FixReference`, `Recommendation`, `VerificationCheckResult`/`VerificationReceipt`, `Missing`, `kernel-jcs-sha256/1`, curator/publisher/reviewer/assessor/verifier/product-owner roles, no-auto-patch effects) matches `contracts/05-suggested-fix-registry.yaml` (`x-compatibility`, `x-ownership`, `x-validation`, `x-semantic-rules`).
+- Consistency with prior accepted files: kernel missingness vocabulary, lifecycle scope/lineage rules, and journal/prefix discipline are referenced accurately and never redefined. No silent re-litigation or handoff amendment (explicitly disclaimed in §11). Pass.
+
+## Concerns
+
+### 1. Bundled citation for empty-registry validity — cosmetic
+- Location: §1, line 13 ("A real manual application, an empty registry, and an M1 diagnostic with a reasoned null recommendation remain valid. … [extracted: contracts/05-suggested-fix-registry.yaml, x-contract.implementation]").
+- Why: manual-application independence and M1 non-prerequisite status are in `x-contract.implementation.not_required_for`, but empty-catalog validity is established in `x-open-evidence` ("An empty catalog is valid"), not `x-contract.implementation`. The claim itself is true; only the citation bundle is imprecise.
+- Severity: cosmetic. No action required before acceptance; a future touch could cite `x-open-evidence` for the empty-registry clause.
+
+No other concerns. No blocking, concerning, or additional cosmetic issues found.
+
+## Recommendation
+
+**Accept with notes** (note = the cosmetic citation observation above, for a future turn's awareness only).
+
+## Downstream impact
+
+None — per the dependency brief, no downstream turn references this file, so acceptance introduces no re-evaluation obligation.

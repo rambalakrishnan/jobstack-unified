@@ -1,0 +1,140 @@
+# Review: contracts/05-suggested-fix-registry.yaml (turn 11)
+
+## Overall assessment
+
+The file is a complete, well-formed contract schema: 1819 lines, valid YAML,
+all local `$ref` values resolve, six durable root records, sixteen FIX
+semantic rules, and epistemic annotations on every definition. Wire
+compatibility with the evidence kernel is exact where claimed
+(`FixReference` matches the kernel field-for-field; shared types match
+modulo descriptions and one equivalent inlining). The two substantive
+issues are citation-accuracy fixes in `x-source` annotations that do not
+change the wire shape. Acceptable with minor concerns.
+
+## Protocol compliance
+
+Pass. The raw deliverable (`runs/turn8-20/deliverables/turn11.md`) opens
+with ` ```yaml:contracts/05-suggested-fix-registry.yaml `, closes the fence,
+and ends with `<!-- TURN_END:11 -->` with no other content outside the
+fence. The tree file is byte-identical to the fence interior (verified by
+diff). The tree file correctly holds inner content only.
+
+## Completeness and structure
+
+Pass. The file ends at a coherent boundary (the end of the
+`VerificationReceipt` definition). Structure matches the manifest item:
+`$defs` with 51 definitions, `oneOf` roots for the six durable records
+(`RuleClass`, `ClassReview`, `RuleInstance`, `VerificationPlan`,
+`RegistrySnapshot`, `VerificationReceipt`), `x-semantic-rules` with
+sixteen FIX rules, plus `x-compatibility`, `x-ownership`,
+`x-source-reconciliation`, `x-validation`, `x-reference-order`,
+`x-provisionals`, and `x-open-evidence` sections. Null discipline holds:
+the only serialized null is `Missing.value` (line 576), and every
+withheld value uses the kernel's six enumerated reasons.
+
+## Concerns
+
+### 1. Instance evidence/contraindication fields mis-tagged as handoff extractions
+
+- Location: `RuleInstance.required_evidence` (lines 1325-1330) and
+  `RuleInstance.contraindications` (lines 1337-1342), both
+  `x-status: extracted, x-source: *h`
+  (`1-handoff-brief.txt, Parts VI-IX`).
+- Why it is a problem: the handoff never mentions evidence requirements,
+  exclusions, or contraindications (verified by grep: no hits). That
+  vocabulary comes from the Hellscape blueprint, `§6.6`: "Fix
+  recommendations use reviewed rules with evidence requirements,
+  exclusions, scope, confidence, and verification plans." An `extracted`
+  tag on a detail the cited source does not contain is a fabricated
+  citation under the review standards, even though the underlying design
+  is sound and correctly sourced elsewhere (e.g. `FIX-REQUIRED-EVIDENCE`
+  cites Hellscape `§§4.3-4.7`). The sibling class-level fields
+  (`RuleClass.required_evidence`, `RuleClass.contraindications`) are
+  correctly tagged `inferred`.
+- Severity: concerning (should fix).
+
+### 2. FIX-CATALOG misattributes snapshot read semantics to Decision 8
+
+- Location: `x-semantic-rules`, `FIX-CATALOG` (lines 262-277),
+  `x-source: "2-state-bank-crawler-blueprint.json Decision 8;
+  contracts/00-evidence-kernel.yaml EK-DIAGNOSTIC."`
+- Why it is a problem: Decision 8 in the crawler blueprint is
+  "Write-path separation" (crawler writes never block on downstream-agent
+  writes), not a publication/snapshot-read rule. The "readers see one
+  complete old or new snapshot, never partial entries" semantics the rule
+  states comes from the handoff, Part X, failure mode 4 ("Sharing
+  transactions across owners. Publication async and versioned; readers
+  see old-or-new, never partial"). The EK-DIAGNOSTIC half of the citation
+  is accurate (verified the rule ID exists in the kernel). The fix is to
+  re-cite the handoff Part X passage instead of (or in addition to)
+  Decision 8.
+- Severity: concerning (should fix).
+
+### 3. Contraindication.condition inference cites the handoff rather than Hellscape §6.6
+
+- Location: `Contraindication.condition` (line 1034),
+  `x-status: inferred, x-source: *h`.
+- Why it is a problem: same root cause as concern 1 — the handoff has no
+  contraindication concept, so the inference chain actually runs through
+  Hellscape `§6.6` ("exclusions"). As an `inferred` tag this is a vague
+  epistemic claim rather than a fabrication, and the cheapest fix is to
+  re-cite `*d`.
+- Severity: cosmetic.
+
+### 4. Missing.reason inlines the null-reason enum instead of sharing a NullReason definition
+
+- Location: `Missing.reason` (lines 577-580).
+- Why it is a problem: the kernel defines a `NullReason` string enum with
+  `x-meanings` for the six reasons and references it from `Missing`;
+  this file inlines the identical six values. The wire shape is
+  equivalent (verified value-for-value against the kernel and against the
+  handoff's "Null with reason" passage), so this is convention drift,
+  not a semantic break. Aligning on a shared `NullReason` definition
+  would keep cross-file consistency as later turns add more contracts.
+- Severity: cosmetic.
+
+## Spot-checks performed (no concerns)
+
+- `FixReference` matches kernel `FixReference` exactly (same required
+  fields, same types): the `x-compatibility diagnostic_link` claim of
+  exact preservation is true.
+- Shared types (`Identifier`, `Revision`, `PositiveInteger`, `Digest`,
+  `EvidenceRef`, `EvidenceRefs`, `SupportRefs`, `JournalPrefix`,
+  `ArtifactReference`, `VersionPin`, `ComponentIdentity`,
+  `SubjectIdentity`, `CapabilityReference`, `MaybeString`,
+  `MaybeDigest`, `MaybeEvidenceRef`, `Inapplicable`) match the kernel
+  and lifecycle wire shapes; diffs are descriptions and the concern-4
+  inlining only.
+- `DefectLocus` (`subject, external_planner, connector, fixture,
+  environment, policy`) correctly narrows Hellscape's `defect_locus`
+  enum with an explicit rationale for excluding `unknown` /
+  `not_applicable` from concrete remedy targets.
+- `Confidence.level` matches Hellscape's `attribution` enum and the
+  kernel's `Finding.attribution`.
+- New vocabulary (`ProductName`, `EvidenceBasis`, `EvidenceCheck` states,
+  `VerificationRole`, execution methods, `MaybeArtifact`) is honestly
+  tagged `proposed` with the wire-design source — no invented
+  enumerations presented as extractions.
+- `FIX-JOURNAL`, `FIX-ATTRIBUTION`, `FIX-PRACTICE`, `FIX-NO-AUTO-PATCH`,
+  and reconciliation decisions 4-5 cite passages verified present in
+  the handoff or Hellscape blueprint.
+- Cited kernel/lifecycle rule IDs (`EK-CAPABILITY`, `EK-DIAGNOSTIC`,
+  `EK-ARTIFACTS`, `LIFE-IDEMPOTENCY`) all exist in the prior accepted
+  files.
+- No forward references to later-manifest contracts; the only
+  `conformance/` mention is the suite pointer in `x-contract`.
+- No handoff amendment is introduced, and the file explicitly records
+  that (`x-source-reconciliation`, final decision) — correct amendment
+  discipline.
+- Scope is correct: records and validation rules only, with explicit
+  non-prerequisites (manual applications, null suggestions, Hellscape
+  M1, independent shipping) grounded in the handoff's thin slice and
+  silo test.
+
+## Recommendation
+
+Accept with notes. Concerns 1 and 2 should be fixed by re-tagging the
+cited `x-status` / `x-source` annotations (no wire-shape change); concerns
+3 and 4 are optional polish. None blocks the downstream conformance
+suite, decisions file, or PRDs, which depend on the record shapes and
+FIX rules rather than on these citations.

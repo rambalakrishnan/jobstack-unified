@@ -1,0 +1,53 @@
+# Review: prd/00-integration.md (turn 14)
+
+## Overall assessment
+
+This is a strong, densely cross-referenced integration PRD: protocol is clean (correct fence, manifest item 14, turn-end marker, tree file byte-identical to the raw inner content), every substantive claim carries an epistemic tag, and extensive spot-checks of rule IDs, enum values, type names, and source citations all verify against the retained contracts and sources. It is acceptable pending one factual correction — the §8 "Registry artifact completeness" row asserts the retained registry contract is elided and incomplete, which the actual file contradicts — plus one minor clarification to the conformance-suite count.
+
+## Concerns
+
+### 1. False incompleteness claim about the retained registry contract
+
+- **Location:** §8 "Decisions and evidence debt" table, row "**Registry artifact completeness**" (line 312): "the retained representation includes an elision and does not establish complete class/scope definitions."
+- **Why it's a problem:** This is a false factual claim about prior accepted work, stated under an `[uncertain: ...]` marker that prescribes retrieving "the unabridged artifact." The retained `tree/contracts/05-suggested-fix-registry.yaml` is 1,819 lines, parses as a complete single YAML document, and contains 51 `$defs` including fully specified `RuleClass` (17 required fields), `RuleScope` (9 required), `RuleInstance` (22 required), `VerificationPlan`, `RegistrySnapshot`, `FixReference`, and `VerificationReceipt` — i.e., complete class/scope definitions — with no truncation, `TODO`, or elision markers anywhere in the file (verified programmatically). The claim is also internally inconsistent: the PRD itself relies on the registry's class/scope machinery as established elsewhere (§5.3 learning loop and FIX-REQUIRED-EVIDENCE/FIX-ATTRIBUTION/FIX-CONTRAINDICATIONS/FIX-RECOMMEND semantics, lines 224–227; "Supported learning" acceptance scenario, line 291), all citing the same file. An uncertainty marker asserting a specific absence is not valid when the thing is present; left standing, it misdirects the operator into re-retrieval work and hands five downstream PRDs a false premise about the contract baseline.
+- **Severity:** blocking (must fix before proceeding — but the fix is a single-row correction, not a rewrite).
+
+### 2. Ambiguous conformance-suite count vs. HA-04's seven instances
+
+- **Location:** §6.2, paragraph below the suite table (line 273): "These are six suite documents with separate internal-binding executions, not a single whole-system pass/fail test."
+- **Why it's a problem:** `decisions/invariants-and-provisionals.md` HA-04 concludes "six suite documents, with separate BrowserOxide and Camoufox binding executions — seven contract/binding suite instances, not five." The PRD sentence omits the "seven instances" total, so a reader cannot tell whether "separate internal-binding executions" is meant to reproduce HA-04's seven-instance conclusion or a looser "six-plus-some" notion. Nothing stated is false, and the §6.2 table row for the binding suite correctly requires separate per-browser runs — this is a clarity gap in the one sentence that states the portfolio-wide suite inventory.
+- **Severity:** cosmetic (one clarifying phrase; fix alongside concern 1).
+
+### 3. "Companion conformance documents" phrasing in the contract baseline
+
+- **Location:** Header, "**Contract baseline**" (line 5): "the six `0.1.0` drafts in `contracts/00` through `contracts/05`, with their companion conformance documents."
+- **Why it's a problem:** The six `0.1.0` versions check out against all retained contract files, and all six `conformance/` documents exist in the tree — but "companion" reads as though the conformance documents ride along with (or inside) the contract drafts, when they are separately versioned manifest items (turns 2, 4, 6, 8, 10, 12) with their own review status. A downstream reader could take contract-draft acceptance as implying conformance-suite acceptance.
+- **Severity:** cosmetic.
+
+### 4. "Independently validated" overstates what the binding file establishes
+
+- **Location:** Header, "**Contract baseline**" (line 5): "the internal-binding file contains independently validated BrowserOxide and Camoufox schemas," tagged `[extracted: ...]`.
+- **Why it's a problem:** The file does contain two independent schema documents (verified: the YAML parses as two documents, BrowserOxide and Camoufox, each `0.1.0`), and the per-browser conformance suite exists — but "validated" under an `extracted` tag implies a validation event the cited file does not itself record. "Independently specified" or "separately executable" would match the evidence.
+- **Severity:** cosmetic.
+
+## What verified clean (spot-check summary)
+
+- **Protocol:** raw `runs/turn8-20/deliverables/turn14.md` is exactly one fenced block (````markdown:prd/00-integration.md`) plus `<!-- TURN_END:14 -->` and nothing else; tree file is byte-identical to the fenced inner content; manifest item 14 matches.
+- **Epistemic coverage:** every paragraph and table row carries `[extracted:/inferred:/proposed:/uncertain:]`; headers and the §3 ASCII diagram (illustrating the tagged sentence above it) are the only untagged text, appropriately.
+- **Cross-file references:** all cited rule IDs exist (EXT-SURFACE/AUTHORITY/DESCRIBE/DECLARE-NOT-ASSESS/TASK/READ-ONLY/PREPARE/PREPARATION-PIN/START/IDEMPOTENCY/RESUME/OBSERVE/NORMALIZE/CLOSE/CONTROLS/BOUNDS/STATE-POLICY/ARTIFACTS; EK-JOURNAL/ATOMICITY/HASHES/PROVENANCE/NULL/TIME/CAPABILITY/ASSESSMENT/MANUAL/DIAGNOSTIC/REPLAY/ARTIFACTS; LIFE-COMMISSION/DISPATCH/CLOSE/CLAIMS/ORIGIN/SOURCE-CHECKS/RECONCILE/REPORT-COVERAGE/LATE-EVIDENCE/LINEAGE/MANUAL/TIME); the nine connector verbs, the six null reasons (`not_enabled` … `manual_override`), `held_in`/`held_out`, `outcome_unknown`, `(target, job_id)` identity, `EvaluationReference`/`MaterialReference`/`JobCrawlerValue`/`JobDownstreamValue`, session `application`/`observation`/`diagnostic` domains, and `ExecutionDescriptor`/`AssistanceRecord` all match the retained contracts.
+- **Source citations:** the eight playbook names, the degree/Microsoft-stack/delegation gaps, the bachelor's-flag rule ("flag, don't auto-exclude"), the legacy `fabricationLog` field, the company/title/location dedup hash, the handoff's "top five this week" thin slice, the seven boundaries and three non-boundaries, the silo-test invariant, the `/run` steps-not-goals surface, the `completed`→execution-only mapping, the manual walkthrough acceptance (pause interval, one commitment, exact replay), the telemetry-plane prohibitions, the env-var secrets policy, P-05's separate-worker recommendation, P-07/P-08/P-10/P-12–P-16, INV-26/INV-30, HA-01–HA-04, and the four-`INCOMPLETE`/nine-`ASSUMED` crawler backlog counts all check out against the cited sources and prior files.
+- **Scope and amendment discipline:** stays on integration (day-one lane, choreography, exchange, gates, acceptance); explicitly records "introduces no further handoff amendment," and no silent override was found. Ends at a coherent boundary; not truncated.
+
+## Recommendation
+
+**Revise** — narrowly: correct the §8 registry row (concern 1), and take the §6.2 suite-count clarification (concern 2) in the same pass. No structural rework is needed.
+
+### Specific actionable changes
+
+1. **§8 "Registry artifact completeness" row (line 312):** verify against the retained `tree/contracts/05-suggested-fix-registry.yaml` (complete: `RuleClass`, `RuleScope`, `RuleInstance`, `VerificationPlan`, `RegistrySnapshot`, `FixReference`, `VerificationReceipt` all fully defined). Either delete the row (if no genuine registry debt remains) or rewrite it to state the actual residual debt, if any — e.g., executable-intake validation still to be run — without claiming an elision or missing core definitions. If the producing model was shown an elided copy at generation time, say that explicitly rather than attributing incompleteness to the retained artifact.
+2. **§6.2 suite-inventory sentence (line 273):** append the HA-04 total, e.g. "…six suite documents with separate internal-binding executions — seven suite instances per HA-04 — not a single whole-system pass/fail test."
+3. **Optional (cosmetic):** line 5 — rephrase "with their companion conformance documents" to "alongside the separately versioned `conformance/` suite documents"; and "independently validated" to "independently specified" (or cite the conformance suite as the validation vehicle).
+
+## Downstream impact
+
+Per the brief, this file is referenced by `prd/01-hellscape.md`, `prd/02-crawler.md`, `prd/03-circus-tent.md`, `prd/04-ringmaster.md`, and `prd/05-job-hunter.md`. The required change is confined to one evidence-debt row (plus an optional one-phrase clarification) and does not alter any normative integration rule, choreography step, gate, or acceptance scenario — so downstream turns already drafted against the choreography, exchange, and acceptance sections need no re-evaluation once the row is corrected; they should simply not inherit the "registry contract is elided" premise.

@@ -1,0 +1,29 @@
+# Review: review-notes.md (turn 20)
+
+## Overall assessment
+
+This file is acceptable with minor concerns. The raw deliverable complies with protocol — a single ```markdown:review-notes.md fence with exactly `<!-- TURN_END:20 -->` after the closing fence and nothing else (runs/turn8-20/deliverables/turn20.md lines 1, 148–149) — ends at a coherent closeout boundary, and answers all ten meta-prompt self-check questions in order (tree/review-notes.md §2 rows 1–10, matching 0-unified-meta-prompt.md SELF-CHECK lines 96–105). It honestly scopes itself to its actual packet — full decisions and integration PRD plus compacted contracts, with conformance bodies and product-PRD bodies explicitly marked unseen (§1) — and every spot-checked extraction (HA-01–HA-04, LIFE/EXT/CF/FIX rule IDs, nine verbs, six null reasons, three domain compositions, M1 acceptance, five-suites conflict) verifies against the cited sources and prior tree files. The three concerns below are tag-precision nits only.
+
+## Concerns
+
+### 1. Amendment-closure claim tagged as extraction rather than inference
+
+- Location: §3, "None of these amendments closes a crawler activation gap, validates a deployment assumption, or establishes a current browser capability. [extracted: decisions/invariants-and-provisionals.md §7]" (tree/review-notes.md line 55).
+- Why it is a problem: decisions §7 closing sentence states only that no supplied evidence closes the four `INCOMPLETE` markers or validates the nine `ASSUMED` values (tree/decisions/invariants-and-provisionals.md line 190); it does not mention browser capability. The broader conclusion is true — HA-01 through HA-04 concern crawler description, core size, day-one chain, and suite count — but it follows by inference from reading the four amendments, not by direct extraction from §7. This is a vague epistemic claim (tag category imprecise), not a fabrication, since the underlying claim is accurate.
+- Severity: cosmetic (note for future turns).
+
+### 2. Production-observation authorization citation is incomplete
+
+- Location: §5, "CI and conformance use local fixtures and synthetic backends rather than live employer portals; production observations belong to separately authorized operating attempts. [extracted: 4-circus-tent-arch.md, Acceptance; 6-get-a-job.xml.txt, AGENTS.md]" (tree/review-notes.md line 113).
+- Why it is a problem: the first clause verifies directly — circus-tent-arch states CI runs "against fixtures — never live sites" (runs/turn8-20/sources/4-circus-tent-arch.md line 408) and AGENTS.md states "Use Firebase Emulator Suite," "Use mock HTML fixtures," "Do not run live portal tests in CI" (runs/turn8-20/sources/AGENTS.md lines 64–66). The second clause ("separately authorized operating attempts") is true in substance but is stated in those terms only by 5-browser-qualification.md ("Live runs additionally require `--allow-live-writes`," "operator-authorized only") and prd/00-integration.md §6.2 ("actual production evidence is an authorized operating activity"), neither of which is cited. The citation should have included 5-browser-qualification.md or the tag should have been inference.
+- Severity: cosmetic (note for future turns).
+
+### 3. Packaging synthesis tagged as extraction rather than inference
+
+- Location: §6, "Current packaging choices remain economical" row, "...none is permission to merge runtimes or postpone applications. [extracted: decisions/invariants-and-provisionals.md P-01 through P-08 and P-15]" (tree/review-notes.md line 128).
+- Why it is a problem: decisions P-01 through P-08 and P-15 supply the individual flip conditions, and the principle is supported by §6 intro plus INV-01/INV-06, but the sentence "none is permission to merge runtimes or postpone applications" is a synthesis across those entries, not a verbatim extraction from any of them. The accurate tag is inference. Not a fabrication; the claim is consistent with the cited decisions.
+- Severity: cosmetic (note for future turns).
+
+## Recommendation
+
+accept with notes

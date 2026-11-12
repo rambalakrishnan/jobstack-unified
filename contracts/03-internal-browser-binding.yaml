@@ -1,0 +1,2869 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: urn:job-application:contracts:internal-browser-binding:browseroxide:0.1.0
+title: BrowserOxide native binding
+description: >-
+  Review draft of the BrowserOxide-only synchronous primitive contract.
+  This is the first of two independent schema documents in this file.
+  It is not a browser-neutral dispatcher, an external connector, or a selection
+  of Ringmaster's packaging. Native Page, DOM, solver, and V8 objects retain
+  their native ownership and lifetime rules.
+x-status: proposed
+x-source: "1-handoff-brief.txt Parts III, V, VI, and VIII; governing task, Products."
+
+x-source-index:
+  handoff: &h "1-handoff-brief.txt, Parts III, V, VI, and VIII–X"
+  engine: &e "2-state-bank-crawler-blueprint.json, §§3–4, 5.5, 9–10, and Decision 2"
+  acquisition: &a "2-state-bank-crawler-blueprint.json, §§3, 7–8, and 13"
+  diagnostic: &d "3-hellscape-blueprint.md, §§3–5 and 10"
+  qualification: &q "5-browser-qualification.md, Evidence discipline"
+  kernel: &k "contracts/00-evidence-kernel.yaml, evidence-kernel/0.1.0"
+  external: &x "contracts/02-external-connector.yaml, external-connector/0.1.0"
+  task: &t "Governing task, Products: BrowserOxide direct DOM/V8 access and open Ringmaster packaging decision."
+  wire: &w >-
+    Proposed BrowserOxide-only primitive and evidence representations.
+    Operation names and argument/result shapes below are contract proposals,
+    not assertions that these exact Rust methods already exist.
+
+x-contract:
+  name: internal-browser-binding/browseroxide
+  version: 0.1.0
+  maturity: review_draft
+  owner: contracts
+  implementation_owner: BrowserOxide_binding_maintainer
+  consumers: [crawler, Ringmaster]
+  conformance_suite: conformance/03-internal-browser-binding.md
+  suite_instance: BrowserOxide
+  schema_entrypoints:
+    - "#/$defs/BOBindingDescriptor"
+    - "#/$defs/BOPrimitiveRecord"
+    - "#/$defs/BODomExport"
+  execution_shape: synchronous_native_primitive
+  external_connector_version: external-connector/0.1.0
+  evidence_kernel_version: evidence-kernel/0.1.0
+  x-status: proposed
+  x-source: *h
+
+x-boundary:
+  rule: >-
+    BrowserOxide scraping and application execution may share BrowserOxide-native
+    implementation. Neither shares primitives, handles, selector machinery, or
+    implementation with the Camoufox binding. Shared definitions copied here
+    describe evidence, not a cross-browser runtime interface.
+  packaging: >-
+    Ringmaster's in-process/FFI, separate-binary/API, or extension/controller
+    packaging decision remains open for its PRD. Wherever the native operation
+    executes, its Page and isolate stay on their owning OS thread. A process
+    boundary may carry owned data, never a live DOM/V8 pointer.
+  purpose: >-
+    This binding enables discovery and real applications; its construction or
+    qualification must not delay manually recorded production applications.
+    An HTTP-only crawler slice may publish its actual narrower scope without
+    claiming unexercised browser capabilities.
+  x-status: inferred
+  x-source: "1-handoff-brief.txt Parts V and VII–IX; governing task, Products."
+
+x-representation:
+  rule: >-
+    PrimitiveRecord is an audit representation of a typed native call and its
+    return, not a JSON RPC protocol. Same-thread code may use native borrows
+    directly; it is not required to serialize the DOM to call another native
+    operation. BOPageRef, BORootRef, and BONodeRef are diagnostic identities
+    attached to live native objects. Deserializing one never creates a usable
+    native handle or grants permission.
+  validation: >-
+    Parse this YAML document independently of the Camoufox document. Resolve
+    only local schema references. Enforce JSON Schema 2020-12 plus BO rules,
+    date-time formats, reference resolution, authorization, and hash checks.
+    Reject duplicate mapping keys, non-finite numbers, unknown versions, and
+    undeclared fields. Raw null is accepted only inside Missing.value.
+  timing: >-
+    A binding's own elapsed timer is subject_reported evidence, even if measured
+    accurately with a monotonic clock. Browser-origin measurements are separately
+    browser_measured. The consumer's independent engine_measured timing is not
+    replaced by either. Configuration limits are not measurements.
+  x-status: proposed
+  x-source: "contracts/00-evidence-kernel.yaml; 2-state-bank-crawler-blueprint.json §5.5."
+
+x-source-reconciliation:
+  - decision: >-
+      The supplied crawler blueprint already specifies Rust/BrowserOxide
+      transport, thread, and session behavior. Those detailed constraints are
+      retained; no Camoufox crawler assumption is imported into this binding.
+    x-status: extracted
+    x-source: *e
+  - decision: >-
+      Page::from_html, Page::challenge_verdict, reset_for_reuse,
+      navigate_with_init(client), HttpClient::shared(profile), and ordinary
+      HttpClient::clone are documentary native anchors. Their complete Rust
+      signatures and current implementation inventory are not supplied.
+      The proposed primitives below require explicit versioned native mappings.
+    x-status: inferred
+    x-source: *e
+  - decision: >-
+      HTTP acquisition remains a first-class BrowserOxide facility. Page is not
+      treated as an operational superset: incomplete browser rendering may
+      coexist with a complete response from the correctly retained live client.
+    x-status: extracted
+    x-source: "2-state-bank-crawler-blueprint.json §§3.2 and 3.6."
+  - decision: >-
+      No supplied source establishes current screenshot, file-assignment,
+      closed-root, trusted-input, or native-interruption support for a particular
+      BrowserOxide build. Naming a primitive reserves a contract, not a present
+      capability.
+    x-status: uncertain
+    x-source: "The current BrowserOxide source/API inventory and executed binding evidence are absent."
+  - decision: >-
+      No handoff amendment is introduced. Browser-specific catalog and audit
+      encodings are proposed mechanisms; no new native capability is assumed.
+    x-status: proposed
+    x-source: *w
+
+x-native-catalog:
+  required_capability_ids:
+    - bo.direct_dom
+    - bo.direct_v8
+    - bo.live_http_client
+    - bo.http_pool_sharing
+    - bo.offline_from_html
+    - bo.frame_dom
+    - bo.open_shadow_dom
+    - bo.closed_shadow_dom
+    - bo.dom_value_mutation
+    - bo.composed_event_dispatch
+    - bo.file_assignment
+    - bo.raster_capture
+    - bo.reset_dom_invalidation
+    - bo.native_deadline_interruption
+  rule: >-
+    These IDs form the minimum BrowserOxide catalog. Each appears exactly once
+    in the pinned capability catalog and descriptor, including unknown entries.
+    Additional capabilities require an explicitly versioned catalog. New
+    primitives require a BrowserOxide schema revision, not a matching Camoufox
+    operation or a browser-neutral escape hatch.
+  flip_condition: >-
+    Refine this proposed inventory when the pinned engine API and native
+    conformance fixtures establish better primitive boundaries. Preserve direct
+    access, native ownership, and truthful unsupported results.
+  x-status: proposed
+  x-source: *w
+
+x-rules:
+  - id: BO-NATIVE
+    classification: invariant
+    rule: >-
+      Mapped operations enter BrowserOxide's native API directly. DOM and V8
+      operations must not route through CDP, Playwright, Juggler, another browser,
+      or a shared browser adapter. Reading serialized HTML through a bridge is
+      not evidence of direct native DOM access.
+    derivation: >-
+      The Stagehand-on-Juggler failure shows why a lowest-common-denominator
+      internal abstraction removes the capabilities the framework needs.
+    x-status: extracted
+    x-source: *h
+
+  - id: BO-THREAD
+    classification: invariant
+    rule: >-
+      Allocate, enter, reset, and destroy a Page on its owning OS thread.
+      Page, isolate-local values, DOM borrows, solver instances, and closures
+      capturing them never cross that thread boundary. A call is synchronous:
+      it returns a value or a typed failure, not a task handle for later polling.
+    consequence: >-
+      Queues and durable I/O may yield outside native execution. Cross-thread
+      messages contain owned bytes, immutable descriptions, IDs, and only those
+      live HTTP-client handles whose Send/sharing semantics are established.
+      Reject wrong-thread use before entering the engine.
+    derivation: "The supplied Page contract is stricter than merely locking a V8 isolate."
+    x-status: extracted
+    x-source: *e
+
+  - id: BO-HTTP
+    classification: invariant
+    rule: >-
+      Preserve live-client identity, pool identity, profile, session domain,
+      epoch, request order, and cookie-application order. An ordinary client
+      clone has an independent pool; it is not a shared-pool handle.
+      Stateful and rotating sessions admit at most one request affecting a jar
+      until redirects and cookie updates have completed.
+    consequence: >-
+      With a process-global SharedSession, independent session domains use
+      separate engine processes unless namespacing is independently verified.
+      A persisted cookie snapshot is recovery evidence, not permission to
+      distribute a rotating session or resume it after an owner crash.
+    derivation: "Concurrent Set-Cookie application and accidental process-global sharing break session continuity."
+    x-status: extracted
+    x-source: *e
+
+  - id: BO-OFFLINE
+    classification: invariant
+    rule: >-
+      bo.from_html performs no network acquisition. Its inputs and required
+      rendering resources must already be available. If required resources are
+      absent, report an unmet precondition; the acquisition controller may then
+      choose a separately evidenced cold navigation.
+    consequence: >-
+      Preserve each transport attempt and verdict. Neither successful bootstrap
+      nor challenge clearance alone establishes accepted job content.
+      Structured JSON must be validated and normalized before an HTML-only
+      render classifier receives it.
+    derivation: "The hybrid acquisition contract cannot be reproduced if from_html secretly fetches."
+    x-status: extracted
+    x-source: *a
+
+  - id: BO-DOM
+    classification: invariant
+    rule: >-
+      Native DOM observations retain frame, document, root, and node identity.
+      Navigation, replacement, reset, and destruction invalidate affected
+      identities before reuse. Removed/replaced nodes cannot be resurrected by
+      reusing an ID. Reject stale references before mutation.
+    consequence: >-
+      Report inaccessible frames, closed roots, truncation, and observation gaps
+      explicitly. Missing access is not an empty complete tree. Direct DOM access
+      does not by itself establish closed-root access, rendering fidelity,
+      trusted input, isolation, or origin compatibility.
+    derivation: "Observation coverage and native access are different properties."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Parts III and VI; 3-hellscape-blueprint.md §§2.1 and 4."
+
+  - id: BO-INPUT
+    classification: invariant
+    rule: >-
+      Direct property mutation, synthetic DOM event dispatch, and native browser
+      input are different mechanisms. This catalog exposes property mutation
+      and event dispatch explicitly; it does not label either as trusted user
+      input. Preserve bubbles, cancelable, and composed settings and actual
+      event observations.
+    consequence: >-
+      A returned native call, None/unit return, setter readback, or dispatched
+      click event is not application acceptance or commitment. No hidden
+      selector healing, planner, retry loop, alternate browser, or direct
+      employer API submission may be added by the binding.
+    derivation: "Acknowledgement is not semantic success; undisclosed assistance corrupts attribution."
+    x-status: inferred
+    x-source: "5-browser-qualification.md; 3-hellscape-blueprint.md §§4.6 and 5.4."
+
+  - id: BO-AUTHORITY
+    classification: invariant
+    rule: >-
+      Every call is bound to an admitted task/resource grant. Artifact references,
+      scripts, node IDs, and URLs do not grant authority. Crawler acquisition and
+      extraction cannot invoke application mutations through DOM writes, V8
+      evaluation, redirects, or a query POST with hidden write semantics.
+    consequence: >-
+      bo.http_exchange is acquisition-only. Application interaction requires
+      the separately commissioned executor scope. Script evaluation obeys the
+      same target, data, and effect permissions as other primitives.
+    derivation: "The crawler's write-action stub and Oregon self-referral counterexample prohibit acquisition-to-apply escalation."
+    x-status: extracted
+    x-source: *a
+
+  - id: BO-REUSE
+    classification: invariant
+    rule: >-
+      reset_for_reuse clears the native DOM registry and invalidates old DOM
+      references while preserving the intended cookie jar. Increment the page
+      generation before making a reset Page available again. Reuse is confined
+      to compatible process, profile, target, and session-generation scope.
+    consequence: >-
+      A failed reset quarantines the Page for owner-thread destruction.
+      Bootstrap remains cold. No retained Page or solver moves to a replacement
+      worker, and no pool reset proves browser-state isolation.
+    derivation: "Warmth must not retain stale native objects or cross session ownership."
+    x-status: extracted
+    x-source: "2-state-bank-crawler-blueprint.json §§9.6 and 10."
+
+  - id: BO-TIME
+    classification: invariant
+    rule: >-
+      Every measurement identifies origin, clock_id, and boot_id and uses exact,
+      bounded, or unavailable estimation with censoring. Endpoint subtraction
+      requires one registered clock/boot/origin and ordered endpoints. Zero is
+      valid. UTC is annotation only.
+    consequence: >-
+      A local waiting deadline is not a native timeout or proof of interruption.
+      If a synchronous engine call cannot be interrupted, the supervisor may
+      contain its owner separately; the binding records uncertainty rather than
+      inventing native cancellation. Do not compare offsets across restarts.
+    derivation: "The _elapsed() defect and the qualification timeout distinction forbid default-zero and timeout-as-cancel semantics."
+    x-status: extracted
+    x-source: *h
+
+  - id: BO-EVIDENCE
+    classification: invariant
+    rule: >-
+      Journal the evidence needed to reconstruct a call before citing its
+      record. Mutating calls require a durable authorized intent before native
+      entry. Install immutable artifacts before registration. Record native
+      returns and errors without strengthening their semantics.
+    consequence: >-
+      Primitive records are observations or subject claims, never origin facts.
+      The ingestion authority assigns provenance; these records cannot set it.
+      Timings copied into the kernel retain their original origin. Secrets stay
+      in controlled session storage; sensitive native bytes are restricted
+      artifacts. A record cannot cite its own future registration.
+    derivation: "Unjournaled native observations cannot become retroactive diagnostic evidence."
+    x-status: inferred
+    x-source: "contracts/00-evidence-kernel.yaml; 3-hellscape-blueprint.md §§3.3 and 10."
+
+  - id: BO-CAPS
+    classification: invariant
+    rule: >-
+      Capability evidence is scoped to the exact binding build, engine build,
+      configuration, mode, and interface surface. A new subject version starts
+      unknown. Mapped does not mean exercised; unsupported mapping does not
+      establish native absence. Capability, opportunity, and result remain
+      separate in the consumer's diagnostic.
+    consequence: >-
+      The BrowserOxide suite must prove actual direct DOM/V8 access for a
+      full-strength binding claim; that test cannot be exempted away. A narrower
+      HTTP-only release must identify unexercised browser capabilities.
+      Passing a binding fixture does not qualify an employer origin.
+    derivation: "No inheritance and held-in/held-out separation prevent untested capability promotion."
+    x-status: extracted
+    x-source: *h
+
+x-open-evidence:
+  - missing: Current BrowserOxide API inventory, build identity, and native action/capture implementations.
+    resolution: >-
+      Inspect the pinned engine source and compile minimal owner-thread fixtures
+      for direct DOM, V8, frames/roots, event semantics, upload, capture, and
+      interruption. Record exact native symbols and executed evidence separately.
+      Until then, descriptors must not advertise these as demonstrated.
+    x-status: uncertain
+    x-source: "2-state-bank-crawler-blueprint.json references an engine inventory but does not supply it."
+  - missing: Engine-level namespacing of process-global session storage.
+    resolution: >-
+      Run same-origin controlled write/read and rotating-cookie tests with valid
+      controls. Until established, preserve the source's separate-process
+      allocation for independent session domains.
+    x-status: uncertain
+    x-source: "2-state-bank-crawler-blueprint.json Decision 2 and §9."
+
+oneOf:
+  - $ref: "#/$defs/BOBindingDescriptor"
+  - $ref: "#/$defs/BOPrimitiveRecord"
+  - $ref: "#/$defs/BODomExport"
+
+$defs:
+  SchemaVersion:
+    const: internal-browser-binding.browseroxide/0.1.0
+    x-status: proposed
+    x-source: *w
+
+  Identifier:
+    type: string
+    minLength: 1
+    x-status: extracted
+    x-source: *k
+
+  Revision:
+    type: integer
+    minimum: 0
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  PositiveInteger:
+    type: integer
+    minimum: 1
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  Digest:
+    type: string
+    pattern: '^sha256:[0-9a-f]{64}$'
+    x-status: extracted
+    x-source: *k
+
+  Missing:
+    type: object
+    additionalProperties: false
+    required: [value, reason]
+    properties:
+      value: {type: "null", x-status: extracted, x-source: *k}
+      reason:
+        enum: [not_enabled, not_applicable, not_observed, observation_lost, unsupported_by_subject, manual_override]
+        x-status: extracted
+        x-source: *k
+      detail: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Inapplicable:
+    allOf:
+      - $ref: "#/$defs/Missing"
+      - properties: {reason: {const: not_applicable}}
+    x-status: extracted
+    x-source: *k
+
+  MaybeString:
+    oneOf:
+      - $ref: "#/$defs/Identifier"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  EvidenceRef:
+    type: object
+    additionalProperties: false
+    required: [journal_id, sequence, event_id, event_hash, pointer]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      event_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      event_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      pointer: {type: string, pattern: '^(?:/(?:[^~/]|~[01])*)*$', x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  EvidenceRefs:
+    type: array
+    uniqueItems: true
+    items: {$ref: "#/$defs/EvidenceRef"}
+    x-status: extracted
+    x-source: *k
+
+  SupportRefs:
+    allOf:
+      - $ref: "#/$defs/EvidenceRefs"
+      - minItems: 1
+    x-status: extracted
+    x-source: *k
+
+  JournalPrefix:
+    type: object
+    additionalProperties: false
+    required: [journal_id, last_sequence, head_hash]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      last_sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      head_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ArtifactReference:
+    type: object
+    additionalProperties: false
+    required: [digest, size_bytes, media_type, owner_domain, access]
+    properties:
+      digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      size_bytes: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *k}
+      media_type: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      access: {enum: [public, restricted], x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  MaybeArtifact:
+    oneOf:
+      - $ref: "#/$defs/ArtifactReference"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *x
+
+  VersionPin:
+    type: object
+    additionalProperties: false
+    required: [id, version, artifact_digest]
+    properties:
+      id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      artifact_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  TimePoint:
+    type: object
+    additionalProperties: false
+    required: [clock_id, boot_id, origin, monotonic_offset_ms, utc_annotation]
+    properties:
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      origin:
+        enum: [engine_measured, browser_measured, subject_reported, manual_reference]
+        x-status: extracted
+        x-source: *k
+      monotonic_offset_ms: {type: number, minimum: 0, x-status: extracted, x-source: *k}
+      utc_annotation:
+        oneOf:
+          - {type: string, format: date-time}
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  Estimate:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: exact, x-status: extracted, x-source: *k}
+          value: {type: number, x-status: extracted, x-source: *k}
+      - type: object
+        additionalProperties: false
+        required: [kind, lower_bound, upper_bound]
+        properties:
+          kind: {const: bounded, x-status: extracted, x-source: *k}
+          lower_bound:
+            oneOf: [{type: number}, {$ref: "#/$defs/Missing"}]
+            x-status: extracted
+            x-source: *k
+          upper_bound:
+            oneOf: [{type: number}, {$ref: "#/$defs/Missing"}]
+            x-status: extracted
+            x-source: *k
+        anyOf:
+          - properties: {lower_bound: {type: number}}
+          - properties: {upper_bound: {type: number}}
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: unavailable, x-status: extracted, x-source: *k}
+          value: {$ref: "#/$defs/Missing", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Measurement:
+    type: object
+    additionalProperties: false
+    required: [measurement_id, name, scope, quantity, unit, origin, clock_id, boot_id, method, start, end, estimate, resolution, censoring, comparability_group]
+    properties:
+      measurement_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      name: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      scope:
+        type: object
+        additionalProperties: false
+        required: [kind, id]
+        properties:
+          kind:
+            enum: [run, session, connector_call, workflow_step, application_operation, native_primitive, recovery, discovery, capability, resource]
+            x-status: extracted
+            x-source: *k
+          id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+        x-status: extracted
+        x-source: *k
+      quantity: {enum: [duration, scalar], x-status: extracted, x-source: *k}
+      unit: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      origin:
+        enum: [engine_measured, browser_measured, subject_reported, manual_reference]
+        x-status: extracted
+        x-source: *k
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      method:
+        enum: [endpoint_difference, source_value, evidence_bound, unavailable]
+        x-status: extracted
+        x-source: *k
+      start:
+        oneOf: [{$ref: "#/$defs/TimePoint"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      end:
+        oneOf: [{$ref: "#/$defs/TimePoint"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      estimate: {$ref: "#/$defs/Estimate", x-status: extracted, x-source: *k}
+      resolution:
+        oneOf: [{type: number, minimum: 0}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      censoring: {enum: [none, left, right, both, unavailable], x-status: extracted, x-source: *k}
+      comparability_group: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {quantity: {const: duration}}}
+        then:
+          properties:
+            unit: {const: ms}
+            estimate:
+              properties:
+                value: {minimum: 0}
+                lower_bound: {minimum: 0}
+                upper_bound: {minimum: 0}
+      - if: {properties: {estimate: {properties: {kind: {const: exact}}}}}
+        then:
+          properties:
+            method: {enum: [endpoint_difference, source_value]}
+            censoring: {const: none}
+      - if: {properties: {estimate: {properties: {kind: {const: bounded}}}}}
+        then:
+          properties:
+            method: {const: evidence_bound}
+            censoring: {enum: [none, left, right, both]}
+      - if: {properties: {estimate: {properties: {kind: {const: unavailable}}}}}
+        then:
+          properties:
+            method: {const: unavailable}
+            censoring: {const: unavailable}
+      - if: {properties: {method: {const: endpoint_difference}}}
+        then:
+          properties:
+            quantity: {const: duration}
+            start: {$ref: "#/$defs/TimePoint"}
+            end: {$ref: "#/$defs/TimePoint"}
+            estimate: {properties: {kind: {const: exact}}}
+    description: >-
+      Enforce same-clock/boot/origin endpoint arithmetic, ordered bounds, and
+      clock registration semantically. No native value is silently corrected.
+    x-status: extracted
+    x-source: *k
+
+  DurationLimit:
+    type: object
+    additionalProperties: false
+    required: [kind, unit, value]
+    properties:
+      kind: {const: exact, x-status: extracted, x-source: *x}
+      unit: {const: ms, x-status: extracted, x-source: *x}
+      value: {type: number, minimum: 0, x-status: extracted, x-source: *x}
+    x-status: extracted
+    x-source: *x
+
+  ComponentIdentity:
+    type: object
+    additionalProperties: false
+    required: [component, reported_version, build_digest, configuration_digest]
+    properties:
+      component: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      reported_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      build_digest:
+        oneOf: [{$ref: "#/$defs/Digest"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      configuration_digest:
+        oneOf: [{$ref: "#/$defs/Digest"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  SubjectIdentity:
+    type: object
+    additionalProperties: false
+    required: [subject_id, subject_version, revision_basis, native_revision, configured_mode, interface_surface, configuration_digest, stack]
+    properties:
+      subject_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      subject_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      revision_basis:
+        enum: [native_revision, source_digest, operator_attestation, unknown]
+        x-status: extracted
+        x-source: *k
+      native_revision: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      configured_mode: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      interface_surface: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      configuration_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      stack:
+        type: array
+        items: {$ref: "#/$defs/ComponentIdentity"}
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  CapabilityRecord:
+    type: object
+    additionalProperties: false
+    required: [capability_id, requirement_refs, availability, claim_origin, evidence, limitations]
+    properties:
+      capability_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      requirement_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *k
+      availability: {enum: [present, absent, unknown, not_applicable], x-status: extracted, x-source: *k}
+      claim_origin: {enum: [native, composed_subject, harness], x-status: extracted, x-source: *k}
+      evidence:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required: [basis, ref]
+          properties:
+            basis:
+              enum: [documentation, executed_observation, source_diagnosis, operator_attestation]
+              x-status: extracted
+              x-source: *k
+            ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *k}
+        x-status: extracted
+        x-source: *k
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *k
+    allOf:
+      - if: {properties: {availability: {enum: [present, absent, not_applicable]}}}
+        then: {properties: {evidence: {minItems: 1}}}
+    x-status: extracted
+    x-source: *k
+
+  CapabilityDescriptor:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, descriptor_id, descriptor_revision, declared_by, subject, catalog, evidence_prefix, supersedes, capabilities]
+    properties:
+      record_type: {const: capability_descriptor, x-status: extracted, x-source: *k}
+      schema_version: {const: evidence-kernel/0.1.0, x-status: extracted, x-source: *k}
+      descriptor_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      descriptor_revision: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      declared_by: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      subject: {$ref: "#/$defs/SubjectIdentity", x-status: extracted, x-source: *k}
+      catalog: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *k}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *k}
+      supersedes:
+        oneOf: [{$ref: "#/$defs/Digest"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      capabilities:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/CapabilityRecord"}
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  BOOwner:
+    type: object
+    additionalProperties: false
+    required: [process_id, boot_id, os_thread_id]
+    properties:
+      process_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      os_thread_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+    description: One native ownership lifetime; OS identifier reuse does not reuse this identity.
+    x-status: proposed
+    x-source: *e
+
+  BOPageRef:
+    type: object
+    additionalProperties: false
+    required: [owner, page_id, page_generation, profile_digest]
+    properties:
+      owner: {$ref: "#/$defs/BOOwner", x-status: proposed, x-source: *w}
+      page_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      page_generation: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      profile_digest: {$ref: "#/$defs/Digest", x-status: inferred, x-source: *e}
+    x-status: proposed
+    x-source: *w
+
+  BORootRef:
+    type: object
+    additionalProperties: false
+    required: [page, frame_id, document_generation, root_id, root_kind]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+      frame_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      document_generation: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      root_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      root_kind: {enum: [document, open_shadow, closed_shadow], x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  BONodeRef:
+    type: object
+    additionalProperties: false
+    required: [root, node_id, node_generation]
+    properties:
+      root: {$ref: "#/$defs/BORootRef", x-status: proposed, x-source: *w}
+      node_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      node_generation: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+    description: Audit identity of a thread-confined native DOM reference, not a portable element handle.
+    x-status: proposed
+    x-source: *w
+
+  BOClientRef:
+    type: object
+    additionalProperties: false
+    required: [process_id, boot_id, client_id, session_domain_id, session_epoch, pool_id, profile_digest]
+    properties:
+      process_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      client_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      session_domain_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      session_epoch: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      pool_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      profile_digest: {$ref: "#/$defs/Digest", x-status: inferred, x-source: *e}
+    description: Names a live native client and pool, never a frozen cookie bundle.
+    x-status: proposed
+    x-source: *w
+
+  BOPrimitive:
+    enum:
+      - bo.client_create
+      - bo.http_exchange
+      - bo.page_create
+      - bo.navigate
+      - bo.from_html
+      - bo.dom_read
+      - bo.dom_write
+      - bo.event_dispatch
+      - bo.v8_evaluate
+      - bo.assign_files
+      - bo.capture
+      - bo.render_verdict
+      - bo.reset_for_reuse
+      - bo.page_destroy
+    x-status: proposed
+    x-source: *w
+
+  BOMapping:
+    type: object
+    additionalProperties: false
+    required: [primitive, mapping_state, native_symbol, native_contract, evidence_refs]
+    properties:
+      primitive: {$ref: "#/$defs/BOPrimitive", x-status: proposed, x-source: *w}
+      mapping_state: {enum: [mapped, unmapped], x-status: proposed, x-source: *w}
+      native_symbol: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+      native_contract:
+        oneOf: [{$ref: "#/$defs/VersionPin"}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *k}
+    allOf:
+      - if: {properties: {mapping_state: {const: mapped}}}
+        then:
+          properties:
+            native_symbol: {$ref: "#/$defs/Identifier"}
+            native_contract: {$ref: "#/$defs/VersionPin"}
+            evidence_refs: {minItems: 1}
+    description: A native mapping declaration is not an executed capability assessment.
+    x-status: proposed
+    x-source: *w
+
+  BOBindingDescriptor:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, binding_id, binding_build, engine, capabilities, primitive_mappings, session_storage_model, session_isolation_refs, privacy_policy, evidence_prefix]
+    properties:
+      record_type: {const: browseroxide_binding_descriptor, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      binding_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      binding_build: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      engine: {$ref: "#/$defs/ComponentIdentity", x-status: inferred, x-source: *q}
+      capabilities: {$ref: "#/$defs/CapabilityDescriptor", x-status: extracted, x-source: *k}
+      primitive_mappings:
+        type: array
+        minItems: 14
+        maxItems: 14
+        items: {$ref: "#/$defs/BOMapping"}
+        x-status: proposed
+        x-source: *w
+      session_storage_model:
+        enum: [process_global, verified_namespaced, unknown]
+        x-status: proposed
+        x-source: *e
+      session_isolation_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *e}
+      privacy_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {session_storage_model: {const: verified_namespaced}}}
+        then: {properties: {session_isolation_refs: {minItems: 1}}}
+    description: >-
+      Each primitive appears exactly once. capabilities.subject identifies this
+      binding build and complete configured engine stack, not an automatically
+      equivalent Ringmaster or crawler capability claim. Unknown session storage
+      cannot be treated as isolated. Register the descriptor before use.
+    x-status: proposed
+    x-source: *w
+
+  BOClientCreate:
+    type: object
+    additionalProperties: false
+    required: [profile, mode, source_client, session_domain_id]
+    properties:
+      profile: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *e}
+      mode: {enum: [create_retained, share_process, clone_independent], x-status: proposed, x-source: *e}
+      source_client:
+        oneOf: [{$ref: "#/$defs/BOClientRef"}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      session_domain_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+    allOf:
+      - if: {properties: {mode: {const: clone_independent}}}
+        then: {properties: {source_client: {$ref: "#/$defs/BOClientRef"}}}
+    description: A clone must return a distinct pool_id; sharing must preserve the actual shared pool.
+    x-status: proposed
+    x-source: *w
+
+  BOHttpExchange:
+    type: object
+    additionalProperties: false
+    required: [client, url, method, headers, body, acquisition_policy, session_mode, request_sequence, cookie_generation]
+    properties:
+      client: {$ref: "#/$defs/BOClientRef", x-status: proposed, x-source: *w}
+      url: {type: string, format: uri, pattern: '^https?://', x-status: proposed, x-source: *w}
+      method: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *a}
+      headers: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *a}
+      body: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *a}
+      acquisition_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      session_mode: {enum: [sessionless, stateful, rotating], x-status: proposed, x-source: *e}
+      request_sequence: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *e}
+      cookie_generation: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *e}
+    description: Non-mutating acquisition semantics are checked by policy, not inferred from HTTP method.
+    x-status: proposed
+    x-source: *w
+
+  BOHttpReturn:
+    type: object
+    additionalProperties: false
+    required: [client, request_sequence, cookie_generation, response_status, headers, body, final_url]
+    properties:
+      client: {$ref: "#/$defs/BOClientRef", x-status: proposed, x-source: *w}
+      request_sequence: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *e}
+      cookie_generation: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *e}
+      response_status:
+        oneOf: [{type: integer, minimum: 100, maximum: 599}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      headers: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *a}
+      body: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *a}
+      final_url: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *a}
+    description: Return follows cookie application; HTTP status is not authentication, render acceptance, or content relevance.
+    x-status: proposed
+    x-source: *w
+
+  BOPageCreate:
+    type: object
+    additionalProperties: false
+    required: [profile, native_options, client]
+    properties:
+      profile: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *e}
+      native_options: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      client:
+        oneOf: [{$ref: "#/$defs/BOClientRef"}, {$ref: "#/$defs/Missing"}]
+        x-status: inferred
+        x-source: *e
+    description: Constructor/initialization options validate against the pinned native mapping, not a shared browser option schema.
+    x-status: proposed
+    x-source: *w
+
+  BONavigate:
+    type: object
+    additionalProperties: false
+    required: [page, url, client, navigation_policy]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+      url: {type: string, format: uri, x-status: proposed, x-source: *w}
+      client:
+        oneOf: [{$ref: "#/$defs/BOClientRef"}, {$ref: "#/$defs/Missing"}]
+        x-status: inferred
+        x-source: *e
+      navigation_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+    description: Policy pins native iteration/deadline behavior and any operational solver; it cannot lengthen the task ceiling.
+    x-status: proposed
+    x-source: *w
+
+  BOFromHtml:
+    type: object
+    additionalProperties: false
+    required: [page, html, base_url, network, complete_input_refs]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+      html: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *a}
+      base_url: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+      network: {const: forbidden, x-status: extracted, x-source: *a}
+      complete_input_refs: {$ref: "#/$defs/SupportRefs", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  BORenderVerdict:
+    enum: [Pass, ThinShell, RenderIncomplete, EdgeBlock, SensorFail, ChallengeIncomplete]
+    x-status: extracted
+    x-source: *a
+
+  BONavigationReturn:
+    type: object
+    additionalProperties: false
+    required: [page, document_root, final_url, verdict, response_evidence]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+      document_root:
+        oneOf: [{$ref: "#/$defs/BORootRef"}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      final_url: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *a}
+      verdict:
+        oneOf: [{$ref: "#/$defs/BORenderVerdict"}, {$ref: "#/$defs/Missing"}]
+        x-status: inferred
+        x-source: *a
+      response_evidence: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *a}
+    description: A native return may expose an incomplete document; no implicit application or content success is attached.
+    x-status: proposed
+    x-source: *w
+
+  BODomRead:
+    type: object
+    additionalProperties: false
+    required: [root, selector, depth_limit, byte_limit, include_frames, include_accessible_shadow_roots]
+    properties:
+      root: {$ref: "#/$defs/BORootRef", x-status: proposed, x-source: *w}
+      selector:
+        $ref: "#/$defs/MaybeString"
+        description: Native CSS query where supported; not_applicable requests the rooted subtree.
+        x-status: proposed
+        x-source: *w
+      depth_limit: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      byte_limit: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      include_frames: {type: boolean, x-status: proposed, x-source: *w}
+      include_accessible_shadow_roots: {type: boolean, x-status: proposed, x-source: *w}
+    description: Unsupported selector grammar or root access is explicit; it is not emulated through another browser.
+    x-status: proposed
+    x-source: *w
+
+  BOBoundary:
+    type: object
+    additionalProperties: false
+    required: [boundary_id, kind, root, access, limitation]
+    properties:
+      boundary_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      kind: {enum: [frame, open_shadow, closed_shadow], x-status: proposed, x-source: *w}
+      root:
+        oneOf: [{$ref: "#/$defs/BORootRef"}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      access: {enum: [complete, partial, unavailable, unobserved], x-status: proposed, x-source: *w}
+      limitation: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+    description: Partial/unavailable/unobserved access requires an explanatory limitation; no empty-tree substitution.
+    x-status: proposed
+    x-source: *w
+
+  BODomNode:
+    type: object
+    additionalProperties: false
+    required: [ref, parent, node_name, attributes, text]
+    properties:
+      ref: {$ref: "#/$defs/BONodeRef", x-status: proposed, x-source: *w}
+      parent:
+        oneOf: [{$ref: "#/$defs/BONodeRef"}, {$ref: "#/$defs/Inapplicable"}]
+        x-status: proposed
+        x-source: *w
+      node_name: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      attributes:
+        type: object
+        additionalProperties: {type: string}
+        x-status: proposed
+        x-source: *w
+      text:
+        oneOf: [{type: string}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+    description: Empty text/attributes are known observed emptiness, not unavailable DOM access.
+    x-status: proposed
+    x-source: *w
+
+  BODomExport:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, root, nodes, boundaries, completeness, limitations]
+    properties:
+      record_type: {const: browseroxide_dom_export, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      root: {$ref: "#/$defs/BORootRef", x-status: proposed, x-source: *w}
+      nodes:
+        type: array
+        items: {$ref: "#/$defs/BODomNode"}
+        x-status: proposed
+        x-source: *w
+      boundaries:
+        type: array
+        items: {$ref: "#/$defs/BOBoundary"}
+        x-status: proposed
+        x-source: *w
+      completeness: {enum: [complete, partial, unknown], x-status: proposed, x-source: *w}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: proposed
+        x-source: *w
+    description: >-
+      Native DOM audit projection, not a replacement for native DOM access.
+      Node identities are unique; parent references resolve within the captured
+      graph or are explicitly excluded by the declared rooted query. Completeness
+      applies only to that query, depth, and boundary scope. Truncation/redaction
+      is disclosed. Persist sensitive exports as restricted artifacts.
+    x-status: proposed
+    x-source: *w
+
+  BODomWrite:
+    type: object
+    additionalProperties: false
+    required: [node, property, value]
+    properties:
+      node: {$ref: "#/$defs/BONodeRef", x-status: proposed, x-source: *w}
+      property: {enum: [value, checked, selected], x-status: proposed, x-source: *w}
+      value: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+    description: One direct native property mutation; event dispatch is separate and never implicit.
+    x-status: proposed
+    x-source: *w
+
+  BOEventDispatch:
+    type: object
+    additionalProperties: false
+    required: [node, event_type, bubbles, cancelable, composed, detail]
+    properties:
+      node: {$ref: "#/$defs/BONodeRef", x-status: proposed, x-source: *w}
+      event_type: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      bubbles: {type: boolean, x-status: proposed, x-source: *w}
+      cancelable: {type: boolean, x-status: proposed, x-source: *w}
+      composed: {type: boolean, x-status: proposed, x-source: *w}
+      detail: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+    description: A synthetic DOM event, not a claim of trusted user interaction.
+    x-status: proposed
+    x-source: *w
+
+  BOMutationReturn:
+    type: object
+    additionalProperties: false
+    required: [node, native_return, readback, event_observation]
+    properties:
+      node: {$ref: "#/$defs/BONodeRef", x-status: proposed, x-source: *w}
+      native_return: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+      readback: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+      event_observation: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+    description: Optional independent readback/event evidence does not establish application acceptance.
+    x-status: proposed
+    x-source: *w
+
+  BOV8Evaluate:
+    type: object
+    additionalProperties: false
+    required: [root, script, argument]
+    properties:
+      root: {$ref: "#/$defs/BORootRef", x-status: proposed, x-source: *w}
+      script: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      argument: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+    description: Executes in the root's owning native isolate; no V8 handle escapes in the serialized result.
+    x-status: proposed
+    x-source: *w
+
+  BOV8Return:
+    type: object
+    additionalProperties: false
+    required: [representation, value]
+    properties:
+      representation: {enum: [json, text, bytes, unserializable, unit], x-status: proposed, x-source: *w}
+      value: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+    description: unit/None is not success evidence; unserializable values remain reasoned missingness outside the owner thread.
+    x-status: proposed
+    x-source: *w
+
+  BOAssignFiles:
+    type: object
+    additionalProperties: false
+    required: [node, files]
+    properties:
+      node: {$ref: "#/$defs/BONodeRef", x-status: proposed, x-source: *w}
+      files:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/ArtifactReference"}
+        x-status: proposed
+        x-source: *w
+    description: Authorized immutable file bytes only; native support and upload acceptance are independently evidenced.
+    x-status: proposed
+    x-source: *w
+
+  BOCapture:
+    type: object
+    additionalProperties: false
+    required: [page, capture_options]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+      capture_options: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+    description: Options use the pinned BrowserOxide-native capture contract, not a cross-browser screenshot API.
+    x-status: proposed
+    x-source: *w
+
+  BOCaptureReturn:
+    type: object
+    additionalProperties: false
+    required: [page, image, geometry]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+      image: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      geometry:
+        type: array
+        items: {$ref: "#/$defs/Measurement"}
+        description: Native geometry measurements with named coordinate space and units; unavailable geometry cannot authorize coordinate action.
+        x-status: proposed
+        x-source: *w
+    x-status: proposed
+    x-source: *w
+
+  BOPageArgument:
+    type: object
+    additionalProperties: false
+    required: [page]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  BOVerdictReturn:
+    type: object
+    additionalProperties: false
+    required: [verdict, basis]
+    properties:
+      verdict: {$ref: "#/$defs/BORenderVerdict", x-status: extracted, x-source: *a}
+      basis: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+    description: Render classification only, never content relevance, authentication, or application completion.
+    x-status: proposed
+    x-source: *w
+
+  BOResetReturn:
+    type: object
+    additionalProperties: false
+    required: [page, invalidated_generation, cookie_continuity_refs]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+      invalidated_generation: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      cookie_continuity_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *e}
+    description: Same native owner/page identity, newer generation, invalid old DOM references, preserved intended jar.
+    x-status: proposed
+    x-source: *w
+
+  BODestroyReturn:
+    type: object
+    additionalProperties: false
+    required: [page, destruction_refs]
+    properties:
+      page: {$ref: "#/$defs/BOPageRef", x-status: proposed, x-source: *w}
+      destruction_refs: {$ref: "#/$defs/SupportRefs", x-status: proposed, x-source: *w}
+    description: Owner-thread destruction evidence; not proof that remote origin work stopped or rolled back.
+    x-status: proposed
+    x-source: *w
+
+  BOFailure:
+    type: object
+    additionalProperties: false
+    required: [code, native_entry, native_error, detail]
+    properties:
+      code:
+        enum: [WRONG_THREAD, STALE_REFERENCE, INVALID_INPUT, UNAUTHORIZED, UNMAPPED_PRIMITIVE, NATIVE_ERROR, NATIVE_TIMEOUT, LOCAL_DEADLINE, OWNER_LOST, INPUTS_INCOMPLETE, RESOURCE_BUSY, RESPONSE_LIMIT]
+        x-status: proposed
+        x-source: *w
+      native_entry: {enum: [not_entered, entered, unknown], x-status: proposed, x-source: *w}
+      native_error: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+      detail: {type: string, minLength: 1, x-status: proposed, x-source: *w}
+    description: >-
+      NATIVE_TIMEOUT requires actual native timeout evidence. LOCAL_DEADLINE
+      and OWNER_LOST do not establish native termination or absence of effects.
+      Sanitize detail; retain sensitive raw errors as restricted artifacts.
+    x-status: proposed
+    x-source: *w
+
+  BOPrimitiveRecord:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, binding_digest, call_id, owner, primitive, authorization_ref, limit, arguments, return_state, value, error, elapsed, evidence_refs, effect_refs]
+    properties:
+      record_type: {const: browseroxide_primitive_record, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      binding_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      call_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      owner: {$ref: "#/$defs/BOOwner", x-status: proposed, x-source: *w}
+      primitive: {$ref: "#/$defs/BOPrimitive", x-status: proposed, x-source: *w}
+      authorization_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      limit: {$ref: "#/$defs/DurationLimit", x-status: proposed, x-source: *w}
+      arguments: {type: object, x-status: proposed, x-source: *w}
+      return_state:
+        enum: [returned, failed, unsupported, uncertain]
+        description: Native-call reporting only; not a capability assessment or application status.
+        x-status: proposed
+        x-source: *w
+      value: {x-status: proposed, x-source: *w}
+      error:
+        oneOf: [{$ref: "#/$defs/BOFailure"}, {$ref: "#/$defs/Inapplicable"}]
+        x-status: proposed
+        x-source: *w
+      elapsed:
+        allOf:
+          - $ref: "#/$defs/Measurement"
+          - properties:
+              quantity: {const: duration}
+              origin: {const: subject_reported}
+              scope: {properties: {kind: {const: native_primitive}}}
+        x-status: inferred
+        x-source: *k
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+      effect_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *q}
+    allOf:
+      - if: {properties: {return_state: {const: returned}}}
+        then: {properties: {error: {$ref: "#/$defs/Inapplicable"}}}
+        else:
+          properties:
+            value: {$ref: "#/$defs/Missing"}
+            error: {$ref: "#/$defs/BOFailure"}
+      - if: {properties: {primitive: {const: bo.client_create}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOClientCreate"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOClientRef"}}}
+      - if: {properties: {primitive: {const: bo.http_exchange}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOHttpExchange"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOHttpReturn"}}}
+      - if: {properties: {primitive: {const: bo.page_create}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOPageCreate"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOPageRef"}}}
+      - if: {properties: {primitive: {const: bo.navigate}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BONavigate"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BONavigationReturn"}}}
+      - if: {properties: {primitive: {const: bo.from_html}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOFromHtml"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BONavigationReturn"}}}
+      - if: {properties: {primitive: {const: bo.dom_read}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BODomRead"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BODomExport"}}}
+      - if: {properties: {primitive: {const: bo.dom_write}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BODomWrite"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOMutationReturn"}}}
+      - if: {properties: {primitive: {const: bo.event_dispatch}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOEventDispatch"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOMutationReturn"}}}
+      - if: {properties: {primitive: {const: bo.v8_evaluate}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOV8Evaluate"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOV8Return"}}}
+      - if: {properties: {primitive: {const: bo.assign_files}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOAssignFiles"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOMutationReturn"}}}
+      - if: {properties: {primitive: {const: bo.capture}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOCapture"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOCaptureReturn"}}}
+      - if: {properties: {primitive: {const: bo.render_verdict}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOPageArgument"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOVerdictReturn"}}}
+      - if: {properties: {primitive: {const: bo.reset_for_reuse}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOPageArgument"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BOResetReturn"}}}
+      - if: {properties: {primitive: {const: bo.page_destroy}}}
+        then:
+          properties: {arguments: {$ref: "#/$defs/BOPageArgument"}}
+          allOf:
+            - if: {properties: {return_state: {const: returned}}}
+              then: {properties: {value: {$ref: "#/$defs/BODestroyReturn"}}}
+    description: >-
+      Resolve binding_digest to BOBindingDescriptor. Validate every native
+      reference against that binding and owner lifetime; HTTP references obey
+      their separately established sharing contract. elapsed.scope.id equals
+      call_id. Returned identities match the arguments except documented
+      generation changes. Unsupported/uncertain records do not invent outputs.
+      Do not infer effect absence from an empty effect_refs array.
+
+---
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: urn:job-application:contracts:internal-browser-binding:camoufox:0.1.0
+title: Camoufox Firefox-native binding
+description: >-
+  Review draft of the Camoufox-only synchronous primitive contract for the
+  Python Circus Tent implementation. This independent schema is not a variant
+  of the BrowserOxide primitive schema. It distinguishes a proposed in-browser
+  Firefox extension surface from the documented Playwright-to-Juggler
+  compatibility path without claiming the extension has been built.
+x-status: proposed
+x-source: "1-handoff-brief.txt Parts III, V, VI, and VIII; governing task, Products."
+
+x-source-index:
+  handoff: &h "1-handoff-brief.txt, Parts III, V, VI, and VIII–X"
+  native: &n "4-circus-tent-arch.md, §§2–5 and 6"
+  diagnostic: &d "3-hellscape-blueprint.md, §§3–5 and 10"
+  qualification: &q "5-browser-qualification.md, Evidence discipline"
+  kernel: &k "contracts/00-evidence-kernel.yaml, evidence-kernel/0.1.0"
+  external: &x "contracts/02-external-connector.yaml, external-connector/0.1.0"
+  task: &t "Governing task, Products: Circus Tent's current bridge stack and ideal Firefox-extension/controller pattern."
+  wire: &w >-
+    Proposed Camoufox-only primitive, extension-surface, and transcript design.
+    fx operation names and token shapes are not claims about existing Firefox,
+    Juggler, Playwright, or Camoufox methods.
+
+x-contract:
+  name: internal-browser-binding/camoufox
+  version: 0.1.0
+  maturity: review_draft
+  owner: contracts
+  implementation_owner: Camoufox_binding_maintainer
+  consumers: [Circus Tent]
+  controller_language: Python
+  conformance_suite: conformance/03-internal-browser-binding.md
+  suite_instance: Camoufox
+  schema_entrypoints:
+    - "#/$defs/CFBindingDescriptor"
+    - "#/$defs/CFPrimitiveTranscript"
+    - "#/$defs/CFReduction"
+  execution_shape: synchronous_firefox_primitive
+  external_connector_version: external-connector/0.1.0
+  evidence_kernel_version: evidence-kernel/0.1.0
+  x-status: proposed
+  x-source: *h
+
+x-boundary:
+  rule: >-
+    Circus Tent and Ringmaster share the external connector and evidence
+    discipline, not an internal driver API. No conversion between CFTargetRef
+    and a BrowserOxide DOM reference exists. The Python controller owns
+    learn-run-heal, selector tiers, extraction policy, and application planning;
+    the native binding performs only explicitly requested primitives.
+  target_architecture: >-
+    A Firefox extension exposes a richer browser-resident observation/action
+    surface to Python, bypassing Playwright and Juggler for page operations.
+    Its protocol, permissions, and actual API coverage must be established for
+    a pinned implementation. This is the proposed native path, not an assertion
+    of current capability or a transplanted Chromium ModCDP implementation.
+  compatibility_scope: >-
+    The documented Python-to-Playwright-to-Juggler-to-Camoufox path remains
+    identifiable for maintenance and honest execution evidence. Passing its
+    compatibility cases does not certify extension bypass or full-strength
+    native-surface access. A compatibility route cannot silently become the
+    fallback beneath an extension-native claim.
+  x-status: inferred
+  x-source: "Governing task, Products; 1-handoff-brief.txt Parts III and V."
+
+x-representation:
+  rule: >-
+    The schema describes synchronous Python-facing primitive calls and their
+    retained transcripts. An extension may transport request/reply messages
+    internally, and the existing driver may await its protocol internally.
+    Neither exposes a task handle or a shared browser abstraction to its caller.
+    Each call returns a native observation or an explicit bounded uncertainty.
+  tokens: >-
+    CFTabRef, CFDocumentRef, and CFTargetRef identify Firefox browsing contexts,
+    document lifetimes, and binding-local target registrations. They are not
+    Playwright ElementHandle objects, transferable DOM objects, durable
+    selectors, or bearer capabilities. Only the matching native binding can
+    resolve a live token.
+  validation: >-
+    Validate this document independently using JSON Schema 2020-12 and all CF
+    rules. All schema references are local. Reject duplicate mapping keys,
+    non-finite numbers, unknown versions, unknown fields, and bare normalized
+    nulls. Enforce date-time/URI formats and kernel evidence/hash semantics.
+  x-status: proposed
+  x-source: *w
+
+x-source-reconciliation:
+  - decision: >-
+      The architecture's async Playwright implementation is historical
+      implementation guidance, not permission to define an async task-shaped
+      internal binding. The handoff's synchronous primitive boundary wins;
+      awaiting a Firefox-specific transport internally does not change it.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 4-circus-tent-arch.md §§3–5."
+  - decision: >-
+      Browser-resident DOM reduction, semantic attributes, explicit open-root
+      traversal, frame accounting, localized capture, and profile-safe recycling
+      survive the architectural revision. Their implementation is Firefox-specific.
+    x-status: extracted
+    x-source: *n
+  - decision: >-
+      The documented page.evaluate, page.frames, page.set_input_files, and
+      DataTransfer-based upload paths are compatibility mapping evidence only.
+      They do not establish an extension API, closed-root access, native input
+      trust, or performance for a new version.
+    x-status: inferred
+    x-source: "4-circus-tent-arch.md §§5.4–5.6; governing task, Products."
+  - decision: >-
+      Network-idle and DOM-quiet heuristics are not universal readiness or
+      application-success predicates. The binding exposes an explicit scoped
+      wait; task-specific readiness and validation semantics belong above it.
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §§6.3 and 9.2 overrides universal interpretation of 4-circus-tent-arch.md §5.4."
+  - decision: >-
+      Historical tab caps, recycling thresholds, crop padding, reduction budgets,
+      and model choices are not portfolio constants. Bindings publish actual
+      configured bounds and mappings; the contract specifies their semantics.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Parts VI–VIII; 4-circus-tent-arch.md §§5–7."
+  - decision: >-
+      No handoff amendment is introduced. The extension direction comes from
+      the governing task; its unresolved implementation is not filled with an
+      invented endpoint, permission grant, or native primitive.
+    x-status: proposed
+    x-source: *t
+
+x-native-catalog:
+  required_capability_ids:
+    - cf.extension_page_surface
+    - cf.page_script_evaluation
+    - cf.frame_observation
+    - cf.open_shadow_observation
+    - cf.closed_shadow_observation
+    - cf.native_input
+    - cf.synthetic_drag_drop
+    - cf.native_file_input
+    - cf.localized_capture
+    - cf.profile_persistence
+    - cf.fingerprint_persistence
+    - cf.browser_context_isolation
+    - cf.native_wait_termination
+    - cf.profile_safe_shutdown
+  rule: >-
+    Enumerate every capability exactly once for this subject/version/mode/route.
+    Unknown is the initial value for a new version. Route and mapping declarations
+    are separate from capability availability and consumer assessment.
+  flip_condition: >-
+    Revise this proposed Camoufox catalog when implemented Firefox-native APIs
+    and their conformance evidence justify a different native cut. Never require
+    a corresponding BrowserOxide operation or hide a capability loss behind a
+    cross-browser facade.
+  x-status: proposed
+  x-source: *w
+
+x-rules:
+  - id: CF-ROUTE
+    classification: invariant
+    rule: >-
+      Pin the actual page-operation route in the binding descriptor and every
+      transcript. For extension_native, all mapped page operations execute
+      through the pinned Firefox extension surface, with no Playwright/Juggler
+      page-operation hop. Profile launch/exit may use a declared native
+      controller lifecycle mapping.
+    consequence: >-
+      Route changes require a new scoped binding/subject configuration and
+      invalidate old tokens. They cannot occur silently inside an already
+      commissioned execution. The legacy route remains labeled compatibility,
+      not a passed extension-bypass claim.
+    derivation: "Otherwise the proposed native surface would conceal the same bridge limitation it exists to remove."
+    x-status: inferred
+    x-source: *t
+
+  - id: CF-SYNC
+    classification: invariant
+    rule: >-
+      Each primitive is synchronous at the Python binding boundary. Serialize
+      context-affecting operations within the relevant tab/profile lifetime.
+      Return a value or typed error/uncertainty; do not return a workflow handle
+      or perform undisclosed online planning, healing, retries, or alternate
+      selector actions.
+    consequence: >-
+      A local waiting deadline may end the call without proving that a remote
+      Firefox operation stopped. Mark that uncertainty, fence dependent actions
+      until safe, and leave containment to its separately authorized operation.
+      Do not deadlock the event loop responsible for servicing the reply.
+    derivation: "The external asynchronous task contract and native primitive contract are different boundaries."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §5.5."
+
+  - id: CF-PROFILE
+    classification: invariant
+    rule: >-
+      A domain-family profile has one owning browser process at a time.
+      Its fingerprint manifest is immutable. Launch-option or fingerprint
+      changes require an explicit full reset and authentication handoff, not
+      reuse of existing session material under a new identity.
+    consequence: >-
+      Before reuse of a profile directory after shutdown, preserve session state,
+      close the old browser, and obtain actual process-exit/reaping evidence.
+      A close acknowledgement or elapsed grace period is insufficient.
+      Recycling does not rotate fingerprints or copy a live Firefox profile.
+    derivation: "Overlapping Firefox writers risk profile corruption; identity drift invalidates persistent authentication."
+    x-status: extracted
+    x-source: "4-circus-tent-arch.md §§5.2–5.3 and 6."
+
+  - id: CF-STATE
+    classification: invariant
+    rule: >-
+      Profile persistence, tab creation, browser-context isolation, and learning
+      state are distinct. A new tab in a persistent profile is not automatically
+      a fresh or isolated browser context. A fresh browser does not erase
+      selector/coordinate caches or framework learning.
+    consequence: >-
+      Bind every document and target token to its tab, document epoch, profile
+      process generation, and binding route. Navigation or node replacement
+      invalidates affected tokens. Reject stale tokens before input; do not
+      silently resolve a different element.
+    derivation: "The historical invalid isolation control cannot establish isolation or leakage."
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §§1.3 and 3.4; 4-circus-tent-arch.md §5."
+
+  - id: CF-STRUCTURE
+    classification: invariant
+    rule: >-
+      Reduce DOM inside the browser before transferring large page content.
+      Preserve role, aria-label, title, alt, useful text, and meaningful icon
+      semantics under the selected reduction profile. Traverse open roots
+      explicitly; ordinary cloning/query selection does not expose their contents.
+    consequence: >-
+      Keep frame/root boundaries and document epochs in the reduced representation.
+      Readable nested frames contribute scoped content; unreadable frames and
+      roots contribute explicit boundary records/markers. Closed-root access is
+      reported only when the exact configured native route establishes it.
+      Truncation or redaction is visible, never represented as complete absence.
+    derivation: "Flattening without scope and silent omission make later target resolution and diagnosis unsound."
+    x-status: inferred
+    x-source: "4-circus-tent-arch.md §5.4; 3-hellscape-blueprint.md §§3.3 and 4."
+
+  - id: CF-INPUT
+    classification: invariant
+    rule: >-
+      Preserve the requested native-input versus DOM-property/event mechanism.
+      Record actual event semantics where observed. Synthetic DataTransfer
+      drag/drop is labeled synthetic; assigning files is not evidence that the
+      server accepted an upload. None and protocol acknowledgement are not
+      successful form postconditions.
+    consequence: >-
+      Ambiguous target resolution returns all bounded matches; it never silently
+      clicks the first. A side-effecting primitive is not automatically retried
+      after uncertain delivery. A submit click cannot write the application axis.
+    derivation: "The qualification discipline and claim/origin separation prohibit semantic-success inflation."
+    x-status: inferred
+    x-source: "5-browser-qualification.md; 3-hellscape-blueprint.md §4.6; 4-circus-tent-arch.md §5.6."
+
+  - id: CF-IMAGE
+    classification: invariant
+    rule: >-
+      Capture records the document epoch, requested crop, actual coordinate-space
+      measurements, and image identity. A controller must verify the viewport,
+      scale, frame offset, and layout validity before using coordinates.
+    consequence: >-
+      A perceptual-hash hit alone does not prove that a cached coordinate still
+      identifies the intended control. Crop requests must not silently become
+      full-page captures or use stale geometry. Missing geometry is explicit
+      and cannot be treated as zero offset or unit scale.
+    derivation: "Image similarity is not semantic target identity."
+    x-status: inferred
+    x-source: "4-circus-tent-arch.md §5.6; 5-browser-qualification.md."
+
+  - id: CF-TIME
+    classification: invariant
+    rule: >-
+      Use kernel Measurement for every measured interval or scalar. Register
+      independent controller, browser-document, and native-report clocks.
+      Never subtract across clocks or boots. A controller's own reported timer
+      remains subject_reported; it does not become Hellscape's independent clock.
+    consequence: >-
+      Native timeout, local waiting deadline, connection loss, and forced
+      termination remain separate. Preserve exact zero, bounded/censored
+      intervals, and reasoned unavailability. No default zero or invented
+      per-step duration is permitted.
+    derivation: "The diagnosed _elapsed() behavior and cancellation evidence require explicit timing provenance."
+    x-status: extracted
+    x-source: *h
+
+  - id: CF-EVIDENCE
+    classification: invariant
+    rule: >-
+      Authorize each primitive against the commissioned task and resource scope.
+      Journal durable intent before potentially side-effecting input. Preserve
+      native replies and errors as immutable evidence before normalization.
+      The ingestion authority, not the controller or extension payload, assigns
+      provenance.
+    consequence: >-
+      Extension telemetry cannot emit origin commitment or verification facts.
+      Scripts and artifact references cannot bypass target, account, upload,
+      or data-destination permissions. Raw secrets/session material are not
+      ordinary journal data. Sensitive DOM, images, and replies use restricted
+      artifacts. A transcript never cites its future registration as support.
+    derivation: "Browser observations are not application authority, and unjournaled evidence cannot support replay."
+    x-status: inferred
+    x-source: "contracts/00-evidence-kernel.yaml; 3-hellscape-blueprint.md §§3.3 and 10; 4-circus-tent-arch.md §§5.8 and 5.11."
+
+  - id: CF-CAPS
+    classification: invariant
+    rule: >-
+      New Camoufox, driver, extension, binding, or materially changed configured
+      subject versions do not inherit capability presence or absence. Map only
+      evidenced native surfaces. A missing extension mapping does not establish
+      that Firefox itself lacks the capability.
+    consequence: >-
+      Run conformance independently for the declared route. Compatibility
+      exemptions cannot certify extension bypass or waive ownership, timing,
+      provenance, missingness, or truthful input semantics. Preserve Firefox,
+      Gecko, NSS, and profile-specific strengths rather than imposing a
+      BrowserOxide-shaped primitive vocabulary.
+    derivation: "The two products remain independent bets; a shared internal abstraction repeats the failed port."
+    x-status: extracted
+    x-source: *h
+
+x-open-evidence:
+  - missing: Firefox-extension transport, permissions, packaging, signing, and current Camoufox support.
+    resolution: >-
+      Inspect the pinned Camoufox/Firefox extension environment. Build a small
+      extension/controller specimen proving browser-resident DOM reduction,
+      target identity, frame/root coverage, input semantics, and page-operation
+      bypass of Playwright/Juggler. Measure rather than assume latency.
+      Do not select an undocumented transport or claim privileged access.
+    x-status: uncertain
+    x-source: *t
+  - missing: Current native upload, closed-root, capture, wait-interruption, and profile-flush behavior for that extension.
+    resolution: >-
+      Exercise local controlled fixtures with independent postconditions and
+      valid controls. Keep each unavailable mapping explicit; continue honest
+      compatibility/manual work without treating these unknowns as a portfolio gate.
+    x-status: uncertain
+    x-source: "Governing task, Products; 3-hellscape-blueprint.md §§4–5."
+
+oneOf:
+  - $ref: "#/$defs/CFBindingDescriptor"
+  - $ref: "#/$defs/CFPrimitiveTranscript"
+  - $ref: "#/$defs/CFReduction"
+
+$defs:
+  SchemaVersion:
+    const: internal-browser-binding.camoufox/0.1.0
+    x-status: proposed
+    x-source: *w
+
+  Identifier:
+    type: string
+    minLength: 1
+    x-status: extracted
+    x-source: *k
+
+  Revision:
+    type: integer
+    minimum: 0
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  PositiveInteger:
+    type: integer
+    minimum: 1
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  Digest:
+    type: string
+    pattern: '^sha256:[0-9a-f]{64}$'
+    x-status: extracted
+    x-source: *k
+
+  Missing:
+    type: object
+    additionalProperties: false
+    required: [value, reason]
+    properties:
+      value: {type: "null", x-status: extracted, x-source: *k}
+      reason:
+        enum: [not_enabled, not_applicable, not_observed, observation_lost, unsupported_by_subject, manual_override]
+        x-status: extracted
+        x-source: *k
+      detail: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Inapplicable:
+    allOf:
+      - $ref: "#/$defs/Missing"
+      - properties: {reason: {const: not_applicable}}
+    x-status: extracted
+    x-source: *k
+
+  MaybeString:
+    oneOf:
+      - $ref: "#/$defs/Identifier"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  EvidenceRef:
+    type: object
+    additionalProperties: false
+    required: [journal_id, sequence, event_id, event_hash, pointer]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      event_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      event_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      pointer: {type: string, pattern: '^(?:/(?:[^~/]|~[01])*)*$', x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  EvidenceRefs:
+    type: array
+    uniqueItems: true
+    items: {$ref: "#/$defs/EvidenceRef"}
+    x-status: extracted
+    x-source: *k
+
+  SupportRefs:
+    allOf:
+      - $ref: "#/$defs/EvidenceRefs"
+      - minItems: 1
+    x-status: extracted
+    x-source: *k
+
+  JournalPrefix:
+    type: object
+    additionalProperties: false
+    required: [journal_id, last_sequence, head_hash]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      last_sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      head_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ArtifactReference:
+    type: object
+    additionalProperties: false
+    required: [digest, size_bytes, media_type, owner_domain, access]
+    properties:
+      digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      size_bytes: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *k}
+      media_type: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      access: {enum: [public, restricted], x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  MaybeArtifact:
+    oneOf:
+      - $ref: "#/$defs/ArtifactReference"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *x
+
+  VersionPin:
+    type: object
+    additionalProperties: false
+    required: [id, version, artifact_digest]
+    properties:
+      id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      artifact_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  TimePoint:
+    type: object
+    additionalProperties: false
+    required: [clock_id, boot_id, origin, monotonic_offset_ms, utc_annotation]
+    properties:
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      origin:
+        enum: [engine_measured, browser_measured, subject_reported, manual_reference]
+        x-status: extracted
+        x-source: *k
+      monotonic_offset_ms: {type: number, minimum: 0, x-status: extracted, x-source: *k}
+      utc_annotation:
+        oneOf: [{type: string, format: date-time}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  Estimate:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: exact, x-status: extracted, x-source: *k}
+          value: {type: number, x-status: extracted, x-source: *k}
+      - type: object
+        additionalProperties: false
+        required: [kind, lower_bound, upper_bound]
+        properties:
+          kind: {const: bounded, x-status: extracted, x-source: *k}
+          lower_bound:
+            oneOf: [{type: number}, {$ref: "#/$defs/Missing"}]
+            x-status: extracted
+            x-source: *k
+          upper_bound:
+            oneOf: [{type: number}, {$ref: "#/$defs/Missing"}]
+            x-status: extracted
+            x-source: *k
+        anyOf:
+          - properties: {lower_bound: {type: number}}
+          - properties: {upper_bound: {type: number}}
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: unavailable, x-status: extracted, x-source: *k}
+          value: {$ref: "#/$defs/Missing", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Measurement:
+    type: object
+    additionalProperties: false
+    required: [measurement_id, name, scope, quantity, unit, origin, clock_id, boot_id, method, start, end, estimate, resolution, censoring, comparability_group]
+    properties:
+      measurement_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      name: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      scope:
+        type: object
+        additionalProperties: false
+        required: [kind, id]
+        properties:
+          kind:
+            enum: [run, session, connector_call, workflow_step, application_operation, native_primitive, recovery, discovery, capability, resource]
+            x-status: extracted
+            x-source: *k
+          id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+        x-status: extracted
+        x-source: *k
+      quantity: {enum: [duration, scalar], x-status: extracted, x-source: *k}
+      unit: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      origin:
+        enum: [engine_measured, browser_measured, subject_reported, manual_reference]
+        x-status: extracted
+        x-source: *k
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      method:
+        enum: [endpoint_difference, source_value, evidence_bound, unavailable]
+        x-status: extracted
+        x-source: *k
+      start:
+        oneOf: [{$ref: "#/$defs/TimePoint"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      end:
+        oneOf: [{$ref: "#/$defs/TimePoint"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      estimate: {$ref: "#/$defs/Estimate", x-status: extracted, x-source: *k}
+      resolution:
+        oneOf: [{type: number, minimum: 0}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      censoring: {enum: [none, left, right, both, unavailable], x-status: extracted, x-source: *k}
+      comparability_group: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {quantity: {const: duration}}}
+        then:
+          properties:
+            unit: {const: ms}
+            estimate:
+              properties:
+                value: {minimum: 0}
+                lower_bound: {minimum: 0}
+                upper_bound: {minimum: 0}
+      - if: {properties: {estimate: {properties: {kind: {const: exact}}}}}
+        then:
+          properties:
+            method: {enum: [endpoint_difference, source_value]}
+            censoring: {const: none}
+      - if: {properties: {estimate: {properties: {kind: {const: bounded}}}}}
+        then:
+          properties:
+            method: {const: evidence_bound}
+            censoring: {enum: [none, left, right, both]}
+      - if: {properties: {estimate: {properties: {kind: {const: unavailable}}}}}
+        then:
+          properties:
+            method: {const: unavailable}
+            censoring: {const: unavailable}
+      - if: {properties: {method: {const: endpoint_difference}}}
+        then:
+          properties:
+            quantity: {const: duration}
+            start: {$ref: "#/$defs/TimePoint"}
+            end: {$ref: "#/$defs/TimePoint"}
+            estimate: {properties: {kind: {const: exact}}}
+    description: Enforce registered clocks, same-epoch endpoint arithmetic, and ordered bounds as kernel semantic rules.
+    x-status: extracted
+    x-source: *k
+
+  DurationLimit:
+    type: object
+    additionalProperties: false
+    required: [kind, unit, value]
+    properties:
+      kind: {const: exact, x-status: extracted, x-source: *x}
+      unit: {const: ms, x-status: extracted, x-source: *x}
+      value: {type: number, minimum: 0, x-status: extracted, x-source: *x}
+    x-status: extracted
+    x-source: *x
+
+  ComponentIdentity:
+    type: object
+    additionalProperties: false
+    required: [component, reported_version, build_digest, configuration_digest]
+    properties:
+      component: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      reported_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      build_digest:
+        oneOf: [{$ref: "#/$defs/Digest"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      configuration_digest:
+        oneOf: [{$ref: "#/$defs/Digest"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  SubjectIdentity:
+    type: object
+    additionalProperties: false
+    required: [subject_id, subject_version, revision_basis, native_revision, configured_mode, interface_surface, configuration_digest, stack]
+    properties:
+      subject_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      subject_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      revision_basis:
+        enum: [native_revision, source_digest, operator_attestation, unknown]
+        x-status: extracted
+        x-source: *k
+      native_revision: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      configured_mode: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      interface_surface: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      configuration_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      stack:
+        type: array
+        items: {$ref: "#/$defs/ComponentIdentity"}
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  CapabilityRecord:
+    type: object
+    additionalProperties: false
+    required: [capability_id, requirement_refs, availability, claim_origin, evidence, limitations]
+    properties:
+      capability_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      requirement_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *k
+      availability: {enum: [present, absent, unknown, not_applicable], x-status: extracted, x-source: *k}
+      claim_origin: {enum: [native, composed_subject, harness], x-status: extracted, x-source: *k}
+      evidence:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required: [basis, ref]
+          properties:
+            basis:
+              enum: [documentation, executed_observation, source_diagnosis, operator_attestation]
+              x-status: extracted
+              x-source: *k
+            ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *k}
+        x-status: extracted
+        x-source: *k
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *k
+    allOf:
+      - if: {properties: {availability: {enum: [present, absent, not_applicable]}}}
+        then: {properties: {evidence: {minItems: 1}}}
+    x-status: extracted
+    x-source: *k
+
+  CapabilityDescriptor:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, descriptor_id, descriptor_revision, declared_by, subject, catalog, evidence_prefix, supersedes, capabilities]
+    properties:
+      record_type: {const: capability_descriptor, x-status: extracted, x-source: *k}
+      schema_version: {const: evidence-kernel/0.1.0, x-status: extracted, x-source: *k}
+      descriptor_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      descriptor_revision: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      declared_by: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      subject: {$ref: "#/$defs/SubjectIdentity", x-status: extracted, x-source: *k}
+      catalog: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *k}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *k}
+      supersedes:
+        oneOf: [{$ref: "#/$defs/Digest"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      capabilities:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/CapabilityRecord"}
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  CFRouteName:
+    enum: [extension_native, legacy_playwright_juggler]
+    x-status: proposed
+    x-source: *t
+
+  CFRoute:
+    type: object
+    additionalProperties: false
+    required: [path, extension_build, channel_contract, bridge_components]
+    properties:
+      path: {$ref: "#/$defs/CFRouteName", x-status: proposed, x-source: *w}
+      extension_build:
+        oneOf: [{$ref: "#/$defs/VersionPin"}, {$ref: "#/$defs/Inapplicable"}]
+        x-status: proposed
+        x-source: *w
+      channel_contract: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      bridge_components:
+        type: array
+        items: {$ref: "#/$defs/ComponentIdentity"}
+        x-status: proposed
+        x-source: *w
+    allOf:
+      - if: {properties: {path: {const: extension_native}}}
+        then:
+          properties:
+            extension_build: {$ref: "#/$defs/VersionPin"}
+            bridge_components: {maxItems: 0}
+        else:
+          properties:
+            extension_build: {$ref: "#/$defs/Inapplicable"}
+            bridge_components: {minItems: 2}
+    description: >-
+      Legacy components explicitly identify Playwright and Juggler and their
+      available version evidence. Extension channel bytes and permissions are
+      pinned implementation artifacts, not an invented endpoint in this schema.
+    x-status: proposed
+    x-source: *w
+
+  CFPrimitive:
+    enum:
+      - fx.profile_open
+      - fx.tab_open
+      - fx.navigate
+      - fx.context_tree
+      - fx.reduce_document
+      - fx.resolve_target
+      - fx.input
+      - fx.upload
+      - fx.evaluate
+      - fx.await_condition
+      - fx.capture_crop
+      - fx.tab_close
+      - fx.profile_flush_exit
+    x-status: proposed
+    x-source: *w
+
+  CFMapping:
+    type: object
+    additionalProperties: false
+    required: [operation, execution_place, native_symbol, native_contract, evidence_refs]
+    properties:
+      operation: {$ref: "#/$defs/CFPrimitive", x-status: proposed, x-source: *w}
+      execution_place:
+        enum: [controller_lifecycle, firefox_extension, legacy_juggler, unmapped]
+        x-status: proposed
+        x-source: *w
+      native_symbol: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+      native_contract:
+        oneOf: [{$ref: "#/$defs/VersionPin"}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *k}
+    allOf:
+      - if: {properties: {execution_place: {enum: [controller_lifecycle, firefox_extension, legacy_juggler]}}}
+        then:
+          properties:
+            native_symbol: {$ref: "#/$defs/Identifier"}
+            native_contract: {$ref: "#/$defs/VersionPin"}
+            evidence_refs: {minItems: 1}
+    description: >-
+      controller_lifecycle is permitted only for profile_open/profile_flush_exit.
+      Other mapped operations use the descriptor's actual page route.
+      An unmapped operation remains callable only to return explicit unsupported.
+    x-status: proposed
+    x-source: *w
+
+  CFBindingDescriptor:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, binding_id, controller_build, browser, route, capabilities, primitive_mappings, profile_policy, max_tabs_per_profile, privacy_policy, evidence_prefix]
+    properties:
+      record_type: {const: camoufox_binding_descriptor, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      binding_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      controller_build: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      browser: {$ref: "#/$defs/ComponentIdentity", x-status: inferred, x-source: *q}
+      route: {$ref: "#/$defs/CFRoute", x-status: proposed, x-source: *w}
+      capabilities: {$ref: "#/$defs/CapabilityDescriptor", x-status: extracted, x-source: *k}
+      primitive_mappings:
+        type: array
+        minItems: 13
+        maxItems: 13
+        items: {$ref: "#/$defs/CFMapping"}
+        x-status: proposed
+        x-source: *w
+      profile_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *n}
+      max_tabs_per_profile: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *n}
+      privacy_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *k}
+    description: >-
+      Each operation appears exactly once. Verify route/mapping consistency and
+      complete capability catalog coverage. max_tabs_per_profile is configuration,
+      not measured capacity. capabilities.subject pins this complete binding,
+      route, browser, and profile configuration. No native or employer
+      qualification follows from the descriptor alone.
+    x-status: proposed
+    x-source: *w
+
+  CFProfileRef:
+    type: object
+    additionalProperties: false
+    required: [profile_id, domain_family, process_id, process_generation, controller_lifetime, fingerprint_digest]
+    properties:
+      profile_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      domain_family: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *n}
+      process_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      process_generation: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      controller_lifetime: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      fingerprint_digest: {$ref: "#/$defs/Digest", x-status: inferred, x-source: *n}
+    description: Profile identity and native process lifetime, not cookies or a filesystem credential.
+    x-status: proposed
+    x-source: *w
+
+  CFTabRef:
+    type: object
+    additionalProperties: false
+    required: [profile, browsing_context_id, tab_epoch]
+    properties:
+      profile: {$ref: "#/$defs/CFProfileRef", x-status: proposed, x-source: *w}
+      browsing_context_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      tab_epoch: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  CFDocumentRef:
+    type: object
+    additionalProperties: false
+    required: [tab, frame_context_id, document_epoch]
+    properties:
+      tab: {$ref: "#/$defs/CFTabRef", x-status: proposed, x-source: *w}
+      frame_context_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      document_epoch: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  CFTargetRef:
+    type: object
+    additionalProperties: false
+    required: [document, node_token, element_epoch]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      node_token: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      element_epoch: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+    description: Binding-local Firefox target registration; cannot be reused across routes or document/node lifetimes.
+    x-status: proposed
+    x-source: *w
+
+  CFProfileOpen:
+    type: object
+    additionalProperties: false
+    required: [profile_id, domain_family, fingerprint, storage_binding, launch_options, prior_exit_ref]
+    properties:
+      profile_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      domain_family: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *n}
+      fingerprint: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *n}
+      storage_binding: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      launch_options: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *n}
+      prior_exit_ref:
+        oneOf: [{$ref: "#/$defs/EvidenceRef"}, {$ref: "#/$defs/Inapplicable"}]
+        x-status: proposed
+        x-source: *w
+    description: >-
+      Inapplicable prior exit is legal only for a never-launched profile verified
+      by the registry. Initial fingerprint provisioning precedes this call.
+      Existing profile/launch identity must match; secret material is resolved
+      through the authorized storage binding, not embedded here.
+    x-status: proposed
+    x-source: *w
+
+  CFProfileOpened:
+    type: object
+    additionalProperties: false
+    required: [profile, launch_refs, fingerprint_observations]
+    properties:
+      profile: {$ref: "#/$defs/CFProfileRef", x-status: proposed, x-source: *w}
+      launch_refs: {$ref: "#/$defs/SupportRefs", x-status: proposed, x-source: *w}
+      fingerprint_observations: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *n}
+    description: Reusing a manifest hash is not by itself evidence that all browser fingerprint surfaces matched.
+    x-status: proposed
+    x-source: *w
+
+  CFProfileArgument:
+    type: object
+    additionalProperties: false
+    required: [profile]
+    properties:
+      profile: {$ref: "#/$defs/CFProfileRef", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  CFTabArgument:
+    type: object
+    additionalProperties: false
+    required: [tab]
+    properties:
+      tab: {$ref: "#/$defs/CFTabRef", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  CFNavigate:
+    type: object
+    additionalProperties: false
+    required: [tab, url, navigation_policy]
+    properties:
+      tab: {$ref: "#/$defs/CFTabRef", x-status: proposed, x-source: *w}
+      url: {type: string, format: uri, x-status: proposed, x-source: *w}
+      navigation_policy: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  CFNavigationReply:
+    type: object
+    additionalProperties: false
+    required: [document, native_response, final_url]
+    properties:
+      document:
+        oneOf: [{$ref: "#/$defs/CFDocumentRef"}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      native_response: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *n}
+      final_url: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *n}
+    description: Native navigation return is not task readiness, authentication, or successful form interaction.
+    x-status: proposed
+    x-source: *w
+
+  CFBoundary:
+    type: object
+    additionalProperties: false
+    required: [boundary_id, parent_boundary_id, kind, document, access, marker, limitation]
+    properties:
+      boundary_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      parent_boundary_id: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+      kind: {enum: [top_document, frame, open_shadow, closed_shadow], x-status: proposed, x-source: *w}
+      document:
+        oneOf: [{$ref: "#/$defs/CFDocumentRef"}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      access: {enum: [readable, unreadable, unobserved], x-status: proposed, x-source: *w}
+      marker: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *n}
+      limitation: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+    description: Unreadable/unobserved boundaries require a limitation; missing document access does not erase a known boundary.
+    x-status: proposed
+    x-source: *w
+
+  CFContextTree:
+    type: object
+    additionalProperties: false
+    required: [tab, boundaries, completeness, limitations]
+    properties:
+      tab: {$ref: "#/$defs/CFTabRef", x-status: proposed, x-source: *w}
+      boundaries:
+        type: array
+        items: {$ref: "#/$defs/CFBoundary"}
+        x-status: proposed
+        x-source: *w
+      completeness: {enum: [complete, partial, unknown], x-status: proposed, x-source: *w}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: proposed
+        x-source: *w
+    x-status: proposed
+    x-source: *w
+
+  CFReduceDocument:
+    type: object
+    additionalProperties: false
+    required: [document, reduction_profile, byte_budget, include_frames, root_access]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      reduction_profile: {enum: [EXTRACT, HEAL], x-status: extracted, x-source: *n}
+      byte_budget: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      include_frames: {type: boolean, x-status: inferred, x-source: *n}
+      root_access: {enum: [open_only, privileged_if_proven], x-status: proposed, x-source: *w}
+    description: Browser-side reduction only; no model invocation or hidden target-resolution assistance.
+    x-status: proposed
+    x-source: *w
+
+  CFReductionSection:
+    type: object
+    additionalProperties: false
+    required: [document, boundary_id, text]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      boundary_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      text: {type: string, x-status: inferred, x-source: *n}
+    description: Scope-preserving reduced semantic text; not a universal selector namespace.
+    x-status: proposed
+    x-source: *w
+
+  CFReduction:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, document, reduction_profile, sections, boundaries, completeness, limitations]
+    properties:
+      record_type: {const: camoufox_dom_reduction, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      reduction_profile: {enum: [EXTRACT, HEAL], x-status: extracted, x-source: *n}
+      sections:
+        type: array
+        items: {$ref: "#/$defs/CFReductionSection"}
+        x-status: proposed
+        x-source: *w
+      boundaries:
+        type: array
+        items: {$ref: "#/$defs/CFBoundary"}
+        x-status: proposed
+        x-source: *w
+      completeness: {enum: [complete, partial, unknown], x-status: proposed, x-source: *w}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: proposed
+        x-source: *w
+    description: >-
+      Boundary IDs are unique and section references resolve. Completeness means
+      completion of the declared reduction profile/scope, not lossless HTML or
+      full application understanding. Exceeding the byte budget produces explicit
+      partial output or a size error, never silent truncation.
+    x-status: proposed
+    x-source: *w
+
+  CFRootHop:
+    type: object
+    additionalProperties: false
+    required: [host_selector, access]
+    properties:
+      host_selector: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      access: {enum: [open, privileged_closed], x-status: proposed, x-source: *w}
+    description: Firefox-root traversal instruction; privileged_closed requires route-specific evidence and authority.
+    x-status: proposed
+    x-source: *w
+
+  CFResolveTarget:
+    type: object
+    additionalProperties: false
+    required: [document, root_path, strategy, query, exact, max_matches]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      root_path:
+        type: array
+        items: {$ref: "#/$defs/CFRootHop"}
+        x-status: proposed
+        x-source: *w
+      strategy: {enum: [css, role, label, text], x-status: proposed, x-source: *w}
+      query: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      exact: {type: boolean, x-status: proposed, x-source: *w}
+      max_matches: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+    description: One declared lookup strategy only; selector tiers and fallback selection belong to Circus Tent.
+    x-status: proposed
+    x-source: *w
+
+  CFMatches:
+    type: object
+    additionalProperties: false
+    required: [matches, completeness, limitation]
+    properties:
+      matches:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/CFTargetRef"}
+        x-status: proposed
+        x-source: *w
+      completeness: {enum: [complete, partial, unknown], x-status: proposed, x-source: *w}
+      limitation: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+    description: An empty complete result means no match for this lookup; it is not native DOM-capability absence.
+    x-status: proposed
+    x-source: *w
+
+  CFInputAction:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [kind, text]
+        properties:
+          kind: {const: fill, x-status: inferred, x-source: *n}
+          text: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      - type: object
+        additionalProperties: false
+        required: [kind, button]
+        properties:
+          kind: {const: click, x-status: inferred, x-source: *n}
+          button: {enum: [primary, secondary], x-status: proposed, x-source: *w}
+      - type: object
+        additionalProperties: false
+        required: [kind, values]
+        properties:
+          kind: {const: select, x-status: inferred, x-source: *n}
+          values:
+            type: array
+            items: {type: string}
+            x-status: proposed
+            x-source: *w
+      - type: object
+        additionalProperties: false
+        required: [kind, key]
+        properties:
+          kind: {const: press, x-status: proposed, x-source: *w}
+          key: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  CFInput:
+    type: object
+    additionalProperties: false
+    required: [target, mechanism, action]
+    properties:
+      target: {$ref: "#/$defs/CFTargetRef", x-status: proposed, x-source: *w}
+      mechanism: {enum: [native_browser_input, dom_property_and_events], x-status: proposed, x-source: *w}
+      action: {$ref: "#/$defs/CFInputAction", x-status: proposed, x-source: *w}
+    description: A single primitive action; unsupported requested mechanisms are not silently substituted.
+    x-status: proposed
+    x-source: *w
+
+  CFInputReply:
+    type: object
+    additionalProperties: false
+    required: [target, native_return, observed_events, effect_observation, event_trust]
+    properties:
+      target: {$ref: "#/$defs/CFTargetRef", x-status: proposed, x-source: *w}
+      native_return: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *q}
+      observed_events: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+      effect_observation: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *q}
+      event_trust: {enum: [browser_trusted, synthetic, unknown, not_applicable], x-status: proposed, x-source: *w}
+    description: event_trust requires observed support; a requested mechanism or native acknowledgement is insufficient.
+    x-status: proposed
+    x-source: *w
+
+  CFUpload:
+    type: object
+    additionalProperties: false
+    required: [target, method, files, event_recipe]
+    properties:
+      target: {$ref: "#/$defs/CFTargetRef", x-status: proposed, x-source: *w}
+      method: {enum: [native_file_input, synthetic_drag_drop], x-status: inferred, x-source: *n}
+      files:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/ArtifactReference"}
+        x-status: inferred
+        x-source: *n
+      event_recipe:
+        oneOf: [{$ref: "#/$defs/VersionPin"}, {$ref: "#/$defs/Inapplicable"}]
+        x-status: proposed
+        x-source: *w
+    allOf:
+      - if: {properties: {method: {const: synthetic_drag_drop}}}
+        then: {properties: {event_recipe: {$ref: "#/$defs/VersionPin"}}}
+        else: {properties: {event_recipe: {$ref: "#/$defs/Inapplicable"}}}
+    description: Enforce admitted file size/type and resolver permissions; no arbitrary path/URL fetch or undeclared fallback.
+    x-status: proposed
+    x-source: *w
+
+  CFEvaluate:
+    type: object
+    additionalProperties: false
+    required: [document, world, script, argument]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      world: {enum: [page, extension_isolated, privileged], x-status: proposed, x-source: *w}
+      script: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      argument: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+    description: Requested execution worlds require evidenced route support and authority; no speculative privilege elevation.
+    x-status: proposed
+    x-source: *w
+
+  CFEvaluationReply:
+    type: object
+    additionalProperties: false
+    required: [representation, value]
+    properties:
+      representation: {enum: [json, text, bytes, unserializable, unit], x-status: proposed, x-source: *w}
+      value: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+    description: A native None/unit result is retained, not normalized into successful interaction.
+    x-status: proposed
+    x-source: *w
+
+  CFAwaitCondition:
+    type: object
+    additionalProperties: false
+    required: [document, read_only_predicate, wait_mapping]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      read_only_predicate: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      wait_mapping: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+    description: >-
+      One explicitly scoped read-only condition. The mapping pins native event/
+      polling behavior and local bound enforcement. Network idle is not an
+      implicit prerequisite or application-completion predicate.
+    x-status: proposed
+    x-source: *w
+
+  CFConditionReply:
+    type: object
+    additionalProperties: false
+    required: [document, predicate_value, observation]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      predicate_value:
+        oneOf: [{type: boolean}, {$ref: "#/$defs/Missing"}]
+        x-status: proposed
+        x-source: *w
+      observation: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+    description: Observed browser predicate only; it cannot manufacture an origin-owned business fact.
+    x-status: proposed
+    x-source: *w
+
+  CFCropRequest:
+    type: object
+    additionalProperties: false
+    required: [x, y, width, height, unit]
+    properties:
+      x: {type: number, minimum: 0, x-status: proposed, x-source: *w}
+      y: {type: number, minimum: 0, x-status: proposed, x-source: *w}
+      width: {type: number, exclusiveMinimum: 0, x-status: proposed, x-source: *w}
+      height: {type: number, exclusiveMinimum: 0, x-status: proposed, x-source: *w}
+      unit: {const: css_px, x-status: proposed, x-source: *w}
+    description: Requested rectangle in the document viewport; declarations, not measured geometry.
+    x-status: proposed
+    x-source: *w
+
+  CFCaptureCrop:
+    type: object
+    additionalProperties: false
+    required: [document, crop, layout_evidence_refs]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      crop: {$ref: "#/$defs/CFCropRequest", x-status: proposed, x-source: *w}
+      layout_evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  CFCaptureReply:
+    type: object
+    additionalProperties: false
+    required: [document, image, geometry]
+    properties:
+      document: {$ref: "#/$defs/CFDocumentRef", x-status: proposed, x-source: *w}
+      image: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *n}
+      geometry:
+        type: array
+        items: {$ref: "#/$defs/Measurement"}
+        x-status: proposed
+        x-source: *w
+    description: >-
+      Geometry names actual crop origin, image dimensions, viewport dimensions,
+      frame offsets, and scale when available, with units and clock provenance.
+      Required unavailable values use unavailable Measurements, not guessed zero
+      or scale one. Empty geometry permits retaining an image, not coordinate use.
+    x-status: proposed
+    x-source: *w
+
+  CFTabClosed:
+    type: object
+    additionalProperties: false
+    required: [tab, close_refs]
+    properties:
+      tab: {$ref: "#/$defs/CFTabRef", x-status: proposed, x-source: *w}
+      close_refs: {$ref: "#/$defs/SupportRefs", x-status: proposed, x-source: *w}
+    description: Tab-close evidence is not profile flush, process exit, cancellation, or rollback.
+    x-status: proposed
+    x-source: *w
+
+  CFProfileExited:
+    type: object
+    additionalProperties: false
+    required: [profile, flush_ref, process_exit_ref]
+    properties:
+      profile: {$ref: "#/$defs/CFProfileRef", x-status: proposed, x-source: *w}
+      flush_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *n}
+      process_exit_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *n}
+    description: >-
+      Requires actual flush and OS process-exit/reaping evidence. If either is
+      unestablished at the local bound, return uncertainty instead of this
+      result. Only then may the same profile storage be reopened safely.
+    x-status: proposed
+    x-source: *w
+
+  CFFailure:
+    type: object
+    additionalProperties: false
+    required: [kind, code, delivery, native_error, detail]
+    properties:
+      kind: {enum: [errored, unsupported, uncertain], x-status: proposed, x-source: *w}
+      code:
+        enum: [STALE_DOCUMENT, STALE_TARGET, PROFILE_BUSY, INVALID_INPUT, UNAUTHORIZED, UNMAPPED_OPERATION, NATIVE_ERROR, NATIVE_TIMEOUT, LOCAL_WAIT_EXPIRED, TRANSPORT_LOST, BROWSER_EXITED, RESPONSE_LIMIT]
+        x-status: proposed
+        x-source: *w
+      delivery: {enum: [not_sent, sent, unknown], x-status: proposed, x-source: *w}
+      native_error: {$ref: "#/$defs/MaybeArtifact", x-status: proposed, x-source: *w}
+      detail: {type: string, minLength: 1, x-status: proposed, x-source: *w}
+    description: >-
+      Native timeout requires native evidence. LOCAL_WAIT_EXPIRED/TRANSPORT_LOST
+      after possible delivery retain effect uncertainty. Unsupported mapping
+      is not automatically subject-native absence. Sanitized detail is not a
+      substitute for retained native error evidence.
+    x-status: proposed
+    x-source: *w
+
+  CFReturned:
+    type: object
+    additionalProperties: false
+    required: [kind, data]
+    properties:
+      kind: {const: returned, x-status: proposed, x-source: *w}
+      data: {x-status: proposed, x-source: *w}
+    description: The enclosing operation selects the exact data schema; returned is not semantic success.
+    x-status: proposed
+    x-source: *w
+
+  CFPrimitiveTranscript:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, binding_digest, call_id, route, operation, authorization_ref, wait_limit, request, reply, measurements, route_evidence_refs, effect_refs]
+    properties:
+      record_type: {const: camoufox_primitive_transcript, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      binding_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      call_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      route: {$ref: "#/$defs/CFRouteName", x-status: proposed, x-source: *w}
+      operation: {$ref: "#/$defs/CFPrimitive", x-status: proposed, x-source: *w}
+      authorization_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      wait_limit: {$ref: "#/$defs/DurationLimit", x-status: proposed, x-source: *w}
+      request: {type: object, x-status: proposed, x-source: *w}
+      reply:
+        oneOf: [{$ref: "#/$defs/CFReturned"}, {$ref: "#/$defs/CFFailure"}]
+        x-status: proposed
+        x-source: *w
+      measurements:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/Measurement"}
+        description: Includes the controller call interval, or its reasoned unavailability, under subject_reported origin.
+        x-status: inferred
+        x-source: *k
+      route_evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: proposed, x-source: *w}
+      effect_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *q}
+    allOf:
+      - if: {properties: {operation: {const: fx.profile_open}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFProfileOpen"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFProfileOpened"}}}}}
+      - if: {properties: {operation: {const: fx.tab_open}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFProfileArgument"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFTabRef"}}}}}
+      - if: {properties: {operation: {const: fx.navigate}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFNavigate"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFNavigationReply"}}}}}
+      - if: {properties: {operation: {const: fx.context_tree}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFTabArgument"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFContextTree"}}}}}
+      - if: {properties: {operation: {const: fx.reduce_document}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFReduceDocument"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFReduction"}}}}}
+      - if: {properties: {operation: {const: fx.resolve_target}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFResolveTarget"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFMatches"}}}}}
+      - if: {properties: {operation: {const: fx.input}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFInput"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFInputReply"}}}}}
+      - if: {properties: {operation: {const: fx.upload}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFUpload"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFInputReply"}}}}}
+      - if: {properties: {operation: {const: fx.evaluate}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFEvaluate"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFEvaluationReply"}}}}}
+      - if: {properties: {operation: {const: fx.await_condition}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFAwaitCondition"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFConditionReply"}}}}}
+      - if: {properties: {operation: {const: fx.capture_crop}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFCaptureCrop"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFCaptureReply"}}}}}
+      - if: {properties: {operation: {const: fx.tab_close}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFTabArgument"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFTabClosed"}}}}}
+      - if: {properties: {operation: {const: fx.profile_flush_exit}}}
+        then:
+          properties: {request: {$ref: "#/$defs/CFProfileArgument"}}
+          allOf:
+            - if: {properties: {reply: {properties: {kind: {const: returned}}}}}
+              then: {properties: {reply: {properties: {data: {$ref: "#/$defs/CFProfileExited"}}}}}
+    description: >-
+      Resolve binding_digest to CFBindingDescriptor and verify route, operation
+      mapping, permissions, token lifetimes, and native evidence. The controller
+      interval uses native_primitive scope with id=call_id. Browser measurements
+      retain separate clocks and origins. Reply identities match the requested
+      profile/tab/document except explicit navigation or lifecycle changes.
+      A route label alone is not proof of bypass, and an empty effect_refs array
+      does not establish no effect. The transcript is registered after its
+      supporting evidence and is never an application-axis write.
+    x-status: proposed
+    x-source: *w

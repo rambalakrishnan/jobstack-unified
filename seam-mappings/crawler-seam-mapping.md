@@ -1,0 +1,1521 @@
+# Track 2.1 — Crawler Boundary Seam Mapping Specification
+
+**Version:** `crawler-seam/0.1.0`  
+**Status:** Proposed mapping specification; implementation and deployment conformance remain unverified.  
+**Scope:** Crawler intake, operational persistence, evidence normalization, job publication, coverage publication, connector adaptation, replacement, archival, and recovery.
+
+## 1. Authority, Scope, and Non-Negotiable Boundaries
+
+### 1.1 Governing sources
+
+| Source | Authority |
+|---|---|
+| `full-featured-blueprints/1-handoff-brief.txt`, Parts III–VI and VIII–X | Current portfolio boundaries, evidence discipline, independent shipping, practice/production separation, and prohibition on unified internal browser primitives |
+| `contracts/00-evidence-kernel.yaml` | Shared missingness, time, measurement, provenance, journal, artifact, diagnostic, replay, and lease representations |
+| `contracts/02-external-connector.yaml` | Nine external verbs, task intake, preparation, dispatch, observation, controls, and read-only discovery |
+| `contracts/04-owner-separated-write-domains.yaml` | Job field ownership, domain revisions, asynchronous publication, read composition, replacement, archive extents, and retention |
+| `feature-inventories/crawler-feature-inventory.md` | Eleven operational entities, crawler states, transport/session allocations, classification, coverage algebra, and cursor restrictions |
+
+The handoff brief governs disagreements with older blueprint assumptions. Shared contracts govern shared wire representations. Crawler semantics remain authoritative within those boundaries.
+
+This document defines a crawler-specific artifact and transformation profile. It does **not** add properties to closed Contract 00, 02, or 04 objects, add connector verbs, or create another shared browser abstraction.
+
+### 1.2 Required distinctions
+
+The seam preserves these distinctions:
+
+- Discovery versus application execution.
+- Render verdict versus relevance verdict.
+- Genuine verdict versus applied verdict.
+- Crawler relevance versus product suitability.
+- Operational state versus lease ownership.
+- Acquisition identity versus response freshness.
+- Source revision versus domain revision versus journal sequence.
+- Owner durability versus publication into a read view.
+- Capability versus opportunity versus assessed result.
+- Native execution claim versus origin fact.
+- Current state versus immutable historical evidence.
+- Practice evidence versus production evidence.
+
+No successful schema validation, adapter declaration, HTTP response, connector receipt, or document statement certifies operational capability.
+
+### 1.3 Exhaustive transformation rule
+
+Every source column is retained in a normalized operational snapshot under the same column name. A field additionally contributes to shared job fields only through the explicit mappings below.
+
+Consequently:
+
+1. Source-only fields are preserved, not discarded.
+2. Operational rows are not inserted wholesale into `JobCrawlerValue`.
+3. Missing shared properties are not supplied through undeclared extensions.
+4. Downstream-owned values are not copied into crawler-owned storage.
+5. The operational outbox remains eleven logical entities. Artifacts, journal events, cursor children, publication receipts, and retention records are not additional work queues.
+
+### 1.4 Independent delivery
+
+The Illinois slice can ship against its own conformance suite without an orchestrator, browser executor peer, or Hellscape deployment.
+
+Unresolved Oregon solver availability, MN/WI/MI cursor certification, MI/OR proof sources, and empirical veto rates remain explicit limitations. They do not become unrelated Illinois milestones.
+
+---
+
+## 2. Boundary and Ownership Register
+
+| ID | Producer → consumer | Payload | Prohibited coupling |
+|---|---|---|---|
+| S01 | Commissioner/kernel → connector | Manifest, grants, task, configuration | Task prose cannot authorize external mutation |
+| S02 | Connector → crawler runtime | Immutable preparation, local handle, dispatch intent | Prepare cannot browse or execute |
+| S03 | BrowserOxide execution → acquisition reducer | Owned bytes, request identity, render/session evidence | No `Page`, DOM/V8 handle, or solver crosses threads |
+| S04 | Adapter → core gateway | Typed plans, requests, parsed evidence | Adapter cannot write tables or override proofs |
+| S05 | LiteRT process → classification gateway | Correlated genuine outputs | Model cannot issue leases or mutate rows |
+| S06 | Crawler producer → kernel ingestion | Authorized submissions and immutable artifacts | Producer cannot assign server provenance |
+| S07 | Crawler owner → read view | Complete crawler-domain revision | No product fields |
+| S08 | Product owner → read view | Complete downstream-domain revision | No ingest wait for product writes |
+| S09 | Coverage reducer → consumers | Ledger, cohort, detectors, capability status | Render health cannot establish pagination completeness |
+| S10 | Crawler/retention authority → archive reader | Sealed prior row, extents, retention protection | No replacement without retrievable full archive |
+| S11 | Connector → client | Journal-backed observation pages/artifacts | Empty page cannot imply native termination |
+| S12 | Analyzer/replay worker → consumer | Immutable diagnostic/replay receipt | Replay cannot repeat live acquisition or external mutation |
+
+### 2.1 Job identity
+
+| Shared field | Mapping |
+|---|---|
+| `JobEntityKey.entity_type` | `job` |
+| `JobEntityKey.target` | Source `target` |
+| `JobEntityKey.job_id` | Source `job_id` |
+| `JobIdentity.portfolio_job_id` | Separately registered product-facing identifier |
+| `JobIdentity.first_discovery_ref` | Journaled first-discovery evidence |
+
+Company/title/location hashes may identify duplicate candidates; they never replace `(target, job_id)` or authorize overwriting another root.
+
+Partition and session identities use their natural scope keys. No dummy posting ID is created.
+
+### 2.2 Domain separation
+
+`JobCrawlerValue` contains exactly:
+
+- `acquisition`
+- `processing`
+- `discovery`
+- `replacement_lineage`
+
+`JobDownstreamValue` contains exactly:
+
+- `track`
+- `priority_hint`
+- `selection`
+- `ownership`
+- `evaluations`
+- `materials`
+- `application_attempts`
+
+Crawler ownership covers acquisition, operational processing, classifier provenance, discovery, coverage references, and crawler semantic candidate.
+
+Product ownership covers prioritization, evaluations, application selection, product work ownership, materials, and attempt links.
+
+Before product publication, the downstream slot is `revision=0` with `Missing(not_observed)`, explicitly meaning “no downstream revision published in this view.” The crawler does not create a pretend product revision containing null values.
+
+Legacy `semantic_state` is retained as source evidence. It is not a shared mutable field. Any legacy display is derived from pinned crawler, product, and origin-backed attempt inputs.
+
+---
+
+## 3. Shared Types, Nulls, Time, Hashes, and References
+
+### 3.1 Type notation
+
+The field schemas below use:
+
+| Type | Definition |
+|---|---|
+| `ID` | Nonempty opaque string |
+| `REV` | Integer `0..9007199254740991` |
+| `POS` | Integer `1..9007199254740991` |
+| `NUM` | Finite JSON number |
+| `TEXT` | String; an observed empty string remains distinct from missingness |
+| `BOOL` | Boolean |
+| `URL` | Evidenced HTTP(S) URL satisfying the destination schema |
+| `DATE` | ISO calendar date, JSON Schema `date` format |
+| `DIGEST` | `sha256:` plus 64 lowercase hexadecimal digits |
+| `TP` | Contract 00 `TimePoint` |
+| `ME` | Contract 00 `MeasurementEvidence` |
+| `AR` | Contract 00 `ArtifactReference` |
+| `ER` | Contract 00 `EvidenceRef` |
+| `ERS` | Unique array of `EvidenceRef` |
+| `SUPPORT` | Nonempty `ERS` |
+| `PIN` | Contract 00 `VersionPin` |
+| `PREFIX` | Contract 00 `JournalPrefix` |
+| `E` | Recursively normalized Contract 00 `EvidenceValue` |
+| `MAP` | Contract 00 `EvidenceMap` |
+| `M(T)` | Exactly `T` or Contract 00 `Missing` |
+| `SID` | Source integer-or-string identifier, preserved without type coercion |
+| `SH` | Source-hash representation defined in §3.6 |
+
+A source JSON field is validated under its pinned declaration schema, then recursively normalized. Raw vendor bodies remain artifacts, not unvalidated `EvidenceMap` values.
+
+### 3.2 Missingness
+
+`Missing` contains required `value:null`, required `reason`, and optional nonempty `detail`. This profile requires `detail` when the surrounding state does not establish the reason.
+
+The six and only six reasons are:
+
+| Reason | Application |
+|---|---|
+| `not_enabled` | Facility deliberately disabled |
+| `not_applicable` | Field has no meaning in this state/scope |
+| `not_observed` | Value not established |
+| `observation_lost` | Expected or previously established observation lost |
+| `unsupported_by_subject` | Exact-version evidence establishes missing native facility |
+| `manual_override` | Authenticated journaled operator decision withheld/superseded the value |
+
+Universal rules:
+
+- SQL null does not itself identify a reason.
+- Missing source content normally means `not_observed`, not `unsupported_by_subject`.
+- `manual_override` requires its decision reference and retained superseded evidence.
+- Empty arrays establish empty collections; they do not mean unknown.
+- Zero and false remain real values.
+- Required content cannot be fulfilled by Missing.
+- A reference expected to resolve but missing is an integrity incident, not ordinary inapplicability.
+- Raw native nulls may exist inside retained artifact bytes only.
+
+### 3.3 Reference structures
+
+`EvidenceRef` has `journal_id`, positive `sequence`, `event_id`, `event_hash`, and JSON Pointer `pointer`. All components must agree.
+
+`ArtifactReference` has `digest`, `size_bytes`, `media_type`, `owner_domain`, and `access:public|restricted`. A digest is not a bearer credential or mutable locator.
+
+`VersionPin` has `id`, `version`, and `artifact_digest`.
+
+`JournalPrefix` has `journal_id`, positive `last_sequence`, and `head_hash`.
+
+Canonical operational references use escaped or length-framed components:
+
+| Entity | Reference components |
+|---|---|
+| listing, work_item, job_detail, seen_ids | Entity name, target, job ID |
+| classifier_result | Entity name, target, job ID, stage, model version, input hash |
+| coverage_ledger | Entity name, target, run, partition |
+| cursor_state | Entity name, target, run, partition, walk |
+| session_state | Entity name, target, run, phase, shard, session epoch |
+| state_mutation_record | Entity name, target, job ID, mutation ID |
+| audit_log | Entity name, target, owner domain, event ID |
+| dead_letter | Entity name, target, entity type, entity reference, failure reason |
+
+Raw slash concatenation is prohibited.
+
+### 3.4 TimePoint and legacy timestamps
+
+Every established instant uses:
+
+- `clock_id`
+- `boot_id`
+- `origin: engine_measured|browser_measured|subject_reported|manual_reference`
+- Nonnegative `monotonic_offset_ms`
+- `utc_annotation`: date-time string or Missing
+
+The clock must be registered. UTC is annotation only.
+
+For **every timestamp field** listed below:
+
+1. Emit the original `TimePoint` when its clock, boot, origin, and coordinate are established.
+2. If only UTC survives, retain that exact UTC in field evidence and emit `Missing(not_observed)` where `MaybeTimePoint` is allowed.
+3. Use `observation_lost` only for lost established coordinates.
+4. Never invent offset zero, an original boot, or an original time from import receipt.
+5. Record import receipt independently.
+
+A required nonmissing `TimePoint` cannot be reconstructed from UTC alone. A historical held lease lacking authority-clock coordinates cannot become a valid held kernel lease; recovery must fence it under an explicit migration/restart policy.
+
+### 3.5 Measurement
+
+Every observed duration/metric has the complete Contract 00 fields:
+
+`measurement_id`, `name`, `scope`, `quantity`, `unit`, `origin`, `clock_id`, `boot_id`, `method`, `start`, `end`, `estimate`, `resolution`, `censoring`, `comparability_group`.
+
+Allowed methods:
+
+- `endpoint_difference`
+- `source_value`
+- `evidence_bound`
+- `unavailable`
+
+Estimate variants:
+
+- Exact: `kind=exact`, numeric `value`.
+- Bounded: `kind=bounded`, `lower_bound` and `upper_bound`, each numeric or Missing, with at least one numeric.
+- Unavailable: `kind=unavailable`, `value=Missing`.
+
+Duration units are `ms`; values/bounds are nonnegative. Exact estimates have `censoring=none`. Unavailable estimates use unavailable method and censoring.
+
+For endpoint differences, endpoint clock, boot, and origin equal the measurement’s, and the exact value equals end minus start.
+
+Source-reported zero remains exact zero. An opaque-report clock identifies a reporting lifetime when native endpoints are unavailable; it does not justify invented endpoints.
+
+`MeasurementEvidence` contains `measurement` and `SUPPORT`.
+
+Authoritative counters, revisions, model confidence, and deterministic proof terms remain typed state values. When emitted as observed telemetry, numeric metrics also use Measurement. Configured limits are declarations, not elapsed measurements.
+
+### 3.6 Hash and revision reconciliation
+
+`SH` is a closed object containing:
+
+- `value: ID`, preserving the source digest text.
+- `profile: M(PIN)`.
+- `evidence_refs: SUPPORT`.
+
+Conversion to `DIGEST` requires established SHA-256 identity and the correct input/framing. Hashing a hash string is not conversion of the underlying digest.
+
+Profiles remain distinct:
+
+- Kernel structured records: `kernel-jcs-sha256/1`.
+- Artifacts: SHA-256 of exact bytes.
+- Fetch identity: `crawler-fetch-key/1`.
+- SLM input: pinned classifier canonicalization.
+- Page/set hashes: pinned crawler hash profile.
+
+Unknown framing or unavailable bytes blocks any shared field requiring an established digest.
+
+Source `entity_revision`, `crawler_revision`, application-revision tokens, and journal sequence are not interchangeable. Domain revisions start at 1 and advance exactly by one. Their source correspondence is journaled.
+
+When an integer/string union must become a shared identifier, use a reversible type-discriminated, length-framed encoding. Do not conflate integer `7` with string `"7"`.
+
+An opaque application-revision token receives an explicitly recorded normalized sequence mapping; it is not guessed numeric. An imported baseline can be normalized revision zero without claiming a count of preceding applications.
+
+---
+
+## 4. Crawler Artifact Schemas
+
+These are closed crawler-profile artifact shapes carried by existing `ArtifactReference` fields.
+
+### 4.1 OperationalSnapshot
+
+| Field | Type |
+|---|---|
+| `record_type` | Constant `crawler_operational_snapshot` |
+| `schema_version` | Constant `crawler-seam/0.1.0` |
+| `entity_type` | One of the eleven operational entities |
+| `entity_id` | Canonical reference |
+| `source_schema` | `PIN` |
+| `row` | Complete normalized row from §§5–15 |
+| `source_record` | `M(AR)` |
+| `field_evidence` | Array of `FieldEvidence` |
+| `captured_at` | `TP` |
+| `evidence_prefix` | `PREFIX` |
+| `evidence_refs` | `SUPPORT` |
+
+`FieldEvidence` contains `pointer`, `source_pointer:M(TEXT)`, `source_value:E`, `normalization`, and `evidence_refs:SUPPORT`.
+
+`normalization` is one of `identity`, `missingness`, `timestamp`, `measurement`, `digest`, `reference`, `revision_mapping`.
+
+Every nonidentity transformation has field evidence. Source timestamp strings are retained there. Raw ambiguous historical records retain `source_record`; absence of a source artifact cannot erase ambiguity.
+
+The snapshot’s registration follows its supporting prefix. It never cites its own future registration.
+
+### 4.2 CoverageExport
+
+Required fields:
+
+- `record_type=crawler_coverage_export`
+- `schema_version=crawler-seam/0.1.0`
+- `target`, `run_id`, `partition_id`
+- `declaration:PIN`
+- `ledger:AR`
+- `cursor_snapshots:array<AR>`
+- `uncertified_observations:array<AR>`
+- `cursor_capability_status:verified|unverified`
+- `cursor_capability_evidence_refs:ERS`
+- `proof:ProofEvaluation`
+- `detectors:array<DetectorEvaluation>`
+- `drift:DriftEvaluation`
+- `measurements:array<ME>`
+- `evidence_prefix:PREFIX`
+- `evidence_refs:SUPPORT`
+
+`ProofEvaluation` contains `proof_type`, `status`, `pagination_coverage_proven`, `cohort_refs:ERS`, `count_units=postings`, `predicate_hash:SH`, `equation_terms:MAP`, `guards`, `child_coverage_refs:ERS`, `failure_reason:M(ID)`, and `evidence_refs:SUPPORT`.
+
+Each guard contains `guard_id`, `result:established|failed|not_established|not_applicable`, `evidence_refs`, and nonempty `rationale`. Guard IDs are `count_units`, `predicate_identity`, `count_source_verified`, `cursor_permitted`, `detectors_resolved`, `termination`, `no_replay_inflation`, `no_duplicate_substitution`, `eligible_sessions`, `positive_observations`, and `covering_children`.
+
+`DetectorEvaluation` contains `detector`, detector-specific `state`, `blocking`, `corroboration_count:REV`, `threshold:POS`, `evidence_refs`, `action`, and `failure_reason:M(ID)`. Actions are `monitor`, `stop_walk`, `split`, `reconcile`, `proven_via_children`, or `mark_incomplete`.
+
+`DriftEvaluation` contains `baseline_dup_rate`, `effective_baseline`, `duplicate_rate`, `band`, `planned_over_fetch_factor`, `reconciliation_passes`, `cursor_trusted_for_proof`, and `evidence_refs`. Rates are finite `[0,1]`; factors are at least 1.
+
+### 4.3 UncertifiedTraversalObservation
+
+Required fields are:
+
+`record_type=crawler_uncertified_traversal_observation`, `schema_version`, `target`, `run_id`, `partition_id`, `observation_id`, `request_identity:CanonicalRequest`, `response:AR`, `ordered_observed_ids`, complete six-verdict `render_verdict_counts`, `page_hash:SH`, `cursor_capability_status=unverified`, `proposed_cursor_kind`, `ordering_model`, `session_epoch:M(SID)`, `backend_signature:M(ID)`, `accepted_for_positive_proof=false`, and `evidence_refs:SUPPORT`.
+
+This records useful initial-response evidence without fabricating a certified continuation. It is not a queue. Valid listings may be materialized with unproven coverage; these packets cannot enter a certified traversal cohort without the required capability evidence.
+
+### 4.4 JobFeedManifest
+
+Required fields are:
+
+`record_type=crawler_job_feed`, `schema_version`, `feed_id`, `run_id`, `task_digest:DIGEST`, `selection_policy:PIN`, `cutoff:PREFIX`, `jobs`, `listing_only`, `coverage:array<AR>`, `limitations:array<TEXT>`, `evidence_refs:SUPPORT`.
+
+Each job entry contains `entity:JobEntityKey`, `logical_row:AR`, `crawler_revision:POS`, `downstream_revision:REV`, and `evidence_refs`.
+
+Each listing-only entry contains `target`, `job_id`, `listing:AR`, exact listing `pipeline_state`, `detail_materialized=false`, and `evidence_refs`.
+
+The selection policy specifies whether failed/render-failed details appear. Presence is not suitability or permission to apply. Coverage includes partitions producing no jobs. An empty feed is not proof of empty target coverage.
+
+---
+
+## 5. Common Claimable Fields
+
+`listing`, `work_item`, and `job_detail` contain every field below. All are retained at the identical normalized `row` path.
+
+| Field | Normalized type | Shared use / missingness |
+|---|---|---|
+| `target` | `ID` | Source root |
+| `job_id` | `ID` | Source root |
+| `active_run_id` | `ID` | Detail → `processing.active_run_id` |
+| `entity_revision` | `REV` | Operational fencing; not domain revision |
+| `input_revision` | `REV` | Detail → `processing.input_revision` |
+| `retry_count` | `REV` | Detail → `processing.retry_count` |
+| `max_retries_effective` | `POS` | Detail → same processing field |
+| `lease_id` | `M(ID)` | `not_applicable` when unleased |
+| `lease_owner` | `M(ID)` | `not_applicable` when unleased |
+| `leased_at` | `M(TP)` | Authority-clock issue; inapplicable unleased |
+| `lease_expires_at` | `M(TP)` | Same clock/boot; inapplicable unleased |
+| `last_failure_reason` | `M(ID)` | Inapplicable before failure and after claim clears it |
+| `created_at` | `M(TP)` | Timestamp rule |
+| `updated_at` | `M(TP)` | Timestamp rule |
+
+All lease fields are absent together when unleased. Held lease publication additionally requires issuer, authority epoch, owner epoch, generation ID, policy pin, and applicable session epoch from the authority journal. These are not inferred from worker names.
+
+---
+
+## 6. Listing Schema and Mapping
+
+The complete row consists of §5 plus:
+
+| Field | Type | Mapping / null interpretation |
+|---|---|---|
+| `first_seen_run_id` | `ID` | `discovery.first_seen_run_id` |
+| `last_seen_run_id` | `ID` | `discovery.last_seen_run_id` |
+| `first_seen_at` | `M(TP)` | `discovery.first_seen_at` |
+| `last_seen_at` | `M(TP)` | `discovery.last_seen_at` |
+| `partition_id` | `ID` | Scoped coverage lineage |
+| `listing_page_url` | `URL` | `acquisition.listing_page_url` |
+| `source_url` | `URL` | A_full listing response URL; otherwise detail acquisition URL |
+| `source_response_hash` | `SH` | Registered response evidence |
+| `source_page_hash` | `SH` | Page evidence after declared volatile removal |
+| `extractor_version` | `ID` | Resolved extractor pin |
+| `title` | `TEXT` | Finalize → `content.title`; destination validation still applies |
+| `employer` | `M(TEXT)` | Finalize → employer; absent source normally not observed |
+| `snippet` | `M(TEXT)` | Finalize → snippet; empty observed string preserved |
+| `full_description` | `M(TEXT)` | Finalize → description; inapplicable outside full-description surface |
+| `posted_date` | `M(DATE)` | Discovery evidence; absent date not observed |
+| `extracted_fields_json` | `E` | Pinned Phase A extraction evidence |
+| `classification_surface` | Surface enum | Pipeline routing and detail processing |
+| `pipeline_state` | Listing-state enum | Operational/listing-only output |
+| `content_verdict` | `M(PASS\|VETO)` | Genuine verdict; inapplicable without genuine result |
+| `verdict_applied` | `M(PASS\|VETO)` | Applied route; inapplicable before decision |
+| `classifier_result_ref` | `M(ID)` | Genuine-result reference; inapplicable if none |
+| `classification_policy_revision` | `M(ID)` | Effective policy; inapplicable if no classifier decision |
+| `bypass_reason` | `M(ID)` | `slm_bypass_on_failure` or inapplicable |
+| `delegated_work_item_ref` | `M(ID)` | Inapplicable before delegation |
+| `finalized_detail_ref` | `M(ID)` | Inapplicable before Finalize |
+
+Missing required URLs cause `incomplete_extraction`; no blank ready URL or invented session token is allowed.
+
+Finalize maps only title, employer, snippet, and full description. `posted_date` and additional extracted values remain evidence unless independently supported by the applicable content contract; a required content field outside the four mappings rejects Finalize.
+
+Snippet-only veto produces no fabricated detail.
+
+---
+
+## 7. Classifier Result Schema and Mapping
+
+| Field | Type | Mapping |
+|---|---|---|
+| `target` | `ID` | Source root |
+| `job_id` | `ID` | Source root |
+| `stage` | `snippet\|description` | `ClassifierResult.stage` |
+| `model_version` | `ID` | `model.version` |
+| `input_hash` | `SH` | Verified `input_hash` |
+| `verdict` | `PASS\|VETO` | Immutable genuine verdict |
+| `verdict_applied` | `PASS\|VETO` | Effective application |
+| `confidence` | Finite `[0,1]` | Exact model output |
+| `reason` | Bounded nonempty text | Exact accepted explanation |
+| `classified_at` | `M(TP)` | `classified_at` |
+| `latency_ms` | `ME` | `latency` |
+| `model_artifact_digest` | `SH` | Verified `model.artifact_digest` |
+| `tokenizer_digest` | `SH` | Verified tokenizer digest |
+| `prompt_digest` | `SH` | Verified preprocessing/prompt digest |
+| `canonicalization_version` | `ID` | Exact canonicalization |
+| `application_revision` | `SID` | Explicit normalized revision mapping |
+| `policy_revision` | `ID` | Applied policy |
+| `last_applied_at` | `M(TP)` | Application-history evidence |
+| `created_at` | `M(TP)` | Persistence provenance |
+| `expires_at` | `M(TP)` | Inapplicable when TTL disabled |
+
+`result_id` is the canonical composite-key identity. `model.id` and all artifact pins come from the admitted manifest, not guessed names.
+
+The genuine output is immutable for `(target,job_id,stage,model_version,input_hash)`. Identical reuse is accepted; conflicting genuine bytes are rejected and audited. Applied policy may advance with retained prior application history.
+
+Bypass writes no row and no synthetic classifier object.
+
+---
+
+## 8. Work Item Schema and Mapping
+
+The row consists of §5 plus:
+
+| Field | Type | Mapping / null interpretation |
+|---|---|---|
+| `pipeline_state` | `pending\|done\|failed` | Operational only |
+| `endpoint_id` | `ID` | Declared endpoint |
+| `request_url` | `URL` | B canonical request URL |
+| `request_method` | Uppercase method | B canonical request method |
+| `request_body_hash` | `SH` | Actual body digest |
+| `request_body_ref` | `M(AR)` | Inapplicable for no body; lost retained bytes are observation lost |
+| `header_identity_set` | Representation-header array | B representation identity |
+| `computed_fetch_key` | `SH` | Verified fetch key |
+| `listing_revision` | `REV` | Exact dispatch input |
+| `classification_surface` | Surface enum | Admitted generation |
+| `partition_id` | `ID` | Discovery lineage |
+| `snippet_classifier_result_ref` | `M(ID)` | Inapplicable without genuine snippet result |
+| `assigned_shard_id` | `M(ID)` | Inapplicable sessionless; not observed before required assignment |
+| `session_epoch` | `M(SID)` | Same distinction |
+| `request_sequence` | `M(REV)` | Not observed before assignment |
+| `job_detail_ref` | `M(ID)` | Inapplicable before qualifying completion |
+| `completed_at` | `M(TP)` | Inapplicable before completion |
+| `completion_kind` | `M(enum)` | `fetched`, `existing-success reuse`, `idempotent-existing-detail`; otherwise inapplicable |
+
+The body hash for an empty body is the digest of empty bytes, not a missing-value sentinel.
+
+A different request cannot overwrite an active leased generation. `completion_kind` is not a pipeline state.
+
+---
+
+## 9. Job Detail Schema and Mapping
+
+The row consists of §5 plus:
+
+| Field | Type | Destination |
+|---|---|---|
+| `source_url` | `URL` | `acquisition.source_url` |
+| `fetch_key` | `SH` | Verified `acquisition.fetch_key` |
+| `fetch_phase_token` | `B\|A_full` | `fetch_identity.phase_token` |
+| `request_params_json` | Canonical request evidence | B canonical request; A_full supporting provenance |
+| `source_response_hash` | `SH` | Response identity evidence |
+| `extractor_version` | `ID` | `acquisition.extractor` pin |
+| `title` | `M(TEXT)` | `content.title` |
+| `employer` | `M(TEXT)` | `content.employer` |
+| `snippet` | `M(TEXT)` | `content.snippet` |
+| `description` | `M(TEXT)` | `content.description` |
+| `posted_date` | `M(DATE)` | `content.posted_date` |
+| `content_fields_json` | `M(E)` | Declared core additions and extended fields |
+| `render_verdict` | Render enum | `acquisition.render_verdict` |
+| `render_basis` | `ID` | `acquisition.render_basis` |
+| `render_history` | Ordered attempt array | `acquisition.render_history` |
+| `rendered_at` | `M(TP)` | `acquisition.rendered_at` |
+| `pipeline_state` | Detail-state enum | `processing.pipeline_state` |
+| `semantic_state` | Legacy semantic enum | Source evidence only |
+| `content_verdict` | `M(PASS\|VETO)` | Routing evidence; no fabricated result |
+| `verdict_applied` | `M(PASS\|VETO)` | Routing/application evidence |
+| `snippet_classifier_result_ref` | `M(ID)` | Applicable genuine result |
+| `description_classifier_result_ref` | `M(ID)` | Applicable genuine result |
+| `final_genuine_result_ref` | `M(ID)` | `processing.final_genuine_result_id` |
+| `bypass_reason` | `M(ID)` | `processing.bypass_reason` |
+| `priority_hint` | `M(SID)` | Product-owned legacy evidence only |
+| `artifacts_json` | `M(E)` | Product-owned legacy evidence only |
+| `crawler_revision` | `REV` | Source revision; explicit domain mapping |
+| `published_agent_revision` | `REV` | Legacy published pointer, reconciled to downstream pin |
+| `semantic_candidate` | `DISCOVERED\|SHORTLISTED\|CLOSED` | `processing.semantic_candidate` |
+| `semantic_evidence_json` | `E` | Journaled semantic support |
+
+### 9.1 Complete JobCrawlerValue construction
+
+| Shared structure | Complete field sourcing |
+|---|---|
+| `acquisition` | Source/listing URLs; verified fetch key and profile; B/A_full identity; durable response artifact; extractor pin; content declarations; complete content object; verdict, basis, ordered history, decision time, supporting references |
+| `processing` | Detail state; surface; active run; input revision; journaled generation ID; immutable kernel lease artifact; retries; failure; genuine results; final genuine ID; bypass; semantic candidate; semantic evidence |
+| `discovery` | First/last run and times from listing evidence; nonempty exact coverage-reference array |
+| `replacement_lineage` | Most recent committed backward replacement link, or `Inapplicable` before replacement |
+
+`JobContent` contains every core slot: `title`, `employer`, `snippet`, `description`, `posted_date`, `location`, `direct_apply_url`, `portal_type`, `closing_date`, and `extended`.
+
+Absent optional content is normally `not_observed`. A known inapplicable field uses `not_applicable`. No source URL is silently copied to direct-apply URL. Closing-date text is preserved without inventing a timezone or expiration fact.
+
+Declarations contain `name`, exact seven-type vocabulary, `required`, `nullable`, and extraction `VersionPin`. Required implies nonnullable. Extended entries contain `name`, `type`, and typed value or Missing; names cannot shadow core fields.
+
+### 9.2 Render cases
+
+**Case A:** Pass plus every required nonnull correctly typed content field. Allowed detail states are pending classification, ready, vetoed, or later operational failed.
+
+**Case B:** Non-Pass, `pipeline_state=render_failed`, every core and declared extended content value Missing, no current classifier results, no final genuine result, and no seen membership.
+
+An earlier snippet result remains historical evidence even when the current detail is Case B.
+
+Pass with missing required content is `incomplete_extraction`, not Case B and not a valid successful write.
+
+### 9.3 Render history
+
+Each source attempt’s verdict, transport, classifier basis, content hash, and timestamp maps to `RenderObservation`:
+
+- `transport:HttpClient|Page`
+- `operation`: evidenced HTTP acquisition, from-HTML render, cold navigation, or HTTP verification
+- `verdict`
+- `basis`
+- `response_hash:M(DIGEST)`
+- `evidence_refs:SUPPORT`
+- `measurements:array<ME>`
+
+Source timestamps remain supporting evidence. Total acquisition time is not divided into invented attempt durations.
+
+### 9.4 Retention and legacy product fields
+
+A Pass `AcquisitionSnapshot` requires actual `source_response:AR`. A digest alone is insufficient. Accepted bytes must be retained before publication even when general replay capture is failures-only.
+
+Historical Pass rows without retrievable response bytes cannot be promoted to conforming Pass publications.
+
+Legacy priority strings require an explicit product-owned conversion before becoming numeric `JobDownstreamValue.priority_hint`. Legacy artifact JSON requires product-owned interpretation into immutable materials. The crawler performs neither conversion on the product owner’s behalf.
+
+---
+
+## 10. Coverage Ledger Schema and Mapping
+
+| Field | Type | Meaning / missingness |
+|---|---|---|
+| `target` | `ID` | Target |
+| `run_id` | `ID` | Run |
+| `partition_id` | `ID` | Partition |
+| `partition_predicate_json` | `E` | Exact supported predicate |
+| `partition_definition_hash` | `SH` | Predicate identity |
+| `parent_partition_id` | `M(ID)` | Inapplicable at root |
+| `child_partition_ids` | Array of ID | Reciprocal children |
+| `split_round` | Integer `0..3` | Split depth |
+| `status` | Coverage-state enum | Exact state |
+| `reported_total_source` | Count-source enum | Exact source |
+| `reported_total_unit` | `postings` | No openings/pages |
+| `reported_total` | `M(REV)` | Not observed if unavailable; inapplicable where no exact-total term applies |
+| `floor_value` | `M(REV)` | Inapplicable outside floor proof |
+| `header_label_is_floor` | `BOOL` | Declared count interpretation |
+| `session_reported_aggregates` | `E` | Session-scoped counts, units, predicate, evidence |
+| `observed_total` | `REV` | Accepted distinct packets’ rows |
+| `distinct_observed_total` | `REV` | Exact ID union cardinality |
+| `repeated_distinct_id_total` | `REV` | IDs occurring more than once |
+| `observed_ids_set_hash` | `SH` | Sorted exact set digest |
+| `duplicate_rate` | Finite `[0,1]` | Defined repeated-distinct ratio |
+| `render_pass_total` | `REV` | Pass observations |
+| `render_coverage` | `M(NUM)` | Inapplicable with zero denominator |
+| `proof_type` | `equality\|floor\|lower_bound\|none` | Selected algebra |
+| `proof_cohort_refs` | Array of canonical cursor refs | Compatible active cohort |
+| `session_count` | `REV` | Eligible completed walks |
+| `session_min_count` | `REV` | Required eligible count |
+| `saturation_marker_present` | `BOOL` | Detector evidence |
+| `pagination_coverage_proven` | `BOOL` | Guarded conclusion |
+| `proof_evidence_json` | `E` | Terms, guards, traversal, child relation |
+| `min_job_id` | `M(ID)` | Inapplicable with no IDs |
+| `max_job_id` | `M(ID)` | Inapplicable with no IDs |
+| `max_date_posted` | `M(DATE)` | Not observed if no date established |
+| `missing_posted_date_total` | `REV` | Rows lacking date |
+| `failure_reason` | `M(ID)` | Inapplicable without failure |
+| `detector_events` | Ordered evidence array | Full detector history |
+| `last_evaluated_at` | `M(TP)` | Evaluation time |
+| `request_count` | `REV` | Request accounting |
+| `request_bytes` | `REV` | Byte accounting |
+| `response_bytes` | `REV` | Byte accounting |
+| `bootstrap_elapsed_ms` | `ME` | Observed aggregate, not configuration estimate |
+| `acquisition_elapsed_ms` | `ME` | Observed aggregate |
+| `entity_revision` | `REV` | Ledger revision |
+| `created_at` | `M(TP)` | Creation |
+| `updated_at` | `M(TP)` | Update |
+
+`CoverageReference` carries exactly run ID, partition ID, verified definition digest, status, proof boolean, ledger artifact, and supporting references. Target must agree with its containing job.
+
+`proven` requires true; all other reference statuses require false. The immutable ledger retains the complete proof rather than merely the boolean.
+
+---
+
+## 11. Cursor Schema and Child Collections
+
+### 11.1 Cursor row
+
+| Field | Type | Meaning / missingness |
+|---|---|---|
+| `target` | `ID` | Target |
+| `run_id` | `ID` | Run |
+| `partition_id` | `ID` | Partition |
+| `walk_id` | `ID` | Walk |
+| `worker_identity` | `ID` | Owner |
+| `owner_epoch` | `REV` | Fence |
+| `phase` | `A` | Enumeration |
+| `shard_id` | `M(ID)` | Inapplicable sessionless |
+| `session_epoch` | `M(SID)` | Inapplicable sessionless |
+| `session_state_ref` | `M(ID)` | Inapplicable sessionless |
+| `cursor_kind` | Cursor enum | Verified capability only |
+| `cursor_payload_json` | `E` | Response-bound or permitted coordinate state |
+| `previous_response_hash` | `SH` | Last committed response |
+| `next_request_identity` | `M(E)` | Inapplicable after termination |
+| `cursor_revision` | `REV` | Committed step |
+| `ordering_model` | Ordering enum | Pinned assumption |
+| `coverage_scope` | Declared ID | Per-run or session-union scope |
+| `ordering_fingerprint` | `SH` | Restart compatibility |
+| `backend_signature` | `M(ID)` | Inapplicable if irrelevant; not observed if needed but absent |
+| `status` | Cursor-state enum | Walk lifecycle |
+| `page_observations` | Child collection | Exact packets |
+| `exact_id_occurrences` | Child collection | Exact counts |
+| `page_hashes` | Ordered SH array | Normalized page identities |
+| `drift_events` | Ordered drift entries | Complete source evidence |
+| `retained_request_bytes_ref` | `M(AR)` | Not enabled if capture omitted; lost if bytes lost |
+| `retained_response_bytes_ref` | `M(AR)` | Same distinction |
+| `profile_version` | `ID` | Resolved profile pin |
+| `engine_version` | `ID` | Resolved engine pin |
+| `extractor_version` | `ID` | Resolved extractor pin |
+| `observed_total` | `REV` | Walk observations |
+| `distinct_total` | `REV` | Walk distinct count |
+| `last_committed_request_sequence` | `REV` | Durable boundary |
+| `created_at` | `M(TP)` | Creation |
+| `updated_at` | `M(TP)` | Update |
+
+### 11.2 Page observation
+
+Every child contains:
+
+`observation_id`, `target`, `run_id`, `partition_id`, `walk_id`, `request_sequence:REV`, `request_identity`, `response_hash:SH`, `page_hash:SH`, `ordered_observed_ids`, complete six-verdict `render_verdict_counts`, `reported_count_evidence:M(E)`, `session_epoch:M(SID)`, `backend_signature:M(ID)`, `in_active_proof_cohort:BOOL`.
+
+Observation identity derives unambiguously from walk, request sequence, and response hash. Replay adds no count. Conflicting content under one identity is an integrity incident.
+
+Count evidence absent from the response is not observed. Session identity is inapplicable only for sessionless execution.
+
+### 11.3 Exact occurrences and drift entries
+
+Each exact-occurrence entry contains `target`, `run_id`, `partition_id`, `walk_id`, `job_id`, `occurrence_count:POS`.
+
+Each drift entry contains:
+
+`detected_at:M(TP)`, `kind`, `severity:low|medium|high`, `duplicate_rate`, `baseline`, `previous_page_hash:M(SH)`, `current_page_hash:M(SH)`, `cursor_revision`, `session_epoch:M(SID)`, `backend_signature:M(ID)`, `action`, `audit_event_ref:ER`.
+
+Missing prior hashes at an inapplicable boundary use inapplicable; missing expected evidence uses not observed or observation lost. Repeating one ID many times contributes one repeated-distinct numerator unit.
+
+---
+
+## 12. Session Schema and Mapping
+
+| Field | Type | Meaning / missingness |
+|---|---|---|
+| `target` | `ID` | Target |
+| `run_id` | `ID` | Run |
+| `phase` | `A\|B` | Slot |
+| `shard_id` | `ID` | Never null in a durable session row |
+| `session_epoch` | `SID` | Generation |
+| `shard_topology` | `per_worker\|per_crawl_run\|per_shard` | No row for none |
+| `worker_identity` | `ID` | Owner |
+| `owner_epoch` | `REV` | Fence |
+| `status` | Session-state enum | Lifecycle |
+| `bootstrap_kind` | Bootstrap-kind enum | Axis-derived |
+| `bootstrap_started_at` | `M(TP)` | Start |
+| `bootstrap_completed_at` | `M(TP)` | Not observed until completed |
+| `bootstrap_attempt` | `REV` | Bounded retry ordinal |
+| `cookie_jar_snapshot` | Restricted `AR` | Encrypted bytes |
+| `cookie_generation` | `REV` | Cookie sequence |
+| `last_committed_request_sequence` | `REV` | Durable request boundary |
+| `profile_ref` | `ID` | Pinned profile |
+| `client_generation` | `SID` | Live client identity, not portable handle bytes |
+| `last_authenticated_url` | `M(URL)` | Inapplicable outside auth; otherwise not observed until verified |
+| `handoff_timestamp` | `M(TP)` | Receipt, not session birth |
+| `authenticated_state_evidence` | `M(E)` | Redacted; inapplicable without authenticated handoff |
+| `verified_session_birth` | `M(TP)` | Not observed when unknown |
+| `session_absolute_lifetime_seconds` | `M(POS)` | Verified declaration; not observed initially |
+| `session_expires_at` | `M(TP)` | Not observed without valid derivation |
+| `replacement_deadline` | `M(TP)` | Not observed without valid derivation |
+| `last_success_at` | `M(TP)` | Not observed before accepted response |
+| `last_failure_reason` | `M(ID)` | Inapplicable without failure |
+| `redacted_solver_harvest_evidence` | `M(E)` | Inapplicable without mechanism; otherwise actual evidence |
+| `entity_revision` | `REV` | Revision |
+| `created_at` | `M(TP)` | Creation |
+| `updated_at` | `M(TP)` | Update |
+
+All initial absolute/idle lifetimes remain unknown. Handoff age must be established through compatible clock evidence or an evidenced bound; receipt time alone proves neither original login time nor remaining lifetime.
+
+Cookies, passwords, MFA answers, and bearer material do not enter ordinary journal payloads. Encrypted snapshots are restricted evidence, not redistributable live sessions.
+
+---
+
+## 13. Audit Schema and Kernel Bridge
+
+| Field | Type | Rule |
+|---|---|---|
+| `target` | `ID` | Source target |
+| `owner_domain` | `ID` | Verified source authority |
+| `event_id` | `ID` | Source identity, not automatically kernel identity |
+| `transaction_id` | `ID` | Owner-local atomic group |
+| `transaction_sequence` | `REV` | Source transaction order |
+| `run_id` | `M(ID)` | Inapplicable outside a run |
+| `phase` | `M(A\|B)` | Inapplicable outside a phase |
+| `partition_id` | `M(ID)` | Inapplicable outside partition |
+| `shard_id` | `M(ID)` | Inapplicable outside shard |
+| `worker_identity` | `M(ID)` | Inapplicable for nonworker writer |
+| `entity_type` | `ID` | Entity or explicit diagnostic subject |
+| `entity_id` | `ID` | Canonical reference |
+| `action_type` | `write\|transition` | Exact action |
+| `payload_kind` | `ID` | Registered interpretation |
+| `payload_json` | `M(E)` or full archive value | Present only for write |
+| `transition_json` | `M(TransitionPayload)` | Present only for transition |
+| `created_at` | `M(TP)` | Source time |
+| `schema_version` | `ID` | Source version |
+| `source_revision` | `M(SID)` | Inapplicable without predecessor |
+| `result_revision` | `M(SID)` | Inapplicable without resulting revision |
+
+`TransitionPayload` retains `trigger`, `field_changes`, `lease_id`, `input_revision`, `session_epoch`, `reason`, `bypass_reason`, and `policy_revision`; inapplicable values use Missing. Field changes preserve old and new values.
+
+Write requires transition Missing(inapplicable); transition requires payload Missing(inapplicable).
+
+### 13.1 Journal envelope mapping
+
+A kernel event contains all Contract 00 fields:
+
+| Kernel field | Assignment |
+|---|---|
+| `record_type`, `schema_version` | Kernel constants |
+| `run_id`, `journal_id`, `manifest_hash` | Admitted immutable scope |
+| `journal_sequence`, `event_id` | Journal authority |
+| `event_kind`, `event_schema_version` | Manifest-pinned event registry |
+| `role`, `assertion_kind` | Registry and authenticated authorization |
+| `owner_domain`, `producer_id`, `provenance` | Ingestion authority |
+| `producer_sequence` | Authenticated producer lifetime sequence, validated for gaps/conflicts |
+| `evidence_scope` | Current, historical-unscored, or synthetic as actually applicable |
+| `recorded_at` | Authority receipt `TimePoint` |
+| `occurred_at` | Established source point or Missing |
+| `causal_refs` | Earlier registered support |
+| `payload` | `data`, `measurements`, `evidence_refs`, `artifact_refs` |
+| `previous_event_hash`, `event_hash` | Kernel canonical chain |
+
+Sequence 1 is `manifest_admitted`; its previous hash is inapplicable. Subsequent sequences are contiguous.
+
+Local operational effects and their owner-local journal evidence commit together. Cross-owner import is asynchronous and retains original authority. Historical importers cannot manufacture contemporary authoritative effects.
+
+---
+
+## 14. Reserved Mutation and Dead-Letter Schemas
+
+### 14.1 State mutation record
+
+Every reserved field is retained:
+
+| Field | Type |
+|---|---|
+| `target`, `job_id`, `mutation_id` | `ID` |
+| `action_name`, `action_version`, `idempotency_key` | `ID` |
+| `request_evidence_json`, `response_evidence_json` | Redacted `E` |
+| `status` | `requested\|confirmed\|rejected\|indeterminate` |
+| `requested_at` | `M(TP)` |
+| `confirmed_at` | `M(TP)` |
+| `audit_event_ref` | `ER` |
+
+Confirmation not established is not observed; a state without a confirmation event is inapplicable; lost established confirmation is observation lost.
+
+**No crawler transition inserts this record.** All four statuses are reserved, non-executing in Phase 1. Historical imports confer no application authority.
+
+### 14.2 Dead letter
+
+| Field | Type | Rule |
+|---|---|---|
+| `target`, `entity_type`, `entity_id`, `failure_reason` | `ID` | Composite terminal-condition identity |
+| `run_id`, `stage` | `ID` | Failure context |
+| `partition_id` | `M(ID)` | Inapplicable without partition |
+| `retry_count` | `POS` | Terminal occurrences of this reason |
+| `first_failed_at`, `last_failed_at` | `M(TP)` | Timestamp rule |
+| `last_entity_revision` | `REV` | Fence at failure |
+| `last_lease_id` | `M(ID)` | Inapplicable for unleased failure |
+| `diagnostic_json` | `E` | Structured failure evidence |
+| `audit_event_refs` | `ERS` | Exact support |
+| `resolution_status` | `open\|superseded` | Explicit resolution evidence |
+
+The occurrence counter is independent of entity retry counters. Repeated reclamation of one failed claim generation does not increment either twice.
+
+---
+
+## 15. Seen-ID Schema and Exact Membership
+
+| Field | Type |
+|---|---|
+| `target`, `job_id` | `ID` |
+| `completed_fetch_key` | `SH` |
+| `completed_pipeline_state` | `ready\|vetoed` |
+| `completed_detail_revision` | `REV` |
+| `first_completed_at`, `last_completed_at` | `M(TP)` |
+| `completed_run_id` | `ID` |
+
+Membership includes only details currently ready/vetoed at the matching successful revision. It excludes snippet-only vetoes, observed listings, pending classification, render failure, and operational failure.
+
+Exit from eligible state removes/invalidates membership atomically. Successful recompletion reinstates it.
+
+Approximate lookup may accelerate definite misses. Possible hits always require exact confirmation. A hit suppresses downstream work where configured, never coverage evidence.
+
+---
+
+## 16. Pipeline, Lease, and Semantic State Machines
+
+### 16.1 Complete vocabularies
+
+- Listing: `pending_snippet_classify`, `pending_enrich`, `pending_description_classify`, `pending_finalize`, `enqueued`, `finalized`, `deduped`, `vetoed`, `render_failed`, `failed`.
+- Work: `pending`, `done`, `failed`.
+- Detail: `pending_classification`, `ready`, `vetoed`, `render_failed`, `failed`.
+- Coverage: `open`, `bisected`, `proven`, `incomplete`, `empty_unproven`.
+- Cursor: `open`, `paused`, `complete`, `invalidated`, `failed`.
+- Session: `establishing`, `active`, `quiescent`, `expired`, `needs_handoff`, `failed`, `retired`.
+- Render: `Pass`, `ThinShell`, `RenderIncomplete`, `EdgeBlock`, `SensorFail`, `ChallengeIncomplete`.
+
+Unknown values are rejected, not mapped to nearest existing states.
+
+### 16.2 Surface routes
+
+| Surface | Initial listing state | Stages |
+|---|---|---|
+| Full description | `pending_description_classify` | Extract → Description Classify → Finalize: 3 |
+| Snippet then B description | `pending_snippet_classify` | Extract → Snippet Classify → Enrich → Description Classify: 4 |
+| B description only | `pending_enrich` | Extract → Enrich → Description Classify: 3 |
+| None | `pending_enrich` | Extract → Enrich: 2 |
+
+The exact wire surface names remain `phase_a_full_description`, `phase_a_snippet_phase_b_description`, `phase_b_description_only`, and `none`.
+
+Enrich dispatcher and fetcher are two execution boundaries within one logical stage. Finalize does not secretly execute on the last three surfaces.
+
+### 16.3 Listing transitions
+
+| From | Guard | To |
+|---|---|---|
+| Absent | Valid extraction | Surface initial state |
+| Pending snippet | Applied PASS or bypass completion | Pending enrich |
+| Pending snippet | Applied VETO | Vetoed |
+| Pending enrich | Work UPSERT commits | Enqueued |
+| Eligible initial state | Exact successful-detail short circuit | Deduped |
+| Pending full-description classification | Genuine result or bypass | Pending finalize |
+| Pending finalize | Valid synthesis and identity protocol | Finalized |
+| Eligible pending state | Exhausted operational/extraction failure | Failed |
+| Known-row extraction generation | Final non-Pass | Render failed |
+| Any pending state | Claim/renew | Same state |
+| Any pending state | Nonexhausted release/reclamation | Same state |
+| Prior-run nonactive state | Authorized fenced reset | Surface initial state |
+
+“Pending snippet” and equivalent table labels denote the exact vocabulary above, not additional states.
+
+### 16.4 Work and detail transitions
+
+| Entity/from | Guard | To |
+|---|---|---|
+| Work absent | Dispatcher commits | Pending |
+| Work pending | Valid authoritative detail committed | Done |
+| Work pending | Exact successful existing detail reused | Done |
+| Work pending | Same-key accepted detail satisfies completion contract | Done, idempotent-existing-detail |
+| Work pending | Terminal fetch/render/extraction failure | Failed |
+| Work pending | Claim/renew/nonexhausted release | Pending |
+| Work prior-run nonactive | Authorized reset | Pending |
+| Detail absent/changed-key generation | Pass, required content, SLM required | Pending classification |
+| Detail absent/changed-key generation | Pass, no SLM or Finalize applied PASS | Ready |
+| Detail absent/changed-key generation | Finalize applied VETO | Vetoed |
+| Detail absent/changed-key generation | Non-Pass | Render failed |
+| Detail pending classification | Applied PASS or bypass | Ready |
+| Detail pending classification | Applied VETO | Vetoed |
+| Detail pending classification | Exhausted nonbypassed failure | Failed |
+| Detail pending classification | Claim/renew/nonexhausted release | Same |
+| Detail prior-run nonactive | Authorized independent reset | Declared pending state without acquisition rewrite |
+
+A same-key failed-render row is never existing success. If an existing row cannot satisfy completion postconditions, reject/defer or apply its existing failure route; do not invent success.
+
+### 16.5 Atomic stage effects
+
+- **Extract:** Listings, observation packet, exact occurrences, coverage delta, certified cursor boundary, and audit.
+- **Snippet classification:** Genuine result/application or bypass evidence, listing transition, lease release.
+- **Dispatch:** Work materialization, listing delegation, lineage, lease release, audit.
+- **Fetch:** Detail materialization/reuse, work completion/failure, lineage, membership if eligible, audit.
+- **Description classification:** Genuine/application or bypass, detail/listing transition, semantic evidence, membership, lease release.
+- **Finalize:** Four-field synthesis, identity protocol, detail/listing completion, membership, audit.
+- **Failure/reclamation:** Fence/clear, once-only retry, pending/terminal route, terminal dead letter, audit.
+
+No database transaction spans network, model inference, signal emission, or human waiting.
+
+### 16.6 Lease behavior
+
+Claim checks eligible pending state and no unexpired lease, assigns unique token and epochs, advances revision, clears failure, appends evidence, and preserves state.
+
+Completion requires current token, unexpired authority-clock deadline, compatible entity/input revision, current worker/session epochs, and allowed transition. Stale completion has no entity effect.
+
+Renewal requires the current held generation and cannot resurrect an expired lease.
+
+Early failure release and expiry/death recovery clear ownership and increment retry once. Remaining retries preserve pending state. Exhaustion applies terminal routing and a dead-letter occurrence using the recorded reason or `retry_exhausted`.
+
+Successful completion is not a failed retry.
+
+Authority restart fences its old epoch before reclaiming. Old monotonic offsets are not compared with a new boot. Worker-death fencing revokes commit authority; it is not evidence that remote execution stopped.
+
+### 16.7 Semantic transitions
+
+Only a genuine applied PASS supports `SHORTLISTED`. Genuine VETO, no genuine verdict, and bypass alone support `DISCOVERED`. A later bypass preserves an earlier applicable genuine applied snippet PASS. A shadowed raw VETO does not shortlist.
+
+Authoritative closure supports `CLOSED`; veto and absence from one crawl do not. Closed postings do not automatically reopen.
+
+Legacy display transitions preserve:
+
+- Discovered → shortlisted by genuine applied PASS.
+- Discovered/shortlisted → claimed only by accepted product work ownership.
+- Claimed → current crawler candidate only by product release.
+- Applied display only from correlated production origin commitment.
+- Applied cannot be downgraded by crawler reclassification.
+- Closure dominates stale ownership projection.
+- No direct discovered/shortlisted → applied from crawler evidence.
+
+### 16.8 Other state machines
+
+| Entity | Permitted progression |
+|---|---|
+| Coverage | Open → proven, bisected, incomplete, or evaluated empty-unproven; bisected → proven only through covering proven children, otherwise incomplete; incomplete reopens only through explicit compatible recovery; proven survives restart |
+| Cursor | Absent → open with verified capability; open ↔ paused under compatibility; open → complete; open/paused → invalidated or failed; recovery creates a new walk |
+| Session | Absent → establishing; establishing → active/needs_handoff/failed; active → quiescent/expired/needs_handoff/failed/retired; nonactive generation → retired; recovery establishes a new epoch |
+| Classifier result | Insert genuine result; reuse identical result; revise application with history; reject conflicting genuine output |
+| Audit | Append only |
+| Dead letter | Absent → open; new terminal occurrence updates occurrence history; explicit resolution → superseded |
+| Seen IDs | Insert/update exact success; remove/invalidate on exit |
+| Mutation record | No executable transition |
+
+---
+
+## 17. Coverage Algebra, Detectors, and Cursor Certification
+
+### 17.1 Proof rules
+
+Selection priority is lower-bound union, floor, verified exact equality, then none.
+
+\[
+Equality:\ observed\_total=reported\_total
+\]
+
+\[
+Floor:\ observed\_total\ge floor\_value \land \neg saturation
+\]
+
+\[
+LowerBound:\ distinct\_observed\_total\ge\max(session\ aggregates)
+\land session\_count\ge session\_min\_count
+\]
+
+Every proof requires compatible posting units, same predicate, verified count source, permitted traversal, termination evidence, resolved detectors, no replay inflation, no duplicate substitution, eligible sessions, and positive observations.
+
+Evaluated zero observations always yield false proof, `empty_unproven`, and `render_coverage=Missing(not_applicable)`, including advertised zero.
+
+\[
+render\_coverage=render\_pass\_total/observed\_total
+\]
+
+when the denominator is positive. It is orthogonal to pagination proof.
+
+### 17.2 Bisection
+
+Child predicates must cover the parent. Overlap is explicit; observations combine by exact ID union, not blind addition. Parent exploratory observations are excluded from child proof arithmetic.
+
+Split priority: declared partition keys, primary key, verified date keys, verified secondary keys. Maximum saturated depth is three.
+
+No valid axis produces `ascending_overflow_unrecoverable` when ascending overflow is established, otherwise `no_bisection_axis_available`. Siblings continue.
+
+### 17.3 Detector state and trigger matrix
+
+| Detector | Trigger and threshold | States and recovery |
+|---|---|---|
+| Row cap | At page commit, observed count reaches verified cap, or cap-boundary termination precedes independent total; threshold 1 | `MONITORING` → `CAP_REACHED_TRIGGERED` → `BISECTED` → `PROVEN_VIA_CHILDREN`; no axis/exhaustion → `TERMINAL_INCOMPLETE` |
+| Saturation | Configured count-label marker before proof acceptance; threshold 1 | `UNSATURATED` → `SATURATED_TRIGGERED` → `BISECTED` → `PROVEN_VIA_CHILDREN`; otherwise terminal incomplete |
+| No-op parameter | Distinct coordinates repeat first-page ordered IDs or page hash without legitimate continuation progress; initially 2 corroborations | `ADVANCING` → `SUSPECT_NOOP` → `NOOP_CONFIRMED_TRIGGERED` → `PARTITION_ONLY_OR_ALTERNATIVE_CURSOR`; unavailable alternative → terminal incomplete |
+| Tail clamp | Beyond-range coordinates repeat terminal ID/page signature; initially 2 corroborations | `ADVANCING` → `SUSPECT_TAIL_CLAMP` → `TAIL_CLAMP_CONFIRMED_TRIGGERED` → `BISECTED_BELOW_CAP`; otherwise terminal incomplete |
+| Ascending overflow | Ascending order plus cap/saturation/banner; newest-date regression triggers corroboration, not standalone proof | `MONITORING_ASCENDING` → `DATE_REGRESSION_SUSPICION` where applicable → `ASCENDING_OVERFLOW_TRIGGERED` → `BISECTED`; valid children permit `PROVEN_VIA_CHILDREN`; otherwise `TERMINAL_UNRECOVERABLE` |
+
+These are diagnostic states, not additional ledger statuses.
+
+Every trigger exports detection boundary, scope, response identity, request coordinate, units/count evidence, ID/page signatures, immediate action, recovery, final disposition, and audit support.
+
+Known prohibited no-op probes are tested using retained fixtures, not repeatedly sent live.
+
+### 17.4 Drift
+
+\[
+effective\_baseline=\max(baseline\_dup\_rate,0.001)
+\]
+
+Duplicate rate is repeated-distinct IDs divided by distinct IDs; zero distinct IDs gives numeric zero.
+
+- Low: rate ≤ 1.5 × baseline.
+- Medium: >1.5 × baseline and ≤3 × baseline.
+- High: >3 × baseline.
+
+Relevant initial factors are 1.1/1.5/2.0. Medium increases permitted reconciliation. High invalidates trust in the cursor’s proof interpretation. Reconciliation is bounded to three passes.
+
+Backend aggregate changes create separate coherent cohorts; totals are not averaged. Date regression compares the same partition-definition hash and retains missing-date counts and ID bounds.
+
+### 17.5 Target allocations and blockers
+
+| Target | Surface / timeout | Coverage and cursor contract |
+|---|---|---|
+| MN | Snippet+B / 30,000 ms | 10,000 cap; exact loc-facet equality; cosmetic 500 ignored; churn-shifted numeric page walk uncertified |
+| IL | A full / 30,000 ms | 10,000 ceiling; county/work-type equality; deterministic per-run offsets allowed; tail clamp detection required |
+| WI | B only / 45,000 ms | 500 cap; jobs floor, never openings; saturation `+`; onet×wd splits; positional `Page$N` uncertified |
+| MI | Snippet+B / 60,000 ms | Session union, minimum two eligible completed walks; aggregate extractor and non-offset continuation unverified |
+| OR | B only / 90,000 ms | 1,000 cap; no-op start; ascending oldest-ID retention; loc-code splitting; independent total/floor absent |
+
+Offset is allowed only for `ordering_model=Deterministic` and `coverage_scope=per_run`.
+
+Storing `page=N`, following a numeric Next link, or binding it to a session does not make it continuation.
+
+Unverified capability is emitted explicitly. Initial responses and planning may proceed within admission, but no certified multi-page proof follows. An exhaustive-single-response capability itself requires evidence; it is not a renamed first page.
+
+For OR, fewer than 1,000 rows is not proof. The placeholder solver remains unavailable until implemented and tested.
+
+---
+
+## 18. Classification and Acquisition Semantics
+
+### 18.1 SLM transformation
+
+Input is `{target,job_id,title,employer,snippet_or_description,source_url,posted_date}`.
+
+Canonicalization applies NFC, newline normalization, outer trimming, optional-empty substitution, ISO date formatting, then the five-field newline payload:
+
+`title`, `employer`, `snippet_or_description`, `source_url`, `posted_date`.
+
+The hash includes canonical text, stage, and model version. Stage/model are separate execution metadata but still explicit hash inputs. Cookies, authorization, profile fingerprint, worker, lease, and batch identity are excluded.
+
+Outputs must match target, job, stage, model, and input hash; genuine/applied verdicts use PASS/VETO; confidence is finite `[0,1]`; reason is bounded and nonempty. Duplicate/malformed/mismatched outputs are inference errors, never implicit PASS.
+
+Batch limits: at most 25 items, at most 20 ms collection dwell, manifest token budget, default 2,000 ms inference timeout. Long input is not silently truncated. Deterministic complete-input decomposition requires a manifest contract.
+
+Before dispatch:
+
+\[
+inference\ timeout+collection\ bound+commit\ margin<remaining\ lease
+\]
+
+Partial item success is allowed. Late responses after release, expiry, revision change, or model mismatch are fenced.
+
+Timeout/failure increments retry once and releases ownership. With bypass disabled, preserve pending or terminate exhausted retries. With bypass enabled, complete the stage with null genuine verdict, applied PASS, explicit bypass reason, and no classifier row.
+
+Snippet shadow is initially on for MN/MI and off for other surfaces. Dynamic mode pins an externally supplied revision at claim. Missing/conflicting updates retain the last valid revision, otherwise safe shadow on. In-flight policy does not change. Description classification is never shadowed by snippet mode.
+
+### 18.2 Transport and render boundary
+
+Acquisition evidence preserves request identity, target/phase/endpoint, worker, session/shard, ordered transport attempts, final render verdict, render history, headers with secret handling, response hash/bytes, accepted content only when accepted, and deadline coordinate.
+
+The whole hybrid acquisition respects the target navigation ceiling:
+
+- HTTP Pass: process.
+- ThinShell/RenderIncomplete with all rendering inputs: `Page::from_html`, no network.
+- Missing required subresources: skip from-HTML and cold navigate.
+- EdgeBlock/SensorFail/ChallengeIncomplete: cold navigate.
+- Failed from-HTML: cold navigate.
+- Harvest success with incomplete browser content: verify via the live HTTP client.
+- Final non-Pass/deadline: failed-render route.
+
+Page is not an HTTP superset. Solver clearance is not render Pass or content PASS.
+
+IL JSON is structurally/media-type validated, challenge masquerades rejected, deterministically escaped for engine classification, and retained raw for extraction. Normalization cannot invent descriptions or override engine verdicts.
+
+### 18.3 Ten slots
+
+| Slot | Bootstrap / mechanism | Session topology |
+|---|---|---|
+| MN-A, MN-B | None; no solver | None |
+| IL-A, IL-B | None; no solver; IL-A request prepares synthetic 32-hex session value | None |
+| WI-A | None; response-derived WebForms state | None |
+| WI-B | External headed authenticated handoff; human escalation | Per worker |
+| MI-A | No bootstrap; query POST is acquisition | Per crawl run, shared |
+| MI-B | Cold Page harvest then HTTP verification; bounded retry | Per worker |
+| OR-A, OR-B | Cold Page with `f5_volt_adc`; currently placeholder blocked | Independent per-shard domains, initially two each |
+
+All initial pagination uses HttpClient, warm pool size zero, preconnect enabled. IL-B is structurally present but dormant for the initial full-description surface.
+
+Stateful sessions permit one in-flight request. Rotating responses, redirects, and solver requests apply cookies before the next request; request/cookie sequences advance monotonically.
+
+Independent rotating shards use separate engine processes unless namespacing is verified. Ordinary `HttpClient::clone()` is not assumed shared-pool continuity. A retained live client or intentionally scoped `shared(profile)` binding is required.
+
+---
+
+## 19. Connector Intake and Nine-Verb Adaptation
+
+### 19.1 TaskEnvelope
+
+Every crawler task contains all Contract 02 fields:
+
+| Field | Crawler mapping |
+|---|---|
+| `record_type`, `schema_version` | `connector_task`, external-connector version |
+| `task_id` | Immutable commissioned task identity |
+| `task_type` | `discover_jobs` or `extract`; never apply |
+| `entry` | Logical ID and actual admitted acquisition URL |
+| `goal` | Read-only discovery/extraction intent |
+| `success_criteria` | Identified objectives, not asserted satisfied predicates |
+| `inputs` | Named immutable declaration, extraction, partition, and other supplied artifacts |
+| `permitted_origins` | Explicit logical IDs and actual origins |
+| `permitted_interfaces` | Declared read-only acquisition and, if needed, ordinary browser interface |
+| `effect_policy` | `read_only` |
+| `budgets` | Complete finite task budgets |
+| `context_policy` | Separate browser and learning policies |
+| `output_schema` | Required VersionPin for feed or extraction output |
+
+`TaskBudgets` contains `active_limit`, `action_limit`, `observation_byte_limit`, `recovery_limit`, and `model_token_limit`. Zero means zero, not absent. Budget-accounting ownership is pinned; unenforceable required bounds reject preparation.
+
+Task limits are not crawler `crawl_allotment`; no such Phase 1 slot is introduced.
+
+`ContextPolicy` separately contains browser-state and learning-state `StatePolicy` objects with `mode`, `requirement`, `resource_ref`, and `baseline`. Fresh browser state does not imply clean learning state. Required unsupported policies reject preparation.
+
+### 19.2 WorkScope and manifest
+
+Discovery `WorkScope` contains:
+
+- `activity=discovery`
+- `run_id`, `journal_id`, `manifest_hash`
+- `admission_ref`
+- `attempt=Inapplicable`
+- `commission=Inapplicable`
+- `commission_ref=Inapplicable`
+- `authorization_refs:SUPPORT`
+- Complete observation policy.
+
+Observation policy includes active, drain, native-cancel wait, cleanup-wait limits, and `fixture_close_action=not_applicable`.
+
+The kernel manifest contains immutable task/configuration artifacts, execution descriptor, build pins, producer registry, event registry, clocks, environment, seed missingness, and source admission.
+
+A crawler service run may use kernel execution mode `service`; its subject is inapplicable. A connector descriptor still identifies its configured native subject/service scope honestly. It does not fabricate an application attempt or browser qualification result.
+
+### 19.3 Verb behavior
+
+| Verb | Required crawler behavior |
+|---|---|
+| **Describe** | Return exact connector/build/binding/subject pins, complete capability catalog, nine operation mappings, supported task mappings, channels, grounding/substrate, limits, accounting pin, evidence prefix. No probes, browser start, or task execution |
+| **Prepare** | Validate immutable scope, task, declarations, schemas, permissions, budgets, state policy, mappings, supplied planning evidence, and runtime-access grants. Serialize intended native request and delivered task. No target request, auth test, planner execution, context reset, or hidden recovery |
+| **Start** | Atomically persist/recover local handle, preparation binding, idempotency association, and dispatch intent before wire delivery; return asynchronously |
+| **Observe** | Return registered handle-scoped projections in journal order through a fixed prefix, with bounded wait and explicit cursor semantics |
+| **RequestNativeCancel** | Invoke only evidenced native cancellation mapping; otherwise unsupported mapping. Preserve request, acknowledgement, stop claim, effect, and timing independently |
+| **CloseObservationConnection** | Close only the connector-owned observation transport. `end_observation=true` stops new workflow delivery and begins bounded local drain; neither operation implies native cancellation |
+| **CollectArtifacts** | Inventory or transfer already produced authorized immutable artifacts; no arbitrary path/URL fetch and no task rerun |
+| **ReleaseNativeContext** | Use only mapped, authorized context release. No implicit logout, profile purge, global reset, or containment fallback |
+| **Contain** | Execute installed versioned policy against authorized resource-registry scope; no arbitrary shell command. Record affected work and unresolved impact |
+
+Every verb has a handler even if native mapping is absent.
+
+Capability catalogs include the shared minimum IDs: native goal task, plan execution, cancel, context release, artifact retrieval, revision, DOM access, browser isolation, browser persistence, and learning-state control. New versions start unknown; inapplicability and absence require evidence. Unsupported mapping is not native absence.
+
+### 19.4 Preparation and handle fields
+
+`PreparedTask` preserves all required fields: preparation ID, scope, configuration, full task, semantic hash, assistance, planning refs, runtime access, delivered-task artifact/hash, native-request artifact/hash, translation pin, all five budget mappings, concerns, and evidence prefix.
+
+Configuration pins connector ID/version, binding pin, exact subject identity, descriptor artifact, and descriptor evidence.
+
+Runtime access contains purpose, opaque access reference, and authorization refs. It carries no secret bytes or control credentials.
+
+Start accepts preparation reference, logical idempotency key, every required concern acceptance, authorization refs, and either inapplicable recovery or explicit same-handle resume authorization.
+
+`ConnectorHandle` contains record/version, handle reference, preparation reference, scope, idempotency key, and real creation TimePoint. Native IDs arrive later as observations.
+
+Command deduplication uses authenticated principal, connector, and request ID. Logical execution deduplication independently uses Start’s idempotency key bound to immutable preparation. Conflicting content rejects; a lost reply does not justify a fresh key.
+
+Resume needs the existing handle/key, new command identity, recovery authority, and evidenced native checkpoint/idempotency contract. Lease expiry alone is insufficient. Closed/draining observation cannot be reopened.
+
+### 19.5 Observation and output
+
+Observe enforces:
+
+\[
+after < item.sequence \le next \le through
+\]
+
+`next` is the last scanned journal position, including non-observation events. `has_more` is exactly whether next precedes the cutoff. Fixed cutoff requests use zero wait. Lost history is explicit; oversized items are not dropped.
+
+Discovery emits kernel observations, native report observations where applicable, context observations, task outputs, controls, incidents, artifact availability, and clock registration. It does not fabricate attempt-axis publications.
+
+`TaskOutput` contains kind, name, output schema pin, artifact, `completeness:complete|partial|unknown`, support, and limitations. Output completeness concerns that output contract, not target coverage. A complete manifest may honestly describe incomplete partitions.
+
+Native reports retain exact bytes before normalization. Authentication and correlation are checked independently. Unverified/mismatched reports yield no accepted execution claims. Discovery execution claims carry no application assertions.
+
+### 19.6 Read-only enforcement
+
+The crawler rejects application mutations through task text, redirects, plans, extraction callbacks, transport overrides, and write-action handlers.
+
+HTTP method does not determine read-only status: MI query POST and WI postback may be acquisition; OR `self-refer-step1-validate.cfm` remains mutation even with `usemyssn=No`.
+
+Hidden employer-contact data remains Missing unless acquired through an admitted non-mutating source. A separately commissioned application belongs to an authorized executor, never this crawler stub.
+
+### 19.7 Error and control meaning
+
+Connector failures retain exact Contract 02 codes, fault domain, operation delivery, retry guidance, retry-after declaration, handle missingness, and evidence references.
+
+Validation/authorization failures map to `INVALID_REQUEST`, `UNSUPPORTED_VERSION`, `FORBIDDEN`, or `NOT_ADMITTED`; absent dependencies/mappings to `PREREQUISITE_UNAVAILABLE` or `UNSUPPORTED_MAPPING`; pressure to `RESOURCE_BUSY` or `BUDGET_EXCEEDED`; storage to `STORAGE_UNAVAILABLE`; ambiguous delivery to `DELIVERY_UNCERTAIN`; stale identities to the corresponding stale/unknown preparation, handle, context, or cursor code; integrity and size failures to `INTEGRITY_CONFLICT`, `RESPONSE_TOO_LARGE`, or artifact/protocol errors as applicable.
+
+These describe the connector operation, not a composite crawl outcome. Valid native failed/completed reports are ordinary evidence.
+
+Requested, acknowledged, effect-observed, unsupported, and unknown controls remain distinct. Forced termination is not cooperative cancellation, rollback, or proof of no remote effect.
+
+---
+
+## 20. Same-Key Operations, Replacement, Publication, and Archives
+
+### 20.1 Fetch identity
+
+\[
+B=SHA256(JCS([target,"B",job\_id,canonical\_request]))
+\]
+
+\[
+A\_full=SHA256(JCS([target,"A\_full",job\_id,listing\_source\_url]))
+\]
+
+Canonical request contains URL, uppercase method, actual body digest, and representation headers. Normalize scheme/host/default port, remove fragment, preserve query order unless proven irrelevant, and deterministically frame multivalue headers.
+
+Exclude ephemeral identity/session headers, not representation-determining headers. Cookie rotation, run, date, response hash, and extractor version are not hidden inputs.
+
+### 20.2 Same-key rule
+
+Absent root accepts initial validated acquisition without predecessor archive.
+
+Existing same key causes acquisition no-op and creates no replacement archive. Acquisition and replacement lineage remain unchanged. Independent discovery, lease, retry, classification, policy application, pipeline, semantic, and coverage-reference transitions may commit.
+
+Changed response bytes under the same key are new observation evidence, not replacement content. A failed-render repair under the same key requires a future versioned freshness contract.
+
+### 20.3 Changed-key atomic protocol
+
+1. Establish old crawler revision, digest, and key.
+2. Select latest fully published downstream revision in the named ingest-side view.
+3. Journal a replacement seal selection pinning both.
+4. Verify complete locally durable registration, domain documents, and dependencies.
+5. Stage archive extent metadata outside the critical section.
+6. Stage new crawler revision with backward replacement link.
+7. At commit, conditionally check both old crawler revision/key and selected local downstream pointer.
+8. Atomically commit replacement, operational effects, journal effect, backward link, and durable retention protection.
+9. Acknowledge only after durability.
+10. Publish to read views asynchronously.
+
+Changed checked pointers force rejection/reselection. A staged orphan is not a committed archive. No peer transaction, acknowledgement, or large serialization enters the ingest critical path.
+
+### 20.4 Exact Contract 04 records
+
+`DataDomainRevision` contains record/version, entity, registration digest, domain, owner domain, writer ID, revision, previous revision, evidence prefix, evidence refs, and complete value.
+
+`PublicationReceipt` contains receipt identity, entity/registration/view/publisher, domain/revision/document, superseded pin, observed owner head or Missing, source prefix, installation time, publication ref, and measured/bounded/unavailable publication delay.
+
+Installation validates complete immutable bytes before atomic pointer advance. Reordering cannot regress the pointer. Skipping visible revisions requires verified lineage. Identical delivery returns the existing receipt.
+
+`LogicalRow` contains entity, complete registration and digest, every domain slot, and seal point. A published slot contains revision, document reference, publication reference, and complete snapshot. Zero means unpublished/inapplicable, never lost published bytes.
+
+`SealPoint` contains seal ID/name/view, exact version vector, time, input prefix, and support. Selection is journaled before resulting row registration, avoiding self-reference.
+
+### 20.5 Archive extents
+
+`ArchiveStorageManifest` contains encoding `owner-domain-extents/1`, schema version, entity, registration artifact, complete domain map, and seal.
+
+For jobs, domain names are exactly crawler/downstream. A published extent contains revision, document, and publication ref. An unpublished extent preserves exact zero-slot Missing.
+
+`ArchiveRecord` contains record/version, root, storage manifest, and **entire previous `LogicalRow` as `payload_json`**.
+
+The root hashes canonical storage-manifest bytes, not the expanded wrapper. Expansion loads verified immutable local components and reconstructs the complete typed logical row exactly. It never queries current peer state, inserts defaults, redacts under the original hash, or upgrades revisions.
+
+A diff, crawler-only row, hash list, or mutable locator is not an archive. Restricted dependencies make the archive restricted.
+
+`FetchKeyReplacement` contains replacement identity, entity/registration, old crawler pin/key, complete new crawler revision, archive root, archived vector, retention-pin identity, commit ref, evidence prefix, and support. The new revision follows the old and has a different key; its `ReplacementLink` names that replacement/archive.
+
+### 20.6 Retention
+
+`RetentionPinRevision` contains pin/owner/writer identities, revision/previous revision, dependent root, archive root, active/released state, release ref, evidence prefix, and support.
+
+Initial pins are active. Dependent and archive identity never change under a pin ID. Release requires evidenced retirement and does not remove other roots’ protection.
+
+Protection is transitive through registration, domains, referenced artifacts, publication/seal evidence, and earlier replacement archives. GC is fenced against concurrent pin creation.
+
+Newer rows, TTL, and cache eviction do not release dependencies. Lost bytes are an integrity incident, not successful GC or permission to reconstruct different content.
+
+---
+
+## 21. Admission, Resource, Recovery, and Declaration Completeness
+
+### 21.1 Declaration boundary
+
+The complete §13.A declaration is retained as an immutable configuration artifact. No field silently disappears at intake. Validation covers these field groups:
+
+| Group | Fields |
+|---|---|
+| Identity/axes | `adapter_id`, `adapter_version`, `target`, `phase_slots`, `bootstrap_requirement`, `session_requirement`, `truncation_model`, `ordering_model`, `state_mutation_surface`, request/byte estimates, `phase_a_sufficient`, `phase_b_value`, `classification_surface` |
+| Transport | `bootstrap_mode`, `pagination_mode`, `endpoints`, `endpoint_transport_overrides`, `profile_ref`, `response_schema_ref`, `render_readiness_predicates`, `session_lapse_predicates`, `nav_timeout_ms`, `nav_max_iter`, `bootstrap_timeout_ms`, `bootstrap_retry_limit`, `solver_names`, `other_mechanism`, `unsolvable_policy`, `max_response_bytes`, `io_buffer_bytes`, `max_rows_per_response` |
+| Sessions | `shard_topology`, `shard_count`, `worker_count`, `max_inflight_per_session`, `initial_bootstrap_cost_class`, absolute/idle lifetimes, rebootstrap buffer, `keepalive_request`, `handoff_max_age_seconds`, `engine_session_domain`, `control_reserve_slots`, saturation grace, resume watermark, worker detection/restart bounds |
+| Warmth | `warm_pool_size`, `preconnect`, `preconnect_origins`, `max_connections_per_slot`, connection idle timeout, Page reset timeout |
+| Coverage | Partition/primary/date/secondary keys, domain extractor, split limit, total source/extractor/unit, floor flag, session minimum, row cap, page size, saturation patterns, tail/no-op thresholds, overflow banners, posted-date extractor, coverage capability status |
+| Ordering/dedup | Cursor kind/status, coverage scope, duplicate baseline, over-fetch factors, reconciliation limit, dedupe location, reset policy, excluded/representation headers, volatile selectors, replay capture mode |
+| SLM | Shadow mode/revision, bypass, model/version/artifact/digests, parameters, quantization, input/batch token limits, item limit, inference timeout, batch dwell, result TTL, load timeout, isolation reservation |
+| Queue/storage | Lease TTL/overrides, retry limit/overrides, sweeper interval, row/byte capacity, staging budget, transaction microbatch limit, projection-lag target, publication metadata bound |
+| Memory/content/telemetry | Memory targets, overshoot percentage/amount/justification, content declarations, failure extensions, sink threshold, telemetry-record bound, diagnostic-byte bound |
+
+Conditional absence is explicit in the declaration schema. Estimates remain unmeasured when unknown. No Axis 6 or crawler `crawl_allotment` is introduced.
+
+The four adapter extensions remain partition planning, pagination advance, transport choice, and non-executing write-action stub. Core owns persistence, leases, evidence, and proofs.
+
+### 21.2 Credit-before-wire and control progress
+
+Before any output-producing request, reserve queue rows, bytes, and durable response staging for the maximum admitted packet and generated references.
+
+An admitted response does not wait for new queue capacity to apply cookies and commit its durable boundary. Oversized decoded responses are rejected while streaming; bounds are not silently raised.
+
+Data admission pauses at row or byte capacity. Reserved in-flight work drains. Each active target retains independently admitted control command, CPU, and cold-bootstrap memory capacity.
+
+Bootstrap/replacement holds no listing/work/detail lease. Old owners drain their single request, apply cookies, commit the boundary, and are fenced. Replacement publishes only a permitted Send live-client handle and epoch.
+
+At prolonged saturation, initially 5,000 ms, deliberate quiescence is allowed. Resume requires both row and byte occupancy below the initial 0.8 watermark and a fresh generation where retired.
+
+### 21.3 Resource and performance contract
+
+Crawler defaults remain deployment declarations:
+
+- Cold worker target 200 MB.
+- Warm worker target `(N+1)×130+70` MB.
+- Orchestrator target 200 MB.
+- Aggregate embedded storage target 100 MB.
+- SLM nominal 600 MB–2.5 GB; class targets 1 GB/3 GB.
+- Default declared overshoot maximum 25%, with justification.
+- SLM batch target 100–200 ms under the reference ≤512-token envelope; not a supplied benchmark.
+- Navigation ceilings remain target-wide.
+- Default response bound 64 MiB and streaming buffer 1 MiB.
+- Queue default 10,000 rows plus explicit byte bound.
+- Microbatching at most 1 ms.
+
+Inference runs in a separately bounded process/domain with host admission reserving crawler/storage/OS resources. An SLM-induced crawler OOM invalidates the run, stops claims, and prevents successful completion representation. It is not an ordinary retry.
+
+Pagination orchestration median must be ≤10% of measured network median. Network, bootstrap, downstream inference, explicit admission wait, and synchronous signal blocking are separately measured, not hidden.
+
+Signals contain stage rows in/out, stage latency, queue depth, request overhead, and sink latency. Sink calls hold no session, transaction, completion, or V8 lock. Median sink latency above 100 ms over five minutes marks degraded throughput; a stuck sink cannot recursively emit its own latency.
+
+### 21.4 Recovery
+
+- Acknowledged entities, results, cursor boundaries, and audit survive the stated durable-storage fault model.
+- Restart does not refetch proven partitions.
+- Incomplete packets/walks may replay idempotently.
+- Confirmed worker death fences ownership and reclaims within admitted lease bounds.
+- Source A4’s 3-second detection/10-second replacement and A5’s 100-ms skew are assumptions, not shared guarantees.
+- Storage failure causes no acknowledgement or cursor advance.
+- Session rejection is detected before accepting content.
+- One target’s challenge, handoff, or model pressure cannot block siblings.
+- Unknown lifetime does not justify invented keepalive requests.
+
+---
+
+## 22. Diagnostics, Replay, Failure Codes, and Reconciliation Issues
+
+Diagnostics derive only from immutable manifest, named journal prefix ending at analysis request, and pinned classifier/requirement/fix registries. Late evidence creates a new immutable revision.
+
+Crawler requirements use a pinned crawler requirement registry, not fictitious browser-subject results. Capability, opportunity, and result stay independent.
+
+Required triage queries expose:
+
+1. Pending work with expired/disappeared ownership.
+2. Dead letters by target/stage/reason/time.
+3. False coverage proofs and exact blockers.
+4. Handoff, failed, quiescent, expired, and missed-replacement sessions.
+5. Bypass and genuine-verdict history.
+6. Rejected stale commits and epochs.
+7. Changed-key replacements and complete prior rows.
+8. Retained evidence by adapter, engine, profile, model, and schema version.
+9. Publication lag, known source head, and installed revision.
+10. Missing/lost artifact dependencies.
+
+Offline diagnostic rederivation uses Contract 00 `ReplayReceipt(mode=diagnostic_rederivation)`. Exact fixture mode is used only when the required semantic-event, final-state, and diagnostic comparisons can all be recomputed from complete recorded inputs.
+
+Replay invokes no browser, subject, live acquisition, or external write. Recorded derived outputs are comparison targets, not authoritative replay inputs. Missing input cannot yield matched.
+
+Failure codes remain pinned owner-policy vocabulary. Explicit source reasons include inference/model/OOM, session lapse/lifetime, incomplete extraction, retry exhaustion, no split axis, ascending overflow, and the declared extensions `solver_unavailable`, `solver_unsolvable`, `warm_reset_failed`, `storage_unavailable`, `coverage_evidence_missing`, `cursor_capability_unverified`, `ordering_drift`, `response_limit_exceeded`, `invalid_configuration`. This list does not invent the unprovided preamble’s entire base vocabulary; undeclared persisted codes are rejected.
+
+Source reconciliation requirements:
+
+- SQL references to `entity_id` in tables lacking that column are conceptual soft references, not executable DDL. Implement composite foreign keys or transactionally validated canonical references.
+- Finite-number, required-content, exact-reference, and transition guards remain mandatory even where source SQL checks are weaker.
+- UTC-only history cannot become monotonic history.
+- Legacy downstream fields cannot be crawler-authored product revisions.
+- `replay_capture_mode=failures` cannot waive Pass source-artifact retention.
+- Shared versioned hash profiles cannot silently reinterpret old hashes.
+- The supplied three-field handoff does not establish original session birth.
+- No missing native schema, signing contract, capability, or benchmark is replaced by an assumed implementation fact.
+
+---
+
+## 23. Conformance and Acceptance Matrix
+
+All tests below are silo tests using retained fixtures or explicit synthetic backends unless authorized live evidence is separately supplied.
+
+| Test | Required result |
+|---|---|
+| C01 — Complete field inventory | Every source column in all eleven entities survives normalized snapshot conversion |
+| C02 — Recursive nulls | Bare normalized null rejected; all six reasons preserved; unknown reason rejected |
+| C03 — UTC-only history | No invented offset/boot; original UTC retained; required held lease publication blocked |
+| C04 — Timing arithmetic | Cross-clock/boot subtraction rejected; exact zero preserved; bounded/unavailable estimates enforced |
+| C05 — Hash profiles | Wrong bytes/framing rejected; hash-of-hash not accepted as source digest |
+| C06 — Authority | Caller provenance/owner spoof rejected; imported evidence not upgraded |
+| C07 — Journal | Durable contiguous ordering, deduplication, conflict detection, producer gaps and late evidence retained |
+| C08 — Four surfaces | Exact 3/4/3/2 stage participation and initial states |
+| C09 — Claim | State unchanged; token/revision/epoch/audit atomically assigned |
+| C10 — Reclamation race | Release, expiry, and death recovery increment one failed generation at most once |
+| C11 — Stale completion | No row, cursor, classifier, membership, or downstream effect |
+| C12 — Stage atomicity | No orphan downstream row or cursor beyond durable packet |
+| C13 — Render cases | Failed content all Missing; Pass incomplete extraction rejected |
+| C14 — Structured IL | HTML masquerading as JSON rejected; empty valid result remains unproven |
+| C15 — Classifier | Exact correlation; malformed/duplicate output rejected; genuine conflict immutable |
+| C16 — Shadow/bypass | Claim-pinned policy; no bypass result row; genuine-PASS semantic precedence preserved |
+| C17 — SLM isolation | Inference memory failure cannot terminate crawler; induced violation invalidates run |
+| C18 — Seen IDs | Exact eligible membership; no snippet-only veto membership; coverage unaffected by hits |
+| C19 — Same key | Acquisition and lineage unchanged despite changed response/extractor/run; metadata transitions still work |
+| C20 — Changed key | Full prior logical row and retention protection commit with replacement |
+| C21 — Publication race | Changed local downstream pointer forces reselection, never mismatched archive |
+| C22 — Two writers | Product large writes/transfer cannot hold ingest writer or require ingest acknowledgement |
+| C23 — Old-or-new publication | No partial domain; reordered delivery cannot regress pointer |
+| C24 — Archive expansion | Exact complete row reconstructed from local immutable extents |
+| C25 — Retention race | Transitive dependency cannot be collected while any root reaches it |
+| C26 — Coverage algebra | Equality/floor/union guards, duplicate non-substitution, and zero rule enforced |
+| C27 — Five detectors | Exact trigger thresholds, stop/split/recovery, and evidence emitted |
+| C28 — Cursor restrictions | Numeric positional aliases rejected outside deterministic per-run scope |
+| C29 — Unverified capability | Initial evidence allowed without positive proof or fabricated certified cursor |
+| C30 — Split tree | Covering children required; overlap union exact; parent exploratory counts excluded |
+| C31 — Drift | Correct repeated-distinct rates, bands, backend cohorts, and bounded reconciliation |
+| C32 — Sessions | None topology writes zero rows; stateful serialization and current epoch enforced |
+| C33 — Rotating cookies | Redirect/solver mutations serialized; cold crash recovery; independent A/B shards |
+| C34 — Thread confinement | Page/solver/DOM/V8 handles never cross allocating-thread boundary |
+| C35 — Back-pressure | Full data queues cannot block reserved control progress or admitted response commit |
+| C36 — Prepare | No target network, auth probe, hidden planner, reset, or recovery |
+| C37 — Start idempotency | Same command/key returns retained handle; conflict rejected; no duplicate execution |
+| C38 — Observe | Fixed-prefix ordering, scanned cursor, loss reporting, and empty-page semantics |
+| C39 — Controls | Close, cancel, release, contain, claim, acknowledgement, and effect remain distinct |
+| C40 — Read-only | OR self-referral and all application mutations rejected before wire; zero mutation rows |
+| C41 — Artifact access | Authorized immutable retrieval only; no arbitrary URL/path; full size/digest verified |
+| C42 — Output completeness | Complete output manifest cannot imply proven discovery or application success |
+| C43 — Replay | No external execution; missing inputs unavailable; required comparisons all match before matched |
+| C44 — Recovery | Acknowledged work survives process/reboot model; proven partitions not refetched |
+| C45 — Independent shipping | IL producer passes with synthetic consumers and no orchestrator/executor peer |
+| C46 — Evidence honesty | Unverified solver, counts, cursor, lifetime, and performance remain unverified |
+
+### 23.1 Completion criteria
+
+Track 2.1 implementation is conformant only when:
+
+- Field transformations and closed artifact schemas pass structural and semantic validation.
+- Owner-local atomicity and independent write-path admission are demonstrated.
+- Every supported operation and transition passes its applicable tests.
+- Current target capability descriptors and blockers are published honestly.
+- Complete archives remain retrievable under concurrent publication and retention tests.
+- The component passes its silo suite before peer integration.
+
+### 23.2 Explicit remaining evidence boundaries
+
+The mapping preserves four source evidence gaps: Oregon solver implementation, MI/OR independent proof sources, MN/WI/MI permitted non-offset traversal, and empirical veto projections.
+
+It also preserves deployment assumptions concerning hardware/isolation, storage service, network baseline, recovery bounds, clocks, entity sizing, downstream load, inference input envelope, and durable-media fault model.
+
+None is resolved by scheduling, policy approval, renaming a cursor, accepting a memory exception, receiving a connector acknowledgement, or validating this document. Evidence or an explicitly versioned contract revision is required.
+
+---
+
+## Appendix A — Normative contract-identifier cross-reference
+
+The identifiers below refer to `contracts/04-owner-separated-write-domains.yaml`, version `owner-separated-write-domains/0.1.0`. They name normative requirements, not implementation-certification claims.
+
+| Invariant | Normative rule | Implementing sections |
+|---|---|---|
+| **OWD-FETCH-NOOP** | An existing identical fetch key makes the acquisition write a no-op. No replacement archive is created. Independent permitted metadata transitions may commit while acquisition and replacement lineage remain unchanged. | §20.2 **Same-key rule**; §§16.3–16.6 operational transitions and fencing |
+| **OWD-REPLACE** | **A changed fetch key requires a complete archive of the prior logical row.** The replacement seal selects the current old crawler revision and latest fully published downstream revision in the named ingest-side view. Commit checks both selected pointers and atomically installs the new crawler revision, backward archive link, replacement evidence, and retention protection before acknowledgement. | §20.3 **Changed-key atomic protocol**; §20.4 revision, publication, and seal structures; §20.5 **FetchKeyReplacement** schema; §20.6 **Retention** |
+| **OWD-ARCHIVE** | **Archive `payload_json` is the entire previous `LogicalRow`.** It includes registration, every domain slot, complete published snapshots, publication references, reasoned missingness, and the sealed revision vector. Immutable extents are permitted only if they reconstruct that exact value without consulting mutable peer state or serializing large downstream payloads on the crawler critical path. | §20.5 **Archive extents**, including **ArchiveRecord** and **FetchKeyReplacement** schemas; §20.4 **LogicalRow** and **SealPoint** structures |
+| **OWD-RETENTION** | A live replacement protects its archive root and every transitive immutable dependency. Later retained archives preserve reachable earlier archives. Release requires explicit evidence; GC must be fenced against concurrent pin creation. | §20.6 **Retention**; §20.3 atomic retention protection; §20.5 backward replacement linkage |
+| **OWD-LOCAL-COMMIT** | An owner’s effect, revision advance, and journal evidence commit atomically within its durability boundary. No owner commit waits for a peer-owned write lock, transaction, acknowledgement, or large-payload serialization. | §16.5 **Atomic stage effects**; §20.3 **Changed-key atomic protocol** |
+| **OWD-PUBLISH** | Owner durability and read-view installation are separate events. Complete immutable components are installed before atomic pointer advance; failed or partial transfer leaves the last complete published revision visible. | §20.4 **Exact Contract 04 records**; §20.3 steps 2, 7, and 10 |
+
+Conformance coverage is provided by §23 tests **C19–C25**, covering same-key preservation, atomic replacement, publication races, write isolation, old-or-new visibility, complete archive expansion, and transitive retention.

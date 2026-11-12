@@ -1,0 +1,42 @@
+# Review — prd/05-job-hunter.md (turn 19)
+
+## Overall assessment
+
+The file is a coherent, well-scoped job-hunter PRD: candidate-policy-centered selection, a day-one manual lane, truthful-materials discipline, connector-mediated commissioning, five-axes outcome tracking, owner-separated data boundaries, and a 13-scenario silo acceptance gate. Protocol, epistemic tagging, source fidelity on every spot-check, and consistency with the provided priors (lifecycle, connector, owner-separated domains, decisions, integration PRD) are all strong. It is acceptable as-is; no revision is needed before proceeding.
+
+## Protocol compliance
+
+The raw deliverable (`runs/turn8-20/deliverables/turn19.md`) wraps the content in a single ````markdown:prd/05-job-hunter.md` fence and ends with `<!-- TURN_END:19 -->` with nothing outside the fence except the marker. The tree file matches the fenced interior exactly (programmatic comparison confirms the only delta is a trailing newline). Manifest item number is correct. The document ends at a coherent boundary (§11 table plus closing synthesis, line 351), not mid-thought.
+
+## Structure and scope
+
+The file matches the shape of a PRD: outcome and operating priority (§1), candidate policy with playbooks, negative space, and versioned inputs (§2), day-one workflow (§3), evaluation/selection with intake, two-check judgment, and decision artifact (§4), truthful materials (§5), commissioning sequence and recovery (§6), outcome tracking across the five axes plus correspondence (§7), data ownership and legacy-collection reconciliation (§8), learning boundary and operating view (§9), incremental delivery with JH-01–JH-13 acceptance scenarios (§10), and open decisions (§11). It stays on the job-hunter manifest item — selection, materials, commissioning, tracking, follow-up — and explicitly places browser control, discovery coverage, and form experiments with Circus Tent/Ringmaster, the crawler, and Hellscape as collaborating products. No drift into sibling-product internals beyond boundary statements.
+
+## Epistemic discipline and fabrication spot-checks
+
+Tagging is dense and consistent: every substantive paragraph or table row carries `[extracted: …]`, `[inferred: …]`, `[proposed: …]`, or `[uncertain: …]`. Concrete details checked against sources all trace:
+
+- Eight-playbook table (§2.1) names match `capability_profile.txt` Playbooks 1–8 verbatim, and the evidence anchors (Meridian/ArcView, Liberty WSPs, Minted five-role progression, Mid-Columbia interventions, SBC/MCU and ROS2/YOLO, local-SLM/cloud-reasoner, Robert's Rules/130-person speaking, 34 mail campaigns) match the profile's proof points.
+- Negative-space claims (§2.2: no formal degree, no deep AzureAD/Intune/PowerPlatform ownership, no multi-year multi-time-zone delegation at scale) match the profile's Negative Space section nearly verbatim; the bachelor's-substitution guidance matches `job_search_queries.txt` policy.
+- Reranker vocabulary (§4.3: `can_do_70_percent`, `hard_blockers`, `playbooks_matched`, `would_tolerate`, `pay_ok`, `legibility_gap`, `resume_translation`, `score`) matches the JSON example in `job_search_queries.txt` exactly, and the file honestly frames it as a starting semantic inventory rather than an executable schema.
+- Two-check evaluation (hard-blocker then tolerability, §4.2) mirrors the source's "Automate the negative veto" section structure.
+- Connector sequence (§6.2: `Describe`, `Prepare`, `Start`, `Observe`/`CollectArtifacts`, `RequestNativeCancel`/`CloseObservationConnection`/`ReleaseNativeContext`/`Contain`) matches the nine verbs in the `Operation` enum; `EXT-*` rule citations (AUTHORITY, DESCRIBE, DECLARE-NOT-ASSESS, PREPARE, START, IDEMPOTENCY, OBSERVE, NORMALIZE, ARTIFACTS, CLOSE, CONTROLS, STATE-POLICY, PREPARATION-PIN, RESUME, FAILURE, SURFACE) all exist in the connector contract.
+- Five-axes table (§7.1) authorities (connector dispatch/observation, subject execution, origin application, reconciler report) match the lifecycle contract's ownership; `LIFE-*` citations (AXES, CLAIMS, COMMISSION, MANUAL, ORIGIN, SOURCE-CHECKS, RECONCILE, CLOSE, LATE-EVIDENCE, TIME, LINEAGE) all exist in the lifecycle contract, including the `held_in`/`held_out`, `derived_from` same-kind, and rehearsal/performance-linkage semantics.
+- Owner-separated claims (§8.1: `JobCrawlerValue`, `EvaluationReference`, `ProductSelection` with `go`/`no_go`/`review`, `JobContent`, `DownstreamOwnership`) all exist in the owner-separated contract; the same-fetch-key no-op and legacy-hash non-merge rules match the decisions file §5.
+- Decision baseline (P-07, P-13–P-16, HA-03, INV-14/29/30, §8.3 `fabricationLog`) all exist in the decisions file with matching substance; no new handoff amendment is introduced, as stated.
+- Dashboard TypeScript/Angular-over-HTTP and Firebase-dashboard-only-or-dropped positions match the handoff brief; the operational-outbox recovery language (§6.3) matches the crawler blueprint's outbox sentence; genuinely absent items (executable verification commands, rubric weights, receipt mappings, follow-up integrations) are marked `[uncertain]` with retrieval obligations rather than invented.
+- No fabricated URLs, endpoints, timeouts, thresholds, or schema constants were found.
+
+## Cross-file consistency
+
+- Contract posture ("does not introduce another shared contract or redefine their fields") is honored throughout; the evaluation artifact (§4.3) is explicitly product-local with a versioned representation to be defined, not a shadow shared contract.
+- Integration PRD references (day-one lane, manual commissioning with `held_out` partition, no-revival of M0, browser-architecture route separation) are faithful.
+- The m0-retirement, practice/production lineage, and no-single-status positions are applied consistently with the lifecycle contract and integration PRD.
+
+## Concerns
+
+No concerns. One cosmetic note for future turns, not requiring action here: the §6.2 "Plan, if required" row attributes the "Circus Tent `/run` surface accepts steps rather than goals" statement to `3-hellscape-blueprint.md, §5.4`, while that exact steps-not-goals wording appears in the blueprint's evidence table (M0 audit row) and §5.4 covers planning assistance and the canonical plan more broadly. The claim itself is true and the adjacent citation (connector native reconciliation) is correct, so this is a section-pointer imprecision, not a fabrication.
+
+## Recommendation
+
+**Accept as-is.** No changes requested.

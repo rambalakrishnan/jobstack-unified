@@ -1,0 +1,45 @@
+# Review: contracts/01-application-attempt-lifecycle.yaml (turn 3)
+
+## Overall assessment
+
+The file is a complete, well-formed contract schema that delivers what manifest item 3 asks for: the five-axis attempt lifecycle with single-writer ownership, a reconciler that writes only `report`, immutable `kind` with lineage linkage, epistemic tagging throughout, and sourced reconciliation of the handoff/hellscape/circus-tent conflicts. YAML parses, all `$ref`s are local, all objects are closed, and the tree file is byte-identical to the raw deliverable's fenced content. I found no blocking or concerning issues — only cosmetic notes. Accept with notes.
+
+## Concerns
+
+### 1. No turn-end marker in the raw deliverable — cosmetic
+
+- **Location:** `runs/turn8-20/extract/turn3_deliverable.md` (fence opens ```` ```yaml:contracts/01-application-attempt-lifecycle.yaml ```` correctly and closes with ```` ``` ````, but no `<!-- TURN_END:3 -->` follows).
+- **Why noted:** REVIEW_PROMPT_V2 asks about the marker, and the design conversation specifies it. However, the developer-prompt extract provided for this review truncates mid-sentence in the protocol section and never states the marker rule, and all six extract-era deliverables (turns 1–6) uniformly lack markers while markers appear from `runs/turn8-20/deliverables/turn7.md` onward. This is therefore a property of the turn-1–6 capture regime, not a defect of this file. The fence path matches the manifest exactly, there is no content outside the fence, and I verified the tree file equals the raw inner content exactly.
+
+### 2. `mirrored_types` list is incomplete — cosmetic
+
+- **Location:** `x-kernel-compatibility.mirrored_types` (lines 52–67).
+- **Why noted:** The list names 15 mirrored kernel types but omits others that are also mirrored verbatim in wire meaning from `contracts/00-evidence-kernel.yaml`: `Scope`, `Estimate`, `MeasurementOrigin`, `ComponentIdentity`, `MaybeString`, `MaybeDigest`, `MaybeTimePoint`, `AttemptReference`. I diffed every shared type with annotations stripped: `Identifier`, `Revision`, `PositiveInteger`, `Digest`, `EvidenceRef`, `JournalPrefix`, `ArtifactReference`, `VersionPin`, `MeasurementEvidence`, `SubjectIdentity`, `AssistanceRecord`, `ComponentIdentity` are wire-identical; `TimePoint`/`Measurement`/`Estimate` differ only by inlining kernel helpers (`NonNegativeNumber`, `MaybeNumber`, `MaybeNonNegative`) into semantically identical inline schemas; `AttemptContext` and `ExecutionDescriptor` differ only by restructuring two `if/then` pairs into `if/then/else` over closed enums (logically equivalent). The compatibility claim ("preserve the kernel's wire meanings") holds; only the inventory list understates it. A future turn could complete the list; nothing to fix here.
+
+### 3. A few `extracted` tags that are arguably `inferred` — cosmetic
+
+- **Location:** `ExecutionClaim.limitations` (line 1772–1776), `ClaimComparison.rationale` (line 1953), `ClaimComparison.limitations` (line 1954–1958), all `x-status: extracted`, `x-source: *d`.
+- **Why noted:** The cited source shape, hellscape §4.5 `Claim`, carries `claim_id`, `made_at`, `received_at`, `evidence_available_to_claimant`, `comparison`, and `comparison_evidence_refs` — but no `limitations` or `rationale` field on the claim itself (`limitations` appears on `NativeCapability`, §4.3). The fields are legitimate and well-motivated; the tag precision is slightly overstated. By contrast the neighboring extractions check out exactly against the source: `scope` enum (`primitive | application_postcondition | execution_lifecycle | unknown`), `comparison` enum (`consistent | contradicted | not_comparable | indeterminate`), `CloseSnapshot.execution_knowledge` (`running | terminal | unknown | not_applicable`, matching hellscape `execution_state_at_observation_close`), and the `/run completed` → execution-completion mapping (§4.6, verified verbatim). No fabrication; at most three tags should read `inferred` on a future revision.
+
+### 4. `Scope.kind` drops `type: string` — cosmetic
+
+- **Location:** `Scope.properties.kind` (lines 741–744) vs kernel, which declares `type: string` alongside the same ten-value enum.
+- **Why noted:** Semantically identical (the enum values are all strings, so validation behavior is unchanged), and correctly marked `extracted` from the kernel. Mentioned only for completeness of the wire-diff audit.
+
+### 5. Forward reach into owner-separation mechanics — note, not a concern
+
+- **Location:** `LIFE-PUBLICATION`, `DomainPin`, `VersionVector`, `SealPoint`, `AxisRevision` (lines 208–224, 1291–1363, 2077–2134).
+- **Why noted:** Per-axis revisions, async publication, and seal points overlap the nominal scope of turn 9 (`contracts/04-owner-separated-write-domains.yaml`). This is justified, not drift: the lifecycle needs publication mechanics for its five axes now, every element is marked `proposed`/`inferred` (never `extracted`), and the derivation explicitly cites Stage1 Decision 8 (`x-source: *o`), matching the handoff's own statement that owner-separation generalizes from there (Part VI). Turn 9 should align with — not duplicate — these definitions.
+
+## Positive checks (spot-verified)
+
+- **Epistemic discipline:** 401 `x-status` / 401 `x-source` entries, every one of the 67 `$defs` tagged; the only serialized null is `Missing.value` (line 628); two genuine `uncertain` items in `x-open-evidence` with stated resolutions.
+- **No invented enumerations:** all new state names (dispatch/observation states, seal names, dispositions, target scopes, close reasons, issue kinds) are marked `proposed`; all handoff enums (`Missing` reasons, opportunity states, axis names, report verdicts, control verbs) verified verbatim against `1-handoff-brief.txt` Part VI.
+- **Invariant discipline:** 15 invariants carry `derivation`s; the one `proposed_mechanism` (`LIFE-REPORT-COVERAGE`) carries `rationale` plus a `flip_condition`.
+- **Amendment discipline:** the file claims no handoff amendment and I found none — the `Missing`-as-no-verdict treatment of `report.state` and the manual/execution-slot rules operationalize rather than override handoff Parts VI–IX.
+- **Cross-file consistency:** `kernel_version: evidence-kernel/0.1.0` pinned, `ExecutionDescriptor` restriction to `manual | subject` disclosed in `application_restriction`, naming and null/timing/digest conventions match the kernel.
+- **Completeness/structure:** ends at a coherent boundary (complete `AttemptSnapshot` + tags); top-level `oneOf` covers commission, axis revision, and snapshot; transition guards, reconciler algorithm, and conformance pointer (`conformance/01-application-attempt-lifecycle.md`) all present.
+
+## Recommendation
+
+**Accept with notes.** The notes above are for future-turn hygiene (complete the mirror inventory, tighten three epistemic tags) and require no change to this file before downstream work proceeds.

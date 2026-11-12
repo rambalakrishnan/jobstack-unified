@@ -1,0 +1,3279 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: urn:job-application:contracts:owner-separated-write-domains:0.1.0
+title: Owner-separated write domains
+description: >-
+  Review draft for independently writable domains, asynchronous publication,
+  atomic read compositions, named revision-vector seals, and complete immutable
+  archives. Applies the pattern to discovered jobs, application attempts, and
+  Hellscape sessions. A read composition is not a multi-owner write API.
+x-status: proposed
+x-source: "1-handoff-brief.txt, Parts VI and VIII."
+
+x-source-index:
+  handoff: &h "1-handoff-brief.txt, Parts VI and VIII–X"
+  separation: &s "2-state-bank-crawler-blueprint.json, §§11.16–11.17 and Decision 8"
+  crawler: &c "2-state-bank-crawler-blueprint.json, §§5–8 and 11"
+  hellscape: &f "3-hellscape-blueprint.md, §§3–5 and 9–10"
+  qualification: &q "5-browser-qualification.md, Evidence discipline"
+  product: &p "6-get-a-job.xml.txt, docs/contracts/firestore-collections.md"
+  kernel: &k "contracts/00-evidence-kernel.yaml, evidence-kernel/0.1.0"
+  lifecycle: &l "contracts/01-application-attempt-lifecycle.yaml, application-attempt-lifecycle/0.1.0"
+  wire: &w >-
+    Proposed wire design for the handoff's owner-separation invariant.
+    Record names, publication receipts, fixed domain maps, archive extent
+    encoding, and retention pins are proposals, not existing implementation claims.
+
+x-contract:
+  name: owner-separated-write-domains
+  version: 0.1.0
+  maturity: review_draft
+  owner: contracts
+  consumers: [crawler, Circus Tent, Ringmaster, Hellscape, job-hunter, dashboard]
+  conformance_suite: conformance/04-owner-separated-write-domains.md
+  gate: structural_validation_and_OWD_rules
+  scope:
+    - Immutable entity registrations and single-writer domain bindings.
+    - Complete owner revisions and independently acknowledged owner-local writes.
+    - Asynchronous installation of complete revisions into a named read view.
+    - Complete read rows sealed at explicit version vectors.
+    - Fetch-key replacement with complete prior-row archival.
+    - Retention roots protecting archives and their transitive dependencies.
+  non_goals:
+    - A shared database, broker, runtime, or distributed transaction.
+    - A global status replacing independently owned facts.
+    - A new browser abstraction or a change to connector verbs.
+    - A replacement for the kernel lease primitive.
+    - Selection of job-hunter's implementation language or primary store.
+  x-status: proposed
+  x-source: *w
+
+x-compatibility:
+  schema_references: All_$ref_values_are_local
+  common_types: >-
+    Missing, evidence references, artifact references, version pins, clocks,
+    measurements, subject identity, assistance, and attempt context preserve
+    evidence-kernel/0.1.0 wire meanings.
+  attempt_publications: >-
+    AxisRevision and its value types retain application-attempt-lifecycle/0.1.0
+    field names and record version. They are embedded without assigning a
+    second authoritative revision number. The containing publication receipt
+    and read row belong to this contract.
+  attempt_registration: >-
+    The immutable commission remains an artifact. Registration repeats only
+    the attempt context, execution descriptor, and owner bindings needed here;
+    these must equal the corresponding commissioned values. The registration
+    is not permission to amend the commission.
+  canonicalization: >-
+    Use kernel-jcs-sha256/1: UTF-8 RFC 8785 canonical JSON and SHA-256 digests
+    encoded as sha256:<64 lowercase hexadecimal digits>. Artifact digests
+    identify exact stored bytes. A record never includes its own artifact digest.
+  archive_identity: >-
+    ArchiveRecord.root identifies the exact canonical ArchiveStorageManifest
+    bytes, not the expanded ArchiveRecord or payload_json bytes. The manifest
+    names immutable, locally durable components and deterministically expands
+    into the complete payload_json. This distinction permits bounded metadata
+    archival without reserializing a large downstream domain on crawler writes.
+  x-status: proposed
+  x-source: "contracts/00-evidence-kernel.yaml; contracts/01-application-attempt-lifecycle.yaml; 2-state-bank-crawler-blueprint.json Decision 8."
+
+x-domain-layouts:
+  job:
+    identity: "(target, job_id); both are source-system identities"
+    domains:
+      crawler:
+        writer_role: crawler
+        owns: >-
+          Acquisition, fetch identity, extracted content, render evidence,
+          discovery and coverage references, operational processing,
+          classifier provenance, crawler semantic candidate, replacement lineage.
+      downstream:
+        writer_role: product
+        owns: >-
+          Product track, priority, evaluations, material references, selection,
+          downstream work ownership, and links to application attempts.
+    exclusion: >-
+      A downstream link to an attempt is not an application fact. Neither job
+      owner may overwrite an attempt's execution or application axis.
+    x-status: inferred
+    x-source: "2-state-bank-crawler-blueprint.json §§11.4, 11.14, 11.17; 1-handoff-brief.txt Part VI."
+
+  application_attempt:
+    identity: "(attempt_id, kind)"
+    domains:
+      dispatch: connector
+      observation: connector
+      execution: subject
+      application: origin
+      report: reconciler
+    exclusion: >-
+      Commissioning is immutable metadata, not a sixth outcome axis.
+      Manual dispatch and execution slots remain unpublished and inapplicable.
+    x-status: extracted
+    x-source: *l
+
+  hellscape_session:
+    identity: session_id
+    domains:
+      application:
+        writer_role: origin
+        owns: Fixture reducer state, accepted data, validation generations, commitment, mutation-authority sealing.
+      observation:
+        writer_role: observer
+        owns: >-
+          Producer completeness, observed actions, confirmation-render evidence,
+          incidents, measurements, and a pinned copy of the attempt observation
+          publication. That copy is not a second lifecycle authority.
+      diagnostic:
+        writer_role: analyzer
+        owns: Immutable diagnostic selection, its input pins, classifier identity, and replay-receipt references.
+    exclusion: >-
+      Curriculum selects future manifests; it cannot mutate these domains to
+      improve an active session's result. Native claims remain attempt execution
+      records, not fixture application state.
+    x-status: proposed
+    x-source: "3-hellscape-blueprint.md §§3.2–3.4, 4, 6.6, 10."
+
+x-source-reconciliation:
+  - decision: >-
+      Stage1's crawler/downstream split wins over a shared mutable Firestore
+      jobs document. The source-system root remains (target, job_id).
+      portfolio_job_id supplies the product-facing identity.
+    x-status: inferred
+    x-source: "2-state-bank-crawler-blueprint.json §11; 6-get-a-job.xml.txt docs/contracts/firestore-collections.md."
+
+  - decision: >-
+      Firestore company maps to content.employer; rawDescription maps to
+      content.description; sourceUrl, directApplyUrl, portalType, location,
+      and closingDate remain separately represented. track belongs to the
+      downstream domain. Missing source values retain reasoned missingness.
+      source_url is not silently copied into direct_apply_url.
+    x-status: proposed
+    x-source: "2-state-bank-crawler-blueprint.json §11.4; 6-get-a-job.xml.txt docs/contracts/firestore-collections.md."
+
+  - decision: >-
+      The old multi-writer semantic_state is not a stored shared field.
+      Crawler semantic_candidate, product selection/ownership, and origin-backed
+      attempt facts remain separate. A legacy DISCOVERED/SHORTLISTED/CLAIMED/
+      APPLIED/CLOSED display may be derived with pinned inputs, but cannot be
+      used as an authoritative write target.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 2-state-bank-crawler-blueprint.json §11.14."
+
+  - decision: >-
+      Company/title/location hashes remain possible duplicate-candidate hints,
+      not primary keys or overwrite authority. The legacy company/title
+      application key cannot merge distinct source postings or practice and
+      production attempts.
+    x-status: inferred
+    x-source: "2-state-bank-crawler-blueprint.json §11.0; 6-get-a-job.xml.txt docs/contracts/firestore-collections.md; 1-handoff-brief.txt Part VI."
+
+  - decision: >-
+      Hellscape's single-binary direction does not imply one cross-owner
+      transaction. Application operations may atomically write their own state,
+      operation record, and journal. Telemetry and diagnostic publication do not
+      join that transaction. Separate tables sharing a contested serialized
+      writer do not establish write-path independence.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 2-state-bank-crawler-blueprint.json Decision 8; 3-hellscape-blueprint.md §§3 and 10.1–10.2."
+
+  - decision: >-
+      The Stage1 same-fetch-key no-op rule is retained, including its freshness
+      limitation. A newer response, repaired failed render, changed extractor,
+      or new crawl date does not authorize same-key acquisition replacement.
+      Independent lease, classification, and semantic transitions remain possible.
+    x-status: extracted
+    x-source: "2-state-bank-crawler-blueprint.json §§11.16 and 15.1."
+
+  - decision: >-
+      ArchiveStorageManifest is a physical extent representation, not permission
+      to return only hashes instead of the promised logical row. Every archive
+      must expand into the complete typed payload_json, including reasoned
+      nulls and the exact published downstream revision.
+    x-status: proposed
+    x-source: *s
+
+  - decision: >-
+      No handoff amendment is introduced. Physical persistence choices remain
+      open; their admission depends on the isolation, publication, archive, and
+      retention tests rather than a datastore brand.
+    x-status: proposed
+    x-source: *w
+
+x-validation:
+  x-status: proposed
+  x-source: *w
+  requirements:
+    - >-
+      Validate JSON Schema 2020-12 with format assertions. Reject duplicate YAML
+      keys, non-JSON values, non-finite numbers, unknown versions, and undeclared
+      properties. Decode YAML before hashing; schema anchors are not wire features.
+    - >-
+      Structural validation is necessary but insufficient. All applicable OWD,
+      kernel, and lifecycle authorization, reference, arithmetic, and transition
+      rules must also pass.
+    - >-
+      Only Missing.value may contain serialized null. Every nested absence has
+      one of the six kernel reasons. Empty arrays describe an established empty
+      collection, not an unknown collection.
+    - >-
+      Verify artifact bytes, declared sizes, evidence references, journal
+      prefixes, registration digests, domain identity, and all revision equality
+      constraints. A caller-supplied writer_id or verified flag grants no authority.
+    - >-
+      Mutable rows, URLs, native handles, and current database queries cannot
+      substitute for the immutable components named by a published row or archive.
+
+x-semantic-rules:
+  - id: OWD-OWNER
+    classification: invariant
+    rule: >-
+      Every declared domain has one authenticated logical writer. Entity
+      registration fixes its field set, authority source, writer, storage-domain
+      identity, and publication policy. Temporary workers act through that
+      writer's fenced transition gateway; they do not become additional owners.
+      Each owner_domain is distinct within an entity.
+    consequence: >-
+      A writer may publish only its own complete domain. A changed field outside
+      that domain rejects the entire write. A composed row is never accepted as
+      an update command. Deployment replacement may retain a logical writer
+      identity; ownership transfer requires an explicit versioned migration,
+      not an unjournaled configuration edit.
+    derivation: "Shared field ownership allows one component's refresh to erase another's work."
+    x-status: inferred
+    x-source: *s
+
+  - id: OWD-LOCAL-COMMIT
+    classification: invariant
+    rule: >-
+      Commit an owner's authorized effect, revision advance, and journal evidence
+      atomically within that owner's durability boundary. Do not acknowledge
+      before durability. No owner commit acquires a peer-owned write lock or
+      waits for a peer transaction, acknowledgement, or large-payload serialization.
+    consequence: >-
+      A shared contracts workspace, process, or database hostname proves no
+      isolation property. For crawler/downstream writes, independent persistence
+      and I/O admission must be demonstrated. Owner-local journals may be
+      asynchronously imported into a composition journal; a central journal
+      transaction is not required on every owner's write path.
+    derivation: "Two tables behind one serialized storage writer fail Stage1 Decision 8's floor."
+    x-status: extracted
+    x-source: *s
+
+  - id: OWD-REVISION
+    classification: invariant
+    rule: >-
+      A domain revision is a complete immutable snapshot, not a patch.
+      revision=previous_revision+1 at the owner. The first revision is 1.
+      The key (entity, domain, revision) identifies exactly one content digest.
+      Identical retries are idempotent; different bytes under that key are an
+      integrity conflict. Stale expected revisions or lease epochs cannot commit.
+    consequence: >-
+      A rejected write changes neither source fields nor publication pointers.
+      Revisions and lease ownership are not application statuses. Claiming a
+      resource does not change its pending operational state.
+    derivation: "Partial writes and unfenced retries create lost updates and duplicate effects."
+    x-status: inferred
+    x-source: "2-state-bank-crawler-blueprint.json §§11.15–11.17; contracts/00-evidence-kernel.yaml."
+
+  - id: OWD-PUBLISH
+    classification: invariant
+    rule: >-
+      Owner durability acknowledgement and installation into a read view are
+      different events. Transfer, validate, and durably install all immutable
+      components before atomically advancing the view's domain pointer.
+      The pointer update is bounded metadata work. Publication cannot expose
+      partially transferred bytes.
+    consequence: >-
+      Failed transfer, checksum failure, unavailable peer storage, or publication
+      lag leaves the last complete published revision visible. Reordered delivery
+      cannot roll the current pointer backward. Publication may skip intermediate
+      visible revisions only after verifying their owner revision lineage.
+      An identical installed revision returns its existing receipt.
+    derivation: "Asynchronous publication is safe only when readers see old-or-new, never partial."
+    x-status: extracted
+    x-source: *s
+
+  - id: OWD-VIEW
+    classification: invariant
+    rule: >-
+      A LogicalRow contains every declared domain slot and an exact version
+      vector. Each nonzero slot embeds the complete domain document whose
+      artifact digest and installation receipt it names. A zero slot means no
+      publication in this view, or an explicitly inapplicable manual axis.
+      Readers obtain one complete immutable row root.
+    consequence: >-
+      Different owners may be at different publication ages. This is a named,
+      locally available composition, not global cross-owner linearizability.
+      A durable but unpublished downstream update is not silently included.
+      Once a revision has been published, loss of its bytes cannot be disguised
+      as revision zero; report observation_lost and retain the known identity.
+    derivation: "A version vector makes asynchronous freshness visible instead of hiding it behind a whole-row status."
+    x-status: inferred
+    x-source: *s
+
+  - id: OWD-SEAL
+    classification: invariant
+    rule: >-
+      A seal names a state and pins all domain revisions selected in a named
+      read view. Its journaled seal-selection event pins the domain document
+      digests and publication receipts before the resulting LogicalRow is
+      registered. The row's input prefix includes that selection event, not its
+      own later artifact-registration event.
+    consequence: >-
+      Seals are immutable and do not freeze future owner writes. observation_closed
+      requires a pinned closed observation publication; it does not establish
+      native termination or final origin absence. A later seal records a new
+      view without changing the earlier cut.
+    derivation: "Without an exact cut, archived rows and diagnostic inputs change when a peer publishes."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; contracts/01-application-attempt-lifecycle.yaml."
+
+  - id: OWD-JOB
+    classification: invariant
+    rule: >-
+      Job acquisition fields belong exclusively to crawler. Product decisions,
+      priorities, materials, and attempt links belong exclusively to downstream.
+      A crawler refresh preserves the separately published downstream domain;
+      it does not copy stale downstream values back into downstream storage.
+      Product evaluations identify the crawler revision they evaluated.
+    consequence: >-
+      A newer crawler revision can make an evaluation stale without deleting it.
+      A content veto is not posting closure. Closure requires authoritative
+      closure evidence, and missing from one crawl is insufficient. An APPLIED
+      display requires a correlated production origin commitment, not a product
+      claim, practice receipt, native completed response, or submit click.
+    derivation: "Crawler semantic candidates and downstream application work have different authorities."
+    x-status: inferred
+    x-source: "2-state-bank-crawler-blueprint.json §§5.6, 11.14, 11.17; 1-handoff-brief.txt Part VI."
+
+  - id: OWD-RENDER
+    classification: invariant
+    rule: >-
+      A Pass acquisition must satisfy its declared required content fields.
+      Required content is present, non-null, and correctly typed. A Pass with
+      missing required extraction is rejected as incomplete_extraction, not
+      materialized as a valid job or reclassified as failed rendering.
+      A non-Pass acquisition has pipeline_state=render_failed and reasoned
+      missingness for every content value.
+    consequence: >-
+      Failed render creates no genuine classifier result or successful seen_ids
+      membership. Bypass creates no classifier result. A raw VETO overridden by
+      shadow mode is not a genuine PASS; bypass alone does not shortlist.
+      A later bypass may preserve an earlier genuine applied PASS.
+    derivation: "Render acceptance, relevance classification, and application suitability cannot substitute for one another."
+    x-status: extracted
+    x-source: *c
+
+  - id: OWD-FETCH-IDENTITY
+    classification: invariant
+    rule: >-
+      Lookup uses (target, job_id). For A_full, fetch identity is the actual
+      listing source URL. For B, it is canonical URL, uppercase method, actual
+      request-body digest, and representation-determining headers. Exclude
+      ephemeral identity/session headers; do not exclude representation headers
+      to increase cache hits.
+    consequence: >-
+      Preserve query ordering unless endpoint evidence permits normalization.
+      Remove fragments and normalize scheme/host case and default ports.
+      Cookie rotation, run ID, crawl date, response digest, and extractor version
+      are not hidden fetch-key inputs.
+    derivation: "Changing request identity accidentally defeats idempotency and hides the documented freshness limitation."
+    x-status: extracted
+    x-source: "2-state-bank-crawler-blueprint.json §11.16."
+
+  - id: OWD-FETCH-NOOP
+    classification: invariant
+    rule: >-
+      An absent root accepts an initial complete crawler domain without a
+      predecessor archive. An existing identical fetch key makes the acquisition
+      write a no-op. No archive is created for that no-op. Independent discovery,
+      lease, classification, and semantic transitions may advance the crawler
+      domain while preserving acquisition and replacement_lineage exactly.
+    consequence: >-
+      A different response under the same key is journaled as new observation,
+      not silently installed as replacement content. Repairing a same-key
+      render_failed acquisition requires an explicitly versioned freshness
+      contract; adding a run nonce is not a repair.
+    derivation: "Stage1 explicitly makes request identity, not response freshness, authoritative for replacement."
+    x-status: extracted
+    x-source: "2-state-bank-crawler-blueprint.json §§11.16 and 15.1."
+
+  - id: OWD-REPLACE
+    classification: invariant
+    rule: >-
+      A changed fetch key requires a complete archive of the prior logical row
+      at the named replacement seal. That cut uses the current old crawler
+      revision and the latest fully published downstream revision in the named
+      ingest-side view. An unpublished downstream revision is excluded.
+      The owner-local replacement checks both the old crawler revision/key and
+      the selected local publication pointer before committing.
+    consequence: >-
+      If either checked pointer changed before commit, reject/reselect rather
+      than archiving a mismatched cut. Stage archive components outside the
+      critical section. Commit the new crawler revision, its backward archive
+      link, replacement journal effect, and durable retention protection as one
+      owner-local effect. No updated crawler row may be acknowledged without
+      its complete retrievable archive. A staged orphan is not a committed archive.
+    derivation: "Archive and replacement must not diverge under crashes or concurrent publication."
+    x-status: inferred
+    x-source: *s
+
+  - id: OWD-ARCHIVE
+    classification: invariant
+    rule: >-
+      Archive payload_json is the entire previous LogicalRow, including its
+      registration, all domain fields, reasoned nulls, publication receipts, and
+      seal vector. It is not a changed-field diff, crawler-only row, hash list,
+      or lookup of the latest downstream record.
+    consequence: >-
+      Physical immutable extents are permitted only when the archive resolver
+      reconstructs exactly that full typed value without contacting a mutable
+      peer. Complete downstream snapshots are imported before publication.
+      Archive creation reuses their immutable bytes; large downstream JSON must
+      not be serialized under, or awaited by, the crawler writer.
+    derivation: "A locator that later resolves to different or absent fields is not a complete prior-row archive."
+    x-status: extracted
+    x-source: *s
+
+  - id: OWD-RETENTION
+    classification: invariant
+    rule: >-
+      A live replacement pins its archive root and every transitive immutable
+      dependency. A retained later archive containing that replacement's
+      backward link also keeps the earlier archive alive. Publishing a newer
+      job revision, deleting a cache entry, or passing a TTL cannot release
+      those dependencies.
+    consequence: >-
+      GC requires journaled proof that no live replacement or retained evidence
+      root reaches the object. Reference checks and deletion are fenced against
+      concurrent pin creation. Release is an explicit retention revision, not
+      mutation of the archived payload. Artifact loss is an integrity incident,
+      not successful GC or permission to silently reconstruct different bytes.
+    derivation: "An immutable archive with reclaimable dependencies is not durable."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 2-state-bank-crawler-blueprint.json Decision 8; contracts/00-evidence-kernel.yaml."
+
+  - id: OWD-ATTEMPT
+    classification: invariant
+    rule: >-
+      Attempt slots contain the exact lifecycle AxisRevision publications.
+      Their outer slot revision equals the embedded axis revision; the axis,
+      attempt identity, commission digest, owner_domain, and writer_id match
+      registration and commission. The reconciler writes only report.
+    consequence: >-
+      Claim/fact histories remain cumulative and immutable. Late origin
+      commitment can be published while report still uses older input pins.
+      Readers expose that staleness; they neither overwrite the claim nor
+      silently apply the old report to new facts. Manual execution creates no
+      subject publication.
+    derivation: "Owner separation must preserve the cancellation corpus's five orthogonal axes."
+    x-status: extracted
+    x-source: *l
+
+  - id: OWD-SESSION
+    classification: invariant
+    rule: >-
+      Hellscape application state is reducer-owned; observation cannot set
+      accepted data, identity verification, or commitment. The diagnostic
+      domain cites exact application and observation input revisions and a
+      journal prefix. It cannot amend either source to fit a finding.
+    consequence: >-
+      A committed fixture application, incomplete telemetry tail, and stale
+      diagnostic can coexist. Confirmation rendering stays observation evidence.
+      The session's pinned attempt-observation copy is verified against its
+      original axis publication, not independently authored lifecycle state.
+      All Hellscape session evidence remains practice and held_in.
+    derivation: "Fixture truth, observed behavior, and judgment have distinct failure modes and authorities."
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §§3–4 and 10; 1-handoff-brief.txt Part III."
+
+  - id: OWD-TIME-PROVENANCE
+    classification: invariant
+    rule: >-
+      Every measurement retains clock_id, boot_id, origin, censoring, and an
+      exact, bounded, or unavailable estimate. No cross-clock or cross-restart
+      subtraction is permitted. Publication delay cannot be computed by
+      subtracting arbitrary source and destination UTC annotations.
+      Provenance and writer authorization are assigned and checked at ingestion.
+    consequence: >-
+      Zero is a valid exact duration, never missingness. Unknown publication
+      lag stays unavailable or bounded. Imported origin facts retain their
+      original authority and correlation evidence; import does not turn a
+      manual observation into a server-origin fact.
+    derivation: "The timing defect and claim-as-fact counterexamples remain applicable at the storage boundary."
+    x-status: extracted
+    x-source: *k
+
+x-proposed-mechanisms:
+  - id: OWD-EXTENT-ENCODING
+    decision: >-
+      Use owner-domain-extents/1 for archive manifests. Each published domain
+      already has a complete immutable document artifact. An archive manifest
+      pins those document artifacts, the entity registration artifact, and the
+      full seal. Expansion inserts the verified documents into the LogicalRow
+      shape defined here.
+    rationale: >-
+      The metadata size depends on the fixed number of domains, not downstream
+      payload size. This reconciles complete logical archives with the explicit
+      prohibition on downstream serialization in the crawler critical path.
+    flip_condition: >-
+      A different representation may replace this encoding in a new version
+      only if it demonstrates exact full-row reconstruction, content addressing,
+      transitive retention, and equivalent non-blocking write behavior.
+    x-status: proposed
+    x-source: *s
+
+  - id: OWD-READ-ROOT
+    decision: >-
+      Install immutable LogicalRow roots atomically in each read view. A
+      composition service owns only that derived pointer and its publication
+      journal; it gains no source-domain write authority.
+    rationale: >-
+      An atomic root prevents readers from assembling half a publication while
+      permitting each source owner to acknowledge writes independently.
+    flip_condition: >-
+      A storage-native snapshot mechanism is acceptable if it returns the same
+      explicit domain pins and passes old-or-new, delayed-publication, crash,
+      and archive-race tests without a cross-owner transaction.
+    x-status: proposed
+    x-source: *w
+
+x-fetch-key-profile:
+  id: crawler-fetch-key/1
+  formulas:
+    B: "SHA-256(JCS([target, 'B', job_id, canonical_request]))"
+    A_full: "SHA-256(JCS([target, 'A_full', job_id, listing_source_url]))"
+  canonical_request_fields: [url, method, body_hash, header_identity_set]
+  framing: >-
+    Arrays are length-unambiguous JSON arrays. header_identity_set is ordered by
+    normalized header name with deterministic value ordering declared by the
+    endpoint. Preserve meaningful multi-value and query order.
+  x-status: proposed
+  x-source: "2-state-bank-crawler-blueprint.json §11.16 specifies inputs; framing is a Step 0 wire proposal."
+
+x-archive-expansion:
+  algorithm:
+    - Verify root.digest and size against canonical storage_manifest bytes.
+    - Load and verify the registration artifact; retain its digest.
+    - For each nonzero domain pin, load its complete document and verify its digest and owner binding.
+    - Preserve every zero-domain Missing envelope exactly.
+    - >-
+      Construct LogicalRow with record_type=logical_row, this contract version,
+      the manifest entity, the complete registration, registration_digest,
+      each expanded domain slot, and the manifest seal_point.
+    - >-
+      Require structural and semantic equality with ArchiveRecord.payload_json.
+      No current owner lookup, default insertion, redaction, or revision upgrade
+      is part of expansion.
+    - Verify local durability and retention of every transitive dependency before replacement acknowledgement.
+  x-status: proposed
+  x-source: *w
+
+x-open-evidence:
+  - missing: Deployment proof of independently reserved ingest, downstream, and snapshot-transfer I/O.
+    resolution: >-
+      Run the two-writer and archive-load suite on the chosen storage deployment.
+      Stage1 A2 and A7 are assumptions and workload baselines, not portfolio-wide
+      guarantees. No source benchmark certifies a chosen new deployment.
+    x-status: uncertain
+    x-source: "2-state-bank-crawler-blueprint.json A2, A7, Decision 8."
+
+  - missing: Precise types and semantics of several legacy Firestore fields, including closingDate and priorityHint.
+    resolution: >-
+      Preserve observed closing-date text without inventing a timezone or
+      deadline. Treat the numeric priority representation here as a proposed
+      product-owned hint, not an extracted scoring rubric. Reconcile actual
+      producers against fixtures before migration; preserve originals in
+      registered source artifacts.
+    x-status: uncertain
+    x-source: "6-get-a-job.xml.txt docs/contracts/firestore-collections.md supplies field names, not executable schemas."
+
+oneOf:
+  - $ref: "#/$defs/EntityRegistration"
+  - $ref: "#/$defs/DataDomainRevision"
+  - $ref: "#/$defs/AxisRevision"
+  - $ref: "#/$defs/PublicationReceipt"
+  - $ref: "#/$defs/LogicalRow"
+  - $ref: "#/$defs/ArchiveRecord"
+  - $ref: "#/$defs/FetchKeyReplacement"
+  - $ref: "#/$defs/RetentionPinRevision"
+
+$defs:
+  SchemaVersion:
+    const: owner-separated-write-domains/0.1.0
+    x-status: proposed
+    x-source: *w
+
+  Identifier:
+    type: string
+    minLength: 1
+    x-status: extracted
+    x-source: *k
+
+  Revision:
+    type: integer
+    minimum: 0
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  PositiveInteger:
+    type: integer
+    minimum: 1
+    maximum: 9007199254740991
+    x-status: extracted
+    x-source: *k
+
+  Digest:
+    type: string
+    pattern: '^sha256:[0-9a-f]{64}$'
+    x-status: extracted
+    x-source: *k
+
+  Missing:
+    type: object
+    additionalProperties: false
+    required: [value, reason]
+    properties:
+      value: {type: "null", x-status: extracted, x-source: *k}
+      reason:
+        enum: [not_enabled, not_applicable, not_observed, observation_lost, unsupported_by_subject, manual_override]
+        x-status: extracted
+        x-source: *h
+      detail: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Inapplicable:
+    allOf:
+      - $ref: "#/$defs/Missing"
+      - properties: {reason: {const: not_applicable}}
+    x-status: extracted
+    x-source: *k
+
+  MaybeString:
+    oneOf:
+      - $ref: "#/$defs/Identifier"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  MaybeText:
+    oneOf:
+      - type: string
+      - $ref: "#/$defs/Missing"
+    description: An observed empty string is distinct from an unobserved value.
+    x-status: proposed
+    x-source: *w
+
+  MaybeDigest:
+    oneOf:
+      - $ref: "#/$defs/Digest"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  MaybeNumber:
+    oneOf:
+      - type: number
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  HttpURL:
+    type: string
+    format: uri
+    pattern: '^https?://'
+    description: An evidenced acquisition or application URL, never an invented endpoint.
+    x-status: proposed
+    x-source: *w
+
+  MaybeURL:
+    oneOf:
+      - $ref: "#/$defs/HttpURL"
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  MaybeDate:
+    oneOf:
+      - {type: string, format: date}
+      - $ref: "#/$defs/Missing"
+    x-status: inferred
+    x-source: *c
+
+  EvidenceRef:
+    type: object
+    additionalProperties: false
+    required: [journal_id, sequence, event_id, event_hash, pointer]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      event_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      event_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      pointer: {type: string, pattern: '^(?:/(?:[^~/]|~[01])*)*$', x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  EvidenceRefs:
+    type: array
+    uniqueItems: true
+    items: {$ref: "#/$defs/EvidenceRef"}
+    x-status: extracted
+    x-source: *k
+
+  SupportRefs:
+    allOf:
+      - $ref: "#/$defs/EvidenceRefs"
+      - minItems: 1
+    x-status: extracted
+    x-source: *k
+
+  MaybeEvidenceRef:
+    oneOf:
+      - $ref: "#/$defs/EvidenceRef"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *l
+
+  JournalPrefix:
+    type: object
+    additionalProperties: false
+    required: [journal_id, last_sequence, head_hash]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      last_sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      head_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ArtifactReference:
+    type: object
+    additionalProperties: false
+    required: [digest, size_bytes, media_type, owner_domain, access]
+    properties:
+      digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      size_bytes: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *k}
+      media_type: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      access: {enum: [public, restricted], x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  MaybeArtifact:
+    oneOf:
+      - $ref: "#/$defs/ArtifactReference"
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  VersionPin:
+    type: object
+    additionalProperties: false
+    required: [id, version, artifact_digest]
+    properties:
+      id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      artifact_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  MeasurementOrigin:
+    enum: [engine_measured, browser_measured, subject_reported, manual_reference]
+    x-status: extracted
+    x-source: *k
+
+  Scope:
+    type: object
+    additionalProperties: false
+    required: [kind, id]
+    properties:
+      kind:
+        enum: [run, session, connector_call, workflow_step, application_operation, native_primitive, recovery, discovery, capability, resource]
+        x-status: extracted
+        x-source: *k
+      id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  TimePoint:
+    type: object
+    additionalProperties: false
+    required: [clock_id, boot_id, origin, monotonic_offset_ms, utc_annotation]
+    properties:
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      origin: {$ref: "#/$defs/MeasurementOrigin", x-status: extracted, x-source: *k}
+      monotonic_offset_ms: {type: number, minimum: 0, x-status: extracted, x-source: *k}
+      utc_annotation:
+        oneOf:
+          - {type: string, format: date-time}
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  MaybeTimePoint:
+    oneOf:
+      - $ref: "#/$defs/TimePoint"
+      - $ref: "#/$defs/Missing"
+    x-status: extracted
+    x-source: *k
+
+  Estimate:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: exact, x-status: extracted, x-source: *k}
+          value: {type: number, x-status: extracted, x-source: *k}
+      - type: object
+        additionalProperties: false
+        required: [kind, lower_bound, upper_bound]
+        properties:
+          kind: {const: bounded, x-status: extracted, x-source: *k}
+          lower_bound: {$ref: "#/$defs/MaybeNumber", x-status: extracted, x-source: *k}
+          upper_bound: {$ref: "#/$defs/MaybeNumber", x-status: extracted, x-source: *k}
+        anyOf:
+          - properties: {lower_bound: {type: number}}
+          - properties: {upper_bound: {type: number}}
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: unavailable, x-status: extracted, x-source: *k}
+          value: {$ref: "#/$defs/Missing", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Measurement:
+    type: object
+    additionalProperties: false
+    required:
+      - measurement_id
+      - name
+      - scope
+      - quantity
+      - unit
+      - origin
+      - clock_id
+      - boot_id
+      - method
+      - start
+      - end
+      - estimate
+      - resolution
+      - censoring
+      - comparability_group
+    properties:
+      measurement_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      name: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      scope: {$ref: "#/$defs/Scope", x-status: extracted, x-source: *k}
+      quantity: {enum: [duration, scalar], x-status: extracted, x-source: *k}
+      unit: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      origin: {$ref: "#/$defs/MeasurementOrigin", x-status: extracted, x-source: *k}
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      method: {enum: [endpoint_difference, source_value, evidence_bound, unavailable], x-status: extracted, x-source: *k}
+      start: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *k}
+      end: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *k}
+      estimate: {$ref: "#/$defs/Estimate", x-status: extracted, x-source: *k}
+      resolution:
+        oneOf:
+          - {type: number, minimum: 0}
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *k
+      censoring: {enum: [none, left, right, both, unavailable], x-status: extracted, x-source: *k}
+      comparability_group: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {quantity: {const: duration}}}
+        then:
+          properties:
+            unit: {const: ms}
+            estimate:
+              properties:
+                value: {minimum: 0}
+                lower_bound: {minimum: 0}
+                upper_bound: {minimum: 0}
+      - if: {properties: {estimate: {properties: {kind: {const: exact}}}}}
+        then:
+          properties:
+            method: {enum: [endpoint_difference, source_value]}
+            censoring: {const: none}
+      - if: {properties: {estimate: {properties: {kind: {const: bounded}}}}}
+        then:
+          properties:
+            method: {const: evidence_bound}
+            censoring: {enum: [none, left, right, both]}
+      - if: {properties: {estimate: {properties: {kind: {const: unavailable}}}}}
+        then:
+          properties:
+            method: {const: unavailable}
+            censoring: {const: unavailable}
+      - if: {properties: {method: {const: endpoint_difference}}}
+        then:
+          properties:
+            quantity: {const: duration}
+            start: {$ref: "#/$defs/TimePoint"}
+            end: {$ref: "#/$defs/TimePoint"}
+            estimate: {properties: {kind: {const: exact}}}
+    description: >-
+      Endpoint arithmetic, bounds, registered clocks, origin agreement, and
+      censoring semantics are checked under the kernel rules.
+    x-status: extracted
+    x-source: *k
+
+  MeasurementEvidence:
+    type: object
+    additionalProperties: false
+    required: [measurement, evidence_refs]
+    properties:
+      measurement: {$ref: "#/$defs/Measurement", x-status: extracted, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ComponentIdentity:
+    type: object
+    additionalProperties: false
+    required: [component, reported_version, build_digest, configuration_digest]
+    properties:
+      component: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      reported_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      build_digest: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *k}
+      configuration_digest: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  SubjectIdentity:
+    type: object
+    additionalProperties: false
+    required: [subject_id, subject_version, revision_basis, native_revision, configured_mode, interface_surface, configuration_digest, stack]
+    properties:
+      subject_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      subject_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      revision_basis: {enum: [native_revision, source_digest, operator_attestation, unknown], x-status: extracted, x-source: *k}
+      native_revision: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      configured_mode: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      interface_surface: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      configuration_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      stack:
+        type: array
+        items: {$ref: "#/$defs/ComponentIdentity"}
+        x-status: extracted
+        x-source: *k
+    x-status: extracted
+    x-source: *k
+
+  AssistanceRecord:
+    type: object
+    additionalProperties: false
+    required: [planning_owner, assistance_track, planner_identity, plan, online_replanning, description]
+    properties:
+      planning_owner: {enum: [subject, external_planner, operator, none], x-status: extracted, x-source: *k}
+      assistance_track: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      planner_identity: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *k}
+      plan: {$ref: "#/$defs/MaybeArtifact", x-status: extracted, x-source: *k}
+      online_replanning: {type: boolean, x-status: extracted, x-source: *k}
+      description: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ExecutionDescriptor:
+    type: object
+    additionalProperties: false
+    required: [mode, subject, connector_version, binding_version, assistance]
+    properties:
+      mode: {enum: [manual, subject], x-status: extracted, x-source: *l}
+      subject:
+        oneOf:
+          - $ref: "#/$defs/SubjectIdentity"
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *l
+      connector_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      binding_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      assistance: {$ref: "#/$defs/AssistanceRecord", x-status: extracted, x-source: *l}
+    allOf:
+      - if: {properties: {mode: {const: manual}}}
+        then:
+          properties:
+            subject: {$ref: "#/$defs/Inapplicable"}
+            connector_version: {$ref: "#/$defs/Inapplicable"}
+            binding_version: {$ref: "#/$defs/Inapplicable"}
+        else:
+          properties:
+            subject: {$ref: "#/$defs/SubjectIdentity"}
+            connector_version: {$ref: "#/$defs/Identifier"}
+            binding_version: {$ref: "#/$defs/Identifier"}
+    x-status: extracted
+    x-source: *l
+
+  AttemptReference:
+    type: object
+    additionalProperties: false
+    required: [attempt_id, kind]
+    properties:
+      attempt_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      kind: {enum: [practice, production], x-status: extracted, x-source: *h}
+    x-status: extracted
+    x-source: *k
+
+  AttemptContext:
+    type: object
+    additionalProperties: false
+    required: [attempt_id, kind, target_class, target_id, evaluation_partition, rehearsal_of, performance_of, derived_from]
+    properties:
+      attempt_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      kind: {enum: [practice, production], x-status: extracted, x-source: *h}
+      target_class: {enum: [laboratory_fixture, employer_origin], x-status: extracted, x-source: *k}
+      target_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      evaluation_partition: {enum: [held_in, held_out], x-status: extracted, x-source: *k}
+      rehearsal_of:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: extracted
+        x-source: *k
+      performance_of:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: extracted
+        x-source: *k
+      derived_from:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: extracted
+        x-source: *k
+    allOf:
+      - if: {properties: {target_class: {const: laboratory_fixture}}}
+        then:
+          properties:
+            kind: {const: practice}
+            evaluation_partition: {const: held_in}
+      - if: {properties: {target_class: {const: employer_origin}}}
+        then:
+          properties: {evaluation_partition: {const: held_out}}
+      - if: {properties: {kind: {const: practice}}}
+        then:
+          properties:
+            performance_of: {maxItems: 0}
+            rehearsal_of: {items: {properties: {kind: {const: production}}}}
+            derived_from: {items: {properties: {kind: {const: practice}}}}
+        else:
+          properties:
+            target_class: {const: employer_origin}
+            rehearsal_of: {maxItems: 0}
+            performance_of: {items: {properties: {kind: {const: practice}}}}
+            derived_from: {items: {properties: {kind: {const: production}}}}
+    description: Resolved lineage identities must agree; derived_from is acyclic and same-kind.
+    x-status: extracted
+    x-source: *l
+
+  JobEntityKey:
+    type: object
+    additionalProperties: false
+    required: [entity_type, target, job_id]
+    properties:
+      entity_type: {const: job, x-status: proposed, x-source: *w}
+      target: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      job_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+    x-status: inferred
+    x-source: *c
+
+  AttemptEntityKey:
+    type: object
+    additionalProperties: false
+    required: [entity_type, attempt_id, kind]
+    properties:
+      entity_type: {const: application_attempt, x-status: proposed, x-source: *w}
+      attempt_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      kind: {enum: [practice, production], x-status: extracted, x-source: *l}
+    x-status: proposed
+    x-source: *w
+
+  SessionEntityKey:
+    type: object
+    additionalProperties: false
+    required: [entity_type, session_id]
+    properties:
+      entity_type: {const: hellscape_session, x-status: proposed, x-source: *w}
+      session_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *f}
+    x-status: proposed
+    x-source: *w
+
+  EntityKey:
+    oneOf:
+      - $ref: "#/$defs/JobEntityKey"
+      - $ref: "#/$defs/AttemptEntityKey"
+      - $ref: "#/$defs/SessionEntityKey"
+    x-status: proposed
+    x-source: *w
+
+  DomainName:
+    enum: [crawler, downstream, dispatch, observation, execution, application, report, diagnostic]
+    x-status: proposed
+    x-source: *w
+
+  DomainOwner:
+    type: object
+    additionalProperties: false
+    required: [role, source_id, writer_id, owner_domain, publication_policy]
+    properties:
+      role: {enum: [crawler, product, connector, subject, origin, reconciler, observer, analyzer], x-status: proposed, x-source: *w}
+      source_id: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      writer_id: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      publication_policy: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *l}
+    description: >-
+      Source authority and publication writer are different concepts. Applicable
+      bindings require actual registered source/writer IDs, not Missing.
+    x-status: proposed
+    x-source: *w
+
+  JobOwners:
+    type: object
+    additionalProperties: false
+    required: [crawler, downstream]
+    properties:
+      crawler:
+        allOf:
+          - $ref: "#/$defs/DomainOwner"
+          - properties: {role: {const: crawler}, source_id: {$ref: "#/$defs/Identifier"}, writer_id: {$ref: "#/$defs/Identifier"}}
+        x-status: inferred
+        x-source: *s
+      downstream:
+        allOf:
+          - $ref: "#/$defs/DomainOwner"
+          - properties: {role: {const: product}, source_id: {$ref: "#/$defs/Identifier"}, writer_id: {$ref: "#/$defs/Identifier"}}
+        x-status: inferred
+        x-source: *s
+    x-status: proposed
+    x-source: *w
+
+  AttemptOwners:
+    type: object
+    additionalProperties: false
+    required: [dispatch, observation, execution, application, report]
+    properties:
+      dispatch:
+        allOf: [{$ref: "#/$defs/DomainOwner"}, {properties: {role: {const: connector}}}]
+        x-status: extracted
+        x-source: *l
+      observation:
+        allOf: [{$ref: "#/$defs/DomainOwner"}, {properties: {role: {const: connector}}}]
+        x-status: extracted
+        x-source: *l
+      execution:
+        allOf: [{$ref: "#/$defs/DomainOwner"}, {properties: {role: {const: subject}}}]
+        x-status: extracted
+        x-source: *l
+      application:
+        allOf: [{$ref: "#/$defs/DomainOwner"}, {properties: {role: {const: origin}}}]
+        x-status: extracted
+        x-source: *l
+      report:
+        allOf: [{$ref: "#/$defs/DomainOwner"}, {properties: {role: {const: reconciler}}}]
+        x-status: extracted
+        x-source: *l
+    description: Exact commissioned owner bindings; the report writer has no execution/application grant.
+    x-status: extracted
+    x-source: *l
+
+  SessionOwners:
+    type: object
+    additionalProperties: false
+    required: [application, observation, diagnostic]
+    properties:
+      application:
+        allOf:
+          - $ref: "#/$defs/DomainOwner"
+          - properties: {role: {const: origin}, source_id: {$ref: "#/$defs/Identifier"}, writer_id: {$ref: "#/$defs/Identifier"}}
+        x-status: inferred
+        x-source: *f
+      observation:
+        allOf:
+          - $ref: "#/$defs/DomainOwner"
+          - properties: {role: {const: observer}, source_id: {$ref: "#/$defs/Identifier"}, writer_id: {$ref: "#/$defs/Identifier"}}
+        x-status: inferred
+        x-source: *f
+      diagnostic:
+        allOf:
+          - $ref: "#/$defs/DomainOwner"
+          - properties: {role: {const: analyzer}, source_id: {$ref: "#/$defs/Identifier"}, writer_id: {$ref: "#/$defs/Identifier"}}
+        x-status: inferred
+        x-source: *f
+    x-status: proposed
+    x-source: *w
+
+  JobIdentity:
+    type: object
+    additionalProperties: false
+    required: [portfolio_job_id, first_discovery_ref]
+    properties:
+      portfolio_job_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *p}
+      first_discovery_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *c}
+    description: >-
+      Maps to lifecycle JobReference.job_id. EntityKey.target and job_id map to
+      JobReference.source_target and source_job_id. Mapping does not merge roots.
+    x-status: proposed
+    x-source: *w
+
+  AttemptIdentity:
+    type: object
+    additionalProperties: false
+    required: [commission, attempt, execution]
+    properties:
+      commission: {$ref: "#/$defs/ArtifactReference", x-status: extracted, x-source: *l}
+      attempt: {$ref: "#/$defs/AttemptContext", x-status: extracted, x-source: *l}
+      execution: {$ref: "#/$defs/ExecutionDescriptor", x-status: extracted, x-source: *l}
+    x-status: proposed
+    x-source: *w
+
+  SessionIdentity:
+    type: object
+    additionalProperties: false
+    required: [run_id, journal_id, manifest, fixture_build, attempt, execution, job_content]
+    properties:
+      run_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      journal_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      manifest: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *f}
+      fixture_build: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *f}
+      attempt:
+        allOf:
+          - $ref: "#/$defs/AttemptContext"
+          - properties: {kind: {const: practice}, target_class: {const: laboratory_fixture}, evaluation_partition: {const: held_in}}
+        x-status: inferred
+        x-source: *h
+      execution: {$ref: "#/$defs/ExecutionDescriptor", x-status: extracted, x-source: *l}
+      job_content:
+        $ref: "#/$defs/MaybeArtifact"
+        description: Real job content may inform descriptions; it does not make fixture forms origin-representative.
+        x-status: extracted
+        x-source: "1-handoff-brief.txt Part III."
+    x-status: proposed
+    x-source: *w
+
+  EntityRegistration:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, registration_id, entity, identity, owners, evidence_prefix, evidence_refs]
+    properties:
+      record_type: {const: write_domain_entity, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      registration_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      entity: {$ref: "#/$defs/EntityKey", x-status: proposed, x-source: *w}
+      identity: {type: object, x-status: proposed, x-source: *w}
+      owners: {type: object, x-status: proposed, x-source: *w}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {entity: {properties: {entity_type: {const: job}}}}}
+        then:
+          properties:
+            identity: {$ref: "#/$defs/JobIdentity"}
+            owners: {$ref: "#/$defs/JobOwners"}
+      - if: {properties: {entity: {properties: {entity_type: {const: application_attempt}}}}}
+        then:
+          properties:
+            identity: {$ref: "#/$defs/AttemptIdentity"}
+            owners: {$ref: "#/$defs/AttemptOwners"}
+      - if: {properties: {entity: {properties: {entity_type: {const: hellscape_session}}}}}
+        then:
+          properties:
+            identity: {$ref: "#/$defs/SessionIdentity"}
+            owners: {$ref: "#/$defs/SessionOwners"}
+      - if:
+          properties:
+            entity: {properties: {entity_type: {const: application_attempt}}}
+            identity: {properties: {execution: {properties: {mode: {const: manual}}}}}
+        then:
+          properties:
+            owners:
+              properties:
+                execution:
+                  properties:
+                    source_id: {$ref: "#/$defs/Inapplicable"}
+                    writer_id: {$ref: "#/$defs/Inapplicable"}
+    description: >-
+      Registration is immutable and authenticated. Identity repeats must agree.
+      Applicable attempt owners have registered IDs; execution.source_id matches
+      the commissioned subject and application.source_id matches target_id.
+      Registration support precedes its own artifact registration.
+    x-status: proposed
+    x-source: *w
+
+  DomainPin:
+    type: object
+    additionalProperties: false
+    required: [revision, record_digest]
+    properties:
+      revision: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *l}
+      record_digest: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *l}
+    allOf:
+      - if: {properties: {revision: {const: 0}}}
+        then:
+          properties: {record_digest: {$ref: "#/$defs/Missing"}}
+        else:
+          properties: {record_digest: {$ref: "#/$defs/Digest"}}
+    x-status: extracted
+    x-source: *l
+
+  NonzeroDomainPin:
+    allOf:
+      - $ref: "#/$defs/DomainPin"
+      - properties: {revision: {$ref: "#/$defs/PositiveInteger"}, record_digest: {$ref: "#/$defs/Digest"}}
+    x-status: proposed
+    x-source: *w
+
+  RepresentationHeader:
+    type: object
+    additionalProperties: false
+    required: [name, values]
+    properties:
+      name: {type: string, minLength: 1, pattern: '^[a-z0-9!#$%&''*+.^_`|~-]+$', x-status: proposed, x-source: *w}
+      values:
+        type: array
+        minItems: 1
+        items: {type: string}
+        x-status: proposed
+        x-source: *w
+    description: Normalized representation identity, not a credential or session-header container.
+    x-status: inferred
+    x-source: *c
+
+  CanonicalRequest:
+    type: object
+    additionalProperties: false
+    required: [url, method, body_hash, header_identity_set]
+    properties:
+      url: {$ref: "#/$defs/HttpURL", x-status: extracted, x-source: *c}
+      method: {type: string, pattern: '^[A-Z]+$', x-status: inferred, x-source: *c}
+      body_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *c}
+      header_identity_set:
+        type: array
+        items: {$ref: "#/$defs/RepresentationHeader"}
+        x-status: extracted
+        x-source: *c
+    x-status: inferred
+    x-source: *c
+
+  FetchIdentity:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [phase_token, canonical_request]
+        properties:
+          phase_token: {const: B, x-status: extracted, x-source: *c}
+          canonical_request: {$ref: "#/$defs/CanonicalRequest", x-status: inferred, x-source: *c}
+      - type: object
+        additionalProperties: false
+        required: [phase_token, listing_source_url]
+        properties:
+          phase_token: {const: A_full, x-status: extracted, x-source: *c}
+          listing_source_url: {$ref: "#/$defs/HttpURL", x-status: extracted, x-source: *c}
+    x-status: inferred
+    x-source: *c
+
+  ContentDeclaration:
+    type: object
+    additionalProperties: false
+    required: [name, type, required, nullable, extraction_binding]
+    properties:
+      name: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      type: {enum: [string, text, integer, float, boolean, date, url], x-status: extracted, x-source: *c}
+      required: {type: boolean, x-status: extracted, x-source: *c}
+      nullable: {type: boolean, x-status: extracted, x-source: *c}
+      extraction_binding: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *c}
+    allOf:
+      - if: {properties: {required: {const: true}}}
+        then:
+          properties: {nullable: {const: false}}
+    description: >-
+      Declarations identify every core and extended content field exactly once.
+      Required declarations cannot be fulfilled by Missing or invented values.
+      Failed-render Case B is the explicit exception producing absent content.
+    x-status: inferred
+    x-source: *c
+
+  ExtendedContentField:
+    type: object
+    additionalProperties: false
+    required: [name, type, value]
+    properties:
+      name: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *c}
+      type: {enum: [string, text, integer, float, boolean, date, url], x-status: extracted, x-source: *c}
+      value:
+        oneOf:
+          - {type: string}
+          - {type: number}
+          - {type: boolean}
+          - $ref: "#/$defs/Missing"
+        x-status: proposed
+        x-source: *w
+    allOf:
+      - if: {properties: {type: {enum: [string, text]}}}
+        then:
+          properties:
+            value: {oneOf: [{type: string}, {$ref: "#/$defs/Missing"}]}
+      - if: {properties: {type: {const: integer}}}
+        then:
+          properties:
+            value:
+              oneOf:
+                - {type: integer, minimum: -9007199254740991, maximum: 9007199254740991}
+                - $ref: "#/$defs/Missing"
+      - if: {properties: {type: {const: float}}}
+        then:
+          properties:
+            value: {oneOf: [{type: number}, {$ref: "#/$defs/Missing"}]}
+      - if: {properties: {type: {const: boolean}}}
+        then:
+          properties:
+            value: {oneOf: [{type: boolean}, {$ref: "#/$defs/Missing"}]}
+      - if: {properties: {type: {const: date}}}
+        then:
+          properties: {value: {$ref: "#/$defs/MaybeDate"}}
+      - if: {properties: {type: {const: url}}}
+        then:
+          properties: {value: {$ref: "#/$defs/MaybeURL"}}
+    description: Unique declared name; cannot shadow a core content field.
+    x-status: proposed
+    x-source: *w
+
+  JobContent:
+    type: object
+    additionalProperties: false
+    required: [title, employer, snippet, description, posted_date, location, direct_apply_url, portal_type, closing_date, extended]
+    properties:
+      title: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *c}
+      employer: {$ref: "#/$defs/MaybeText", x-status: extracted, x-source: *c}
+      snippet: {$ref: "#/$defs/MaybeText", x-status: extracted, x-source: *c}
+      description: {$ref: "#/$defs/MaybeText", x-status: extracted, x-source: *c}
+      posted_date: {$ref: "#/$defs/MaybeDate", x-status: extracted, x-source: *c}
+      location: {$ref: "#/$defs/MaybeText", x-status: proposed, x-source: *p}
+      direct_apply_url: {$ref: "#/$defs/MaybeURL", x-status: proposed, x-source: *p}
+      portal_type: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *p}
+      closing_date:
+        $ref: "#/$defs/MaybeText"
+        description: Source-preserved text; no invented timezone, closing instant, or expiry inference.
+        x-status: proposed
+        x-source: *p
+      extended:
+        type: array
+        items: {$ref: "#/$defs/ExtendedContentField"}
+        x-status: inferred
+        x-source: *c
+    description: >-
+      Full-description Finalize maps title, employer, snippet, and full_description
+      to title, employer, snippet, and description. It cannot invent additional
+      required fields. Optional product-facing fields need their own extraction
+      evidence or reasoned missingness.
+    x-status: inferred
+    x-source: *c
+
+  RenderVerdict:
+    enum: [Pass, ThinShell, RenderIncomplete, EdgeBlock, SensorFail, ChallengeIncomplete]
+    x-status: extracted
+    x-source: *c
+
+  RenderObservation:
+    type: object
+    additionalProperties: false
+    required: [transport, operation, verdict, basis, response_hash, evidence_refs, measurements]
+    properties:
+      transport: {enum: [HttpClient, Page], x-status: extracted, x-source: *c}
+      operation: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      verdict: {$ref: "#/$defs/RenderVerdict", x-status: extracted, x-source: *c}
+      basis: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *c}
+      response_hash: {$ref: "#/$defs/MaybeDigest", x-status: inferred, x-source: *c}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *c}
+      measurements:
+        type: array
+        items: {$ref: "#/$defs/MeasurementEvidence"}
+        x-status: inferred
+        x-source: *k
+    x-status: proposed
+    x-source: *w
+
+  AcquisitionSnapshot:
+    type: object
+    additionalProperties: false
+    required:
+      - source_url
+      - listing_page_url
+      - fetch_key
+      - fetch_key_profile
+      - fetch_identity
+      - source_response
+      - extractor
+      - content_declarations
+      - content
+      - render_verdict
+      - render_basis
+      - render_history
+      - rendered_at
+      - evidence_refs
+    properties:
+      source_url: {$ref: "#/$defs/HttpURL", x-status: extracted, x-source: *c}
+      listing_page_url: {$ref: "#/$defs/MaybeURL", x-status: inferred, x-source: *c}
+      fetch_key: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *c}
+      fetch_key_profile: {const: crawler-fetch-key/1, x-status: proposed, x-source: *w}
+      fetch_identity: {$ref: "#/$defs/FetchIdentity", x-status: inferred, x-source: *c}
+      source_response: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *c}
+      extractor: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *c}
+      content_declarations:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/ContentDeclaration"}
+        x-status: inferred
+        x-source: *c
+      content: {$ref: "#/$defs/JobContent", x-status: inferred, x-source: *c}
+      render_verdict: {$ref: "#/$defs/RenderVerdict", x-status: extracted, x-source: *c}
+      render_basis: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      render_history:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/RenderObservation"}
+        x-status: extracted
+        x-source: *c
+      rendered_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *c}
+    allOf:
+      - if: {properties: {render_verdict: {const: Pass}}}
+        then:
+          properties: {source_response: {$ref: "#/$defs/ArtifactReference"}}
+        else:
+          properties:
+            content:
+              properties:
+                title: {$ref: "#/$defs/Missing"}
+                employer: {$ref: "#/$defs/Missing"}
+                snippet: {$ref: "#/$defs/Missing"}
+                description: {$ref: "#/$defs/Missing"}
+                posted_date: {$ref: "#/$defs/Missing"}
+                location: {$ref: "#/$defs/Missing"}
+                direct_apply_url: {$ref: "#/$defs/Missing"}
+                portal_type: {$ref: "#/$defs/Missing"}
+                closing_date: {$ref: "#/$defs/Missing"}
+                extended:
+                  items:
+                    properties: {value: {$ref: "#/$defs/Missing"}}
+    description: >-
+      Immutable under an unchanged fetch key. For A_full, source_url equals the
+      evidenced listing source URL. A failed acquisition retains its requested
+      URL and render history; no blank-URL ready row is permitted.
+    x-status: inferred
+    x-source: *c
+
+  ClassifierResult:
+    type: object
+    additionalProperties: false
+    required:
+      - result_id
+      - stage
+      - model
+      - tokenizer_digest
+      - prompt_digest
+      - canonicalization_version
+      - input_hash
+      - verdict
+      - verdict_applied
+      - confidence
+      - reason
+      - classified_at
+      - latency
+      - application_revision
+      - policy_revision
+      - evidence_refs
+    properties:
+      result_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *c}
+      stage: {enum: [snippet, description], x-status: extracted, x-source: *c}
+      model: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *c}
+      tokenizer_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *c}
+      prompt_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *c}
+      canonicalization_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      input_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *c}
+      verdict: {enum: [PASS, VETO], x-status: extracted, x-source: *c}
+      verdict_applied: {enum: [PASS, VETO], x-status: extracted, x-source: *c}
+      confidence: {type: number, minimum: 0, maximum: 1, x-status: extracted, x-source: *c}
+      reason: {type: string, minLength: 1, x-status: extracted, x-source: *c}
+      classified_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *k}
+      latency: {$ref: "#/$defs/MeasurementEvidence", x-status: inferred, x-source: *k}
+      application_revision: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *c}
+      policy_revision: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *c}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *c}
+    description: >-
+      Genuine model output is immutable for the source root, stage, model
+      version, and input hash. Applied-policy changes retain prior application
+      history in the journal. Confidence is the model's recorded output, not a
+      measured performance score or proof of suitability.
+    x-status: inferred
+    x-source: *c
+
+  JobProcessing:
+    type: object
+    additionalProperties: false
+    required:
+      - pipeline_state
+      - classification_surface
+      - active_run_id
+      - input_revision
+      - generation_id
+      - lease
+      - retry_count
+      - max_retries_effective
+      - last_failure_reason
+      - classifier_results
+      - final_genuine_result_id
+      - bypass_reason
+      - semantic_candidate
+      - semantic_evidence_refs
+    properties:
+      pipeline_state: {enum: [pending_classification, ready, vetoed, render_failed, failed], x-status: extracted, x-source: *c}
+      classification_surface:
+        enum: [phase_a_full_description, phase_a_snippet_phase_b_description, phase_b_description_only, none]
+        x-status: extracted
+        x-source: *c
+      active_run_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      input_revision: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *c}
+      generation_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *k}
+      lease:
+        $ref: "#/$defs/MaybeArtifact"
+        description: Immutable kernel LeaseRecord snapshot, not a second lease implementation or a cross-owner claim.
+        x-status: proposed
+        x-source: *k
+      retry_count: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *c}
+      max_retries_effective: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *c}
+      last_failure_reason: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *c}
+      classifier_results:
+        type: array
+        items: {$ref: "#/$defs/ClassifierResult"}
+        x-status: inferred
+        x-source: *c
+      final_genuine_result_id: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *c}
+      bypass_reason: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *c}
+      semantic_candidate: {enum: [DISCOVERED, SHORTLISTED, CLOSED], x-status: extracted, x-source: *c}
+      semantic_evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *c}
+    description: >-
+      final_genuine_result_id resolves to an applicable genuine result, not a
+      bypass. Lease snapshots and retry accounting must agree with the owner's
+      journal. SHORTLISTED is a crawler relevance candidate, not job-hunter's
+      final application decision.
+    x-status: inferred
+    x-source: *c
+
+  CoverageReference:
+    type: object
+    additionalProperties: false
+    required: [run_id, partition_id, partition_definition_hash, status, pagination_coverage_proven, ledger, evidence_refs]
+    properties:
+      run_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      partition_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      partition_definition_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *c}
+      status: {enum: [open, bisected, proven, incomplete, empty_unproven], x-status: extracted, x-source: *c}
+      pagination_coverage_proven: {type: boolean, x-status: extracted, x-source: *c}
+      ledger: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *c}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *c}
+    allOf:
+      - if: {properties: {status: {const: proven}}}
+        then:
+          properties: {pagination_coverage_proven: {const: true}}
+        else:
+          properties: {pagination_coverage_proven: {const: false}}
+    description: >-
+      The immutable ledger retains cohort, count, traversal, detector, and proof
+      evidence. This reference carries its declared status, not a new proof.
+      Zero observations, unverified count sources, or unresolved traversal
+      blockers cannot support proven. Render coverage cannot substitute.
+    x-status: inferred
+    x-source: *c
+
+  DiscoveryRecord:
+    type: object
+    additionalProperties: false
+    required: [first_seen_run_id, last_seen_run_id, first_seen_at, last_seen_at, coverage]
+    properties:
+      first_seen_run_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      last_seen_run_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *c}
+      first_seen_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *k}
+      last_seen_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *k}
+      coverage:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/CoverageReference"}
+        x-status: inferred
+        x-source: *c
+    description: Observation accounting remains in the coverage ledger; duplicates need not rewrite this root.
+    x-status: inferred
+    x-source: *c
+
+  ReplacementLink:
+    type: object
+    additionalProperties: false
+    required: [replacement_id, prior_crawler_revision, archive_root]
+    properties:
+      replacement_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      prior_crawler_revision: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *s}
+      archive_root: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+    description: Backward immutable archive dependency; preserving it also preserves earlier replacement history.
+    x-status: proposed
+    x-source: *w
+
+  JobCrawlerValue:
+    type: object
+    additionalProperties: false
+    required: [acquisition, processing, discovery, replacement_lineage]
+    properties:
+      acquisition: {$ref: "#/$defs/AcquisitionSnapshot", x-status: inferred, x-source: *c}
+      processing: {$ref: "#/$defs/JobProcessing", x-status: inferred, x-source: *c}
+      discovery: {$ref: "#/$defs/DiscoveryRecord", x-status: inferred, x-source: *c}
+      replacement_lineage:
+        oneOf:
+          - $ref: "#/$defs/ReplacementLink"
+          - $ref: "#/$defs/Inapplicable"
+        x-status: proposed
+        x-source: *w
+    allOf:
+      - if:
+          properties:
+            acquisition:
+              properties: {render_verdict: {not: {const: Pass}}}
+        then:
+          properties:
+            processing:
+              properties:
+                pipeline_state: {const: render_failed}
+                classifier_results: {maxItems: 0}
+                final_genuine_result_id: {$ref: "#/$defs/Inapplicable"}
+    x-status: proposed
+    x-source: *w
+
+  EvaluationReference:
+    type: object
+    additionalProperties: false
+    required: [evaluation_id, crawler_input, candidate_profile, evaluation, evidence_refs]
+    properties:
+      evaluation_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *p}
+      crawler_input: {$ref: "#/$defs/NonzeroDomainPin", x-status: proposed, x-source: *w}
+      candidate_profile: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *p}
+      evaluation:
+        $ref: "#/$defs/ArtifactReference"
+        description: Immutable suitability/desirability assessment, rubric, blockers, matched playbooks, and rationale.
+        x-status: inferred
+        x-source: *p
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    x-status: proposed
+    x-source: *w
+
+  MaterialReference:
+    type: object
+    additionalProperties: false
+    required: [artifact_id, role, content, evidence_refs]
+    properties:
+      artifact_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *p}
+      role: {enum: [resume, cover_letter, supplemental_responses, other], x-status: proposed, x-source: *p}
+      content: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *p}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    description: Material content and version are immutable; actual submission evidence belongs to the attempt.
+    x-status: proposed
+    x-source: *w
+
+  AttemptLink:
+    type: object
+    additionalProperties: false
+    required: [attempt, commission_digest, evidence_refs]
+    properties:
+      attempt: {$ref: "#/$defs/AttemptReference", x-status: extracted, x-source: *l}
+      commission_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *l}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    description: Resolved commission must identify this portfolio job; a link carries no inherited outcome.
+    x-status: proposed
+    x-source: *w
+
+  ProductSelection:
+    type: object
+    additionalProperties: false
+    required: [decision, evaluation_id, rationale, evidence_refs]
+    properties:
+      decision: {enum: [go, no_go, review], x-status: proposed, x-source: *p}
+      evaluation_id: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *p}
+      rationale: {type: string, minLength: 1, x-status: proposed, x-source: *p}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    description: An explicit human decision may exist without a fabricated model evaluation.
+    x-status: proposed
+    x-source: *w
+
+  DownstreamOwnership:
+    type: object
+    additionalProperties: false
+    required: [state, claimant, lease, evidence_refs]
+    properties:
+      state: {enum: [unclaimed, claimed], x-status: proposed, x-source: *c}
+      claimant: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *w}
+      lease: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    allOf:
+      - if: {properties: {state: {const: claimed}}}
+        then:
+          properties:
+            claimant: {$ref: "#/$defs/Identifier"}
+            lease: {$ref: "#/$defs/ArtifactReference"}
+        else:
+          properties:
+            claimant: {$ref: "#/$defs/Inapplicable"}
+            lease: {$ref: "#/$defs/Inapplicable"}
+    description: Product work ownership only; it neither changes crawler state nor establishes an application.
+    x-status: proposed
+    x-source: *w
+
+  JobDownstreamValue:
+    type: object
+    additionalProperties: false
+    required: [track, priority_hint, selection, ownership, evaluations, materials, application_attempts]
+    properties:
+      track: {$ref: "#/$defs/MaybeString", x-status: proposed, x-source: *p}
+      priority_hint: {$ref: "#/$defs/MaybeNumber", x-status: proposed, x-source: *p}
+      selection:
+        oneOf:
+          - $ref: "#/$defs/ProductSelection"
+          - $ref: "#/$defs/Missing"
+        x-status: proposed
+        x-source: *p
+      ownership: {$ref: "#/$defs/DownstreamOwnership", x-status: inferred, x-source: *c}
+      evaluations:
+        type: array
+        items: {$ref: "#/$defs/EvaluationReference"}
+        x-status: inferred
+        x-source: *p
+      materials:
+        type: array
+        items: {$ref: "#/$defs/MaterialReference"}
+        x-status: inferred
+        x-source: *p
+      application_attempts:
+        type: array
+        items: {$ref: "#/$defs/AttemptLink"}
+        x-status: inferred
+        x-source: *l
+    description: >-
+      Complete product domain. Crawler never initializes or clears it.
+      No downstream publication yet is represented by the row's zero slot,
+      rather than a crawler-authored pretend product revision.
+    x-status: proposed
+    x-source: *w
+
+  ReportInputPins:
+    type: object
+    additionalProperties: false
+    required: [dispatch, observation, execution, application]
+    properties:
+      dispatch: {$ref: "#/$defs/DomainPin", x-status: extracted, x-source: *l}
+      observation: {$ref: "#/$defs/DomainPin", x-status: extracted, x-source: *l}
+      execution: {$ref: "#/$defs/DomainPin", x-status: extracted, x-source: *l}
+      application: {$ref: "#/$defs/DomainPin", x-status: extracted, x-source: *l}
+    x-status: extracted
+    x-source: *l
+
+  CloseInputPins:
+    type: object
+    additionalProperties: false
+    required: [dispatch, execution, application, report]
+    properties:
+      dispatch: {$ref: "#/$defs/DomainPin", x-status: extracted, x-source: *l}
+      execution: {$ref: "#/$defs/DomainPin", x-status: extracted, x-source: *l}
+      application: {$ref: "#/$defs/DomainPin", x-status: extracted, x-source: *l}
+      report: {$ref: "#/$defs/DomainPin", x-status: extracted, x-source: *l}
+    x-status: extracted
+    x-source: *l
+
+  SourceChecks:
+    type: object
+    additionalProperties: false
+    required: [authentication, correlation, trace_correlation, verification_policy, matched_by, evidence_refs]
+    properties:
+      authentication: {enum: [verified, failed, unknown], x-status: extracted, x-source: *l}
+      correlation: {enum: [matched, mismatched, unknown], x-status: extracted, x-source: *l}
+      trace_correlation: {enum: [matched, mismatched, not_observed, not_applicable], x-status: extracted, x-source: *l}
+      verification_policy: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *l}
+      matched_by:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *l
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *l}
+    x-status: extracted
+    x-source: *l
+
+  VerifiedSourceChecks:
+    allOf:
+      - $ref: "#/$defs/SourceChecks"
+      - properties:
+          authentication: {const: verified}
+          correlation: {const: matched}
+          matched_by: {minItems: 1}
+    description: Verification evidence must actually resolve; these labels cannot self-authenticate.
+    x-status: extracted
+    x-source: *l
+
+  CapabilityReference:
+    type: object
+    additionalProperties: false
+    required: [descriptor_digest, capability_id, evidence_ref]
+    properties:
+      descriptor_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *k}
+      capability_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      evidence_ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  Opportunity:
+    type: object
+    additionalProperties: false
+    required: [state, evidence_refs, rationale]
+    properties:
+      state: {enum: [exposed, unexposed, blocked], x-status: extracted, x-source: *h}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+      rationale: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  ControlObservation:
+    type: object
+    additionalProperties: false
+    required:
+      - control_event_id
+      - operation_id
+      - operation
+      - target_scope
+      - disposition
+      - at
+      - authorization_ref
+      - capability_ref
+      - opportunity
+      - request_ref
+      - response_ref
+      - response_checks
+      - native_claim_refs
+      - effect_refs
+      - affected_attempts
+      - measurements
+      - limitations
+    properties:
+      control_event_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      operation_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      operation: {enum: [RequestNativeCancel, CloseObservationConnection, ReleaseNativeContext, Contain], x-status: extracted, x-source: *l}
+      target_scope:
+        enum: [native_execution, observation_connection, native_context, fixture_mutation_authority, local_process, deployment_slot, harness_resources]
+        x-status: extracted
+        x-source: *l
+      disposition: {enum: [not_requested, unsupported, requested, acknowledged, effect_observed, unknown], x-status: extracted, x-source: *l}
+      at: {$ref: "#/$defs/TimePoint", x-status: extracted, x-source: *l}
+      authorization_ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *l}
+      capability_ref:
+        oneOf: [{$ref: "#/$defs/CapabilityReference"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *l
+      opportunity: {$ref: "#/$defs/Opportunity", x-status: extracted, x-source: *l}
+      request_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: extracted, x-source: *l}
+      response_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: extracted, x-source: *l}
+      response_checks:
+        oneOf: [{$ref: "#/$defs/SourceChecks"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *l
+      native_claim_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      effect_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      affected_attempts:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: extracted
+        x-source: *l
+      measurements:
+        type: array
+        items: {$ref: "#/$defs/MeasurementEvidence"}
+        x-status: extracted
+        x-source: *l
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *l
+    allOf:
+      - if: {properties: {operation: {const: RequestNativeCancel}}}
+        then: {properties: {target_scope: {const: native_execution}}}
+      - if: {properties: {operation: {const: CloseObservationConnection}}}
+        then: {properties: {target_scope: {const: observation_connection}}}
+      - if: {properties: {operation: {const: ReleaseNativeContext}}}
+        then: {properties: {target_scope: {const: native_context}}}
+      - if: {properties: {operation: {const: Contain}}}
+        then:
+          properties:
+            target_scope: {enum: [fixture_mutation_authority, local_process, deployment_slot, harness_resources]}
+      - if: {properties: {disposition: {const: acknowledged}}}
+        then:
+          properties:
+            response_ref: {$ref: "#/$defs/EvidenceRef"}
+            response_checks: {$ref: "#/$defs/VerifiedSourceChecks"}
+      - if: {properties: {disposition: {const: effect_observed}}}
+        then: {properties: {effect_refs: {minItems: 1}}}
+    x-status: extracted
+    x-source: *l
+
+  DispatchValue:
+    type: object
+    additionalProperties: false
+    required: [state, local_handle, native_run_id, request_digest, delivery_refs, acceptance_refs, recovery_authorization_refs, reason]
+    properties:
+      state: {enum: [not_started, prepared, dispatching, accepted, rejected, uncertain], x-status: extracted, x-source: *l}
+      local_handle: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      native_run_id: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      request_digest: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *l}
+      delivery_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      acceptance_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      recovery_authorization_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      reason: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+    allOf:
+      - if: {properties: {state: {enum: [dispatching, accepted, uncertain]}}}
+        then:
+          properties:
+            local_handle: {$ref: "#/$defs/Identifier"}
+            request_digest: {$ref: "#/$defs/Digest"}
+            delivery_refs: {minItems: 1}
+      - if: {properties: {state: {const: prepared}}}
+        then: {properties: {request_digest: {$ref: "#/$defs/Digest"}}}
+      - if: {properties: {state: {const: accepted}}}
+        then: {properties: {acceptance_refs: {minItems: 1}}}
+      - if: {properties: {state: {const: not_started}}}
+        then:
+          properties:
+            native_run_id: {$ref: "#/$defs/Missing"}
+            delivery_refs: {maxItems: 0}
+            acceptance_refs: {maxItems: 0}
+    x-status: extracted
+    x-source: *l
+
+  CloseSnapshot:
+    type: object
+    additionalProperties: false
+    required: [closure_id, boundary_ref, known_versions, execution_knowledge, execution_evidence_refs, application_knowledge, application_evidence_refs, limitations]
+    properties:
+      closure_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      boundary_ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *l}
+      known_versions: {$ref: "#/$defs/CloseInputPins", x-status: extracted, x-source: *l}
+      execution_knowledge: {enum: [running, terminal, unknown, not_applicable], x-status: extracted, x-source: *l}
+      execution_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      application_knowledge: {enum: [committed, not_committed, unknown], x-status: extracted, x-source: *l}
+      application_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *l
+    x-status: extracted
+    x-source: *l
+
+  CloseReason:
+    enum: [normal_completion, operator_stop, local_deadline, translation_failure, launch_failure, subject_terminal, connection_lost, infrastructure_interruption]
+    x-status: extracted
+    x-source: *l
+
+  ObservationValue:
+    type: object
+    additionalProperties: false
+    required: [state, window_id, opened_at, active_deadline, drain_started_at, drain_deadline, closed_at, close_reason, at_close, control_observations, late_evidence_refs, measurements]
+    properties:
+      state: {enum: [not_opened, open, draining, closed], x-status: extracted, x-source: *l}
+      window_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      opened_at: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *l}
+      active_deadline: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *l}
+      drain_started_at: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *l}
+      drain_deadline: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *l}
+      closed_at: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *l}
+      close_reason:
+        oneOf: [{$ref: "#/$defs/CloseReason"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *l
+      at_close:
+        oneOf: [{$ref: "#/$defs/CloseSnapshot"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *l
+      control_observations:
+        type: array
+        items: {$ref: "#/$defs/ControlObservation"}
+        x-status: extracted
+        x-source: *l
+      late_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      measurements:
+        type: array
+        items: {$ref: "#/$defs/MeasurementEvidence"}
+        x-status: extracted
+        x-source: *l
+    allOf:
+      - if: {properties: {state: {const: not_opened}}}
+        then:
+          properties:
+            opened_at: {$ref: "#/$defs/Missing"}
+            active_deadline: {$ref: "#/$defs/Missing"}
+      - if: {properties: {state: {enum: [open, draining]}}}
+        then:
+          properties:
+            opened_at: {$ref: "#/$defs/TimePoint"}
+            active_deadline: {$ref: "#/$defs/TimePoint"}
+      - if: {properties: {state: {const: draining}}}
+        then:
+          properties:
+            drain_started_at: {$ref: "#/$defs/TimePoint"}
+            drain_deadline: {$ref: "#/$defs/TimePoint"}
+            close_reason: {$ref: "#/$defs/CloseReason"}
+      - if: {properties: {state: {const: closed}}}
+        then:
+          properties:
+            closed_at: {$ref: "#/$defs/TimePoint"}
+            close_reason: {$ref: "#/$defs/CloseReason"}
+            at_close: {$ref: "#/$defs/CloseSnapshot"}
+        else:
+          properties:
+            closed_at: {$ref: "#/$defs/Inapplicable"}
+            at_close: {$ref: "#/$defs/Inapplicable"}
+    x-status: extracted
+    x-source: *l
+
+  ExecutionState:
+    enum: [running, completed, failed, stopped, unknown]
+    x-status: extracted
+    x-source: *l
+
+  CommitmentAssertion:
+    type: object
+    additionalProperties: false
+    required: [assertion_id, value, span, boundary_ref, evidence_refs]
+    properties:
+      assertion_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      value: {enum: [committed, not_committed, outcome_unknown], x-status: extracted, x-source: *l}
+      span: {enum: [at_boundary, after_boundary, entire_attempt], x-status: extracted, x-source: *l}
+      boundary_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: extracted, x-source: *l}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *l}
+    allOf:
+      - if: {properties: {span: {const: entire_attempt}}}
+        then: {properties: {boundary_ref: {$ref: "#/$defs/Inapplicable"}}}
+        else: {properties: {boundary_ref: {$ref: "#/$defs/EvidenceRef"}}}
+    x-status: extracted
+    x-source: *l
+
+  ExecutionClaim:
+    type: object
+    additionalProperties: false
+    required: [claim_id, scope, state, application_assertions, native_run_id, native_message_id, native_report, mapping, source_checks, made_at, received_at, evidence_available_to_claimant, evidence_refs, limitations]
+    properties:
+      claim_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      scope: {enum: [primitive, application_postcondition, execution_lifecycle, unknown], x-status: extracted, x-source: *l}
+      state:
+        oneOf: [{$ref: "#/$defs/ExecutionState"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *l
+      application_assertions:
+        type: array
+        items: {$ref: "#/$defs/CommitmentAssertion"}
+        x-status: extracted
+        x-source: *l
+      native_run_id: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      native_message_id: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      native_report: {$ref: "#/$defs/ArtifactReference", x-status: extracted, x-source: *l}
+      mapping: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *l}
+      source_checks: {$ref: "#/$defs/VerifiedSourceChecks", x-status: extracted, x-source: *l}
+      made_at: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *l}
+      received_at: {$ref: "#/$defs/TimePoint", x-status: extracted, x-source: *l}
+      evidence_available_to_claimant: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *l}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *l
+    allOf:
+      - if: {properties: {scope: {const: primitive}}}
+        then:
+          properties:
+            state: {$ref: "#/$defs/Inapplicable"}
+            application_assertions: {maxItems: 0}
+      - if: {properties: {scope: {const: unknown}}}
+        then:
+          properties:
+            state: {$ref: "#/$defs/Missing"}
+            application_assertions: {maxItems: 0}
+    x-status: extracted
+    x-source: *l
+
+  ExecutionValue:
+    type: object
+    additionalProperties: false
+    required: [claims]
+    properties:
+      claims:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/ExecutionClaim"}
+        x-status: extracted
+        x-source: *l
+    x-status: extracted
+    x-source: *l
+
+  OriginFact:
+    type: object
+    additionalProperties: false
+    required: [fact_id, origin_id, candidate_id, job_id, state, coverage, boundary_ref, origin_application_id, origin_revision, receipt, verification_kind, source_checks, authority_seal_ref, occurred_at, received_at, evidence_refs]
+    properties:
+      fact_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      origin_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      candidate_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      job_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      state: {enum: [not_committed, committed], x-status: extracted, x-source: *l}
+      coverage: {enum: [at_boundary, final_for_attempt], x-status: extracted, x-source: *l}
+      boundary_ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *l}
+      origin_application_id: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      origin_revision: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      receipt: {$ref: "#/$defs/ArtifactReference", x-status: extracted, x-source: *l}
+      verification_kind: {enum: [local_origin_transaction, verified_origin_receipt], x-status: extracted, x-source: *l}
+      source_checks: {$ref: "#/$defs/VerifiedSourceChecks", x-status: extracted, x-source: *l}
+      authority_seal_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: extracted, x-source: *l}
+      occurred_at: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *l}
+      received_at: {$ref: "#/$defs/TimePoint", x-status: extracted, x-source: *l}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *l}
+    allOf:
+      - if: {properties: {state: {const: not_committed}, coverage: {const: final_for_attempt}}}
+        then: {properties: {authority_seal_ref: {$ref: "#/$defs/EvidenceRef"}}}
+    x-status: extracted
+    x-source: *l
+
+  ApplicationValue:
+    type: object
+    additionalProperties: false
+    required: [facts]
+    properties:
+      facts:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/OriginFact"}
+        x-status: extracted
+        x-source: *l
+    x-status: extracted
+    x-source: *l
+
+  TemporalRelation:
+    type: object
+    additionalProperties: false
+    required: [relation, basis, evidence_refs]
+    properties:
+      relation: {enum: [before, at, after, unknown, not_applicable], x-status: extracted, x-source: *l}
+      basis: {enum: [same_clock, causal_evidence, origin_sequence, not_established, not_applicable], x-status: extracted, x-source: *l}
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+    allOf:
+      - if: {properties: {relation: {enum: [before, at, after]}}}
+        then:
+          properties:
+            basis: {enum: [same_clock, causal_evidence, origin_sequence]}
+            evidence_refs: {minItems: 1}
+      - if: {properties: {relation: {const: unknown}}}
+        then: {properties: {basis: {const: not_established}}}
+      - if: {properties: {relation: {const: not_applicable}}}
+        then: {properties: {basis: {const: not_applicable}}}
+    x-status: extracted
+    x-source: *l
+
+  ClaimComparison:
+    type: object
+    additionalProperties: false
+    required: [claim_id, assertion_id, claim_ref, fact_ids, fact_refs, result, temporal_relation, rationale, limitations]
+    properties:
+      claim_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      assertion_id: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      claim_ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *l}
+      fact_ids:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *l
+      fact_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *l}
+      result: {enum: [consistent, contradicted, not_comparable, indeterminate], x-status: extracted, x-source: *l}
+      temporal_relation: {$ref: "#/$defs/TemporalRelation", x-status: extracted, x-source: *l}
+      rationale: {type: string, minLength: 1, x-status: extracted, x-source: *l}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *l
+    allOf:
+      - if: {properties: {result: {enum: [consistent, contradicted]}}}
+        then:
+          properties:
+            fact_ids: {minItems: 1}
+            fact_refs: {minItems: 1}
+    x-status: extracted
+    x-source: *l
+
+  ReconciliationIssue:
+    type: object
+    additionalProperties: false
+    required: [kind, detail, evidence_refs]
+    properties:
+      kind:
+        enum: [origin_fact_conflict, subject_claim_conflict, insufficient_evidence, incomparable_scope, untrusted_observation, mapping_error, multiple_origin_commitments]
+        x-status: extracted
+        x-source: *l
+      detail: {type: string, minLength: 1, x-status: extracted, x-source: *l}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *l}
+    x-status: extracted
+    x-source: *l
+
+  ReportValue:
+    type: object
+    additionalProperties: false
+    required: [state, coverage, inputs, evaluator, comparisons, issues, limitations, diagnostic]
+    properties:
+      state:
+        oneOf:
+          - enum: [reconciled, contradicted]
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *l
+      coverage: {enum: [complete, incomplete, not_applicable], x-status: extracted, x-source: *l}
+      inputs: {$ref: "#/$defs/ReportInputPins", x-status: extracted, x-source: *l}
+      evaluator: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *l}
+      comparisons:
+        type: array
+        items: {$ref: "#/$defs/ClaimComparison"}
+        x-status: extracted
+        x-source: *l
+      issues:
+        type: array
+        items: {$ref: "#/$defs/ReconciliationIssue"}
+        x-status: extracted
+        x-source: *l
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *l
+      diagnostic: {$ref: "#/$defs/MaybeArtifact", x-status: extracted, x-source: *l}
+    allOf:
+      - if: {properties: {comparisons: {contains: {properties: {result: {const: contradicted}}}}}}
+        then: {properties: {state: {const: contradicted}}}
+      - if: {properties: {state: {const: contradicted}}}
+        then:
+          properties:
+            comparisons: {contains: {properties: {result: {const: contradicted}}}}
+      - if: {properties: {state: {const: reconciled}}}
+        then:
+          properties:
+            coverage: {const: complete}
+            comparisons:
+              minItems: 1
+              items: {properties: {result: {enum: [consistent, not_comparable]}}}
+      - if: {properties: {coverage: {const: complete}}}
+        then:
+          properties:
+            state: {enum: [reconciled, contradicted]}
+            comparisons:
+              minItems: 1
+              items: {properties: {result: {enum: [consistent, contradicted, not_comparable]}}}
+      - if: {properties: {coverage: {const: not_applicable}}}
+        then:
+          properties:
+            state: {$ref: "#/$defs/Inapplicable"}
+            comparisons: {maxItems: 0}
+      - if:
+          properties:
+            coverage: {const: incomplete}
+            comparisons: {not: {contains: {properties: {result: {const: contradicted}}}}}
+        then:
+          properties:
+            state:
+              allOf:
+                - $ref: "#/$defs/Missing"
+                - properties: {reason: {enum: [not_observed, observation_lost]}}
+    x-status: extracted
+    x-source: *l
+
+  AxisRevision:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, attempt, commission_digest, axis, owner_domain, writer_id, revision, previous_revision, evidence_prefix, evidence_refs, value]
+    properties:
+      record_type: {const: attempt_axis_revision, x-status: extracted, x-source: *l}
+      schema_version: {const: application-attempt-lifecycle/0.1.0, x-status: extracted, x-source: *l}
+      attempt: {$ref: "#/$defs/AttemptReference", x-status: extracted, x-source: *l}
+      commission_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *l}
+      axis: {enum: [dispatch, observation, execution, application, report], x-status: extracted, x-source: *l}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      writer_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      revision: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *l}
+      previous_revision: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *l}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *l}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *l}
+      value: {type: object, x-status: extracted, x-source: *l}
+    allOf:
+      - if: {properties: {axis: {const: dispatch}}}
+        then: {properties: {value: {$ref: "#/$defs/DispatchValue"}}}
+      - if: {properties: {axis: {const: observation}}}
+        then: {properties: {value: {$ref: "#/$defs/ObservationValue"}}}
+      - if: {properties: {axis: {const: execution}}}
+        then: {properties: {value: {$ref: "#/$defs/ExecutionValue"}}}
+      - if: {properties: {axis: {const: application}}}
+        then: {properties: {value: {$ref: "#/$defs/ApplicationValue"}}}
+      - if: {properties: {axis: {const: report}}}
+        then: {properties: {value: {$ref: "#/$defs/ReportValue"}}}
+    description: >-
+      Exact lifecycle publication type. Dispatch and observation transitions,
+      cumulative claims/facts, immutable close-time snapshots, non-regressing
+      report input pins, source checks, and manual exclusions remain enforced.
+    x-status: extracted
+    x-source: *l
+
+  SectionAcceptance:
+    type: object
+    additionalProperties: false
+    required: [section, value_revision, validation_generation, accepted_data, evidence_refs]
+    properties:
+      section: {enum: [contact, history, review], x-status: proposed, x-source: *f}
+      value_revision: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *f}
+      validation_generation: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *f}
+      accepted_data: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *f}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *f}
+    description: >-
+      One current accepted entry per section. Edits invalidate dependent
+      acceptance. Rejections and superseded generations remain in the journal.
+    x-status: inferred
+    x-source: *f
+
+  FixtureCommitment:
+    type: object
+    additionalProperties: false
+    required: [application_id, operation_key, request_digest, receipt, committed_at, commit_ref]
+    properties:
+      application_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *f}
+      operation_key: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *f}
+      request_digest: {$ref: "#/$defs/Digest", x-status: inferred, x-source: *f}
+      receipt: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *f}
+      committed_at: {$ref: "#/$defs/TimePoint", x-status: inferred, x-source: *k}
+      commit_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *f}
+    description: Repeated identical submit returns this commitment; changed content under the key conflicts.
+    x-status: inferred
+    x-source: *f
+
+  SessionApplicationValue:
+    type: object
+    additionalProperties: false
+    required:
+      - state_revision
+      - workflow_state
+      - selected_job
+      - accepted_sections
+      - upload
+      - identity_receipt
+      - authoritative_state
+      - submission
+      - mutation_authority
+      - authority_seal_ref
+    properties:
+      state_revision: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *f}
+      workflow_state:
+        enum: [LISTING, DETAIL, CONTACT, HISTORY, UPLOAD, IDENTITY, REVIEW, CONFIRMATION]
+        x-status: extracted
+        x-source: *f
+      selected_job: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *f}
+      accepted_sections:
+        type: array
+        items: {$ref: "#/$defs/SectionAcceptance"}
+        x-status: proposed
+        x-source: *f
+      upload: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *f}
+      identity_receipt: {$ref: "#/$defs/MaybeArtifact", x-status: inferred, x-source: *f}
+      authoritative_state:
+        $ref: "#/$defs/ArtifactReference"
+        description: Full immutable reducer state and operation-idempotency snapshot; not a mutable database locator.
+        x-status: proposed
+        x-source: *f
+      submission:
+        oneOf:
+          - $ref: "#/$defs/FixtureCommitment"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *f
+      mutation_authority: {enum: [open, sealed], x-status: inferred, x-source: *f}
+      authority_seal_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: inferred, x-source: *f}
+    allOf:
+      - if: {properties: {workflow_state: {const: CONFIRMATION}}}
+        then: {properties: {submission: {$ref: "#/$defs/FixtureCommitment"}}}
+      - if: {properties: {submission: {required: [application_id]}}}
+        then: {properties: {workflow_state: {const: CONFIRMATION}}}
+      - if: {properties: {mutation_authority: {const: sealed}}}
+        then: {properties: {authority_seal_ref: {$ref: "#/$defs/EvidenceRef"}}}
+        else: {properties: {authority_seal_ref: {$ref: "#/$defs/Inapplicable"}}}
+    description: >-
+      An unpublished or uncommitted submission is not a native cancellation
+      conclusion. Once committed, submission is immutable. Sealing does not
+      remove it. Server workflow CONFIRMATION does not imply receipt rendering.
+    x-status: inferred
+    x-source: *f
+
+  SequenceRange:
+    type: object
+    additionalProperties: false
+    required: [first, last]
+    properties:
+      first: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      last: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+    description: first <= last; ranges are ordered and non-overlapping.
+    x-status: extracted
+    x-source: *k
+
+  ProducerCompleteness:
+    type: object
+    additionalProperties: false
+    required: [producer_id, state, observed_ranges, missing_ranges, final_sequence, evidence_refs]
+    properties:
+      producer_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      state: {enum: [complete, incomplete, unknown, not_applicable], x-status: extracted, x-source: *k}
+      observed_ranges:
+        type: array
+        items: {$ref: "#/$defs/SequenceRange"}
+        x-status: extracted
+        x-source: *k
+      missing_ranges:
+        type: array
+        items: {$ref: "#/$defs/SequenceRange"}
+        x-status: extracted
+        x-source: *k
+      final_sequence:
+        oneOf: [{$ref: "#/$defs/Revision"}, {$ref: "#/$defs/Missing"}]
+        x-status: extracted
+        x-source: *k
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+    allOf:
+      - if: {properties: {state: {const: complete}}}
+        then:
+          properties:
+            final_sequence: {$ref: "#/$defs/Revision"}
+            missing_ranges: {maxItems: 0}
+    x-status: extracted
+    x-source: *k
+
+  EvidenceNote:
+    type: object
+    additionalProperties: false
+    required: [code, detail, evidence_refs]
+    properties:
+      code: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      detail: {type: string, minLength: 1, x-status: extracted, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+    x-status: extracted
+    x-source: *k
+
+  SessionObservationValue:
+    type: object
+    additionalProperties: false
+    required: [attempt_observation, attempt_observation_ref, producer_completeness, observed_action_refs, confirmation_render_refs, late_evidence_refs, measurements, infrastructure_incidents]
+    properties:
+      attempt_observation:
+        oneOf:
+          - allOf:
+              - $ref: "#/$defs/AxisRevision"
+              - properties: {axis: {const: observation}}
+          - $ref: "#/$defs/Missing"
+        x-status: proposed
+        x-source: *w
+      attempt_observation_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: proposed, x-source: *w}
+      producer_completeness:
+        type: array
+        items: {$ref: "#/$defs/ProducerCompleteness"}
+        x-status: extracted
+        x-source: *f
+      observed_action_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *f}
+      confirmation_render_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *f}
+      late_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *f}
+      measurements:
+        type: array
+        items: {$ref: "#/$defs/MeasurementEvidence"}
+        x-status: inferred
+        x-source: *f
+      infrastructure_incidents:
+        type: array
+        items: {$ref: "#/$defs/EvidenceNote"}
+        x-status: inferred
+        x-source: *f
+    allOf:
+      - if: {properties: {attempt_observation: {required: [record_type]}}}
+        then: {properties: {attempt_observation_ref: {$ref: "#/$defs/EvidenceRef"}}}
+        else: {properties: {attempt_observation_ref: {$ref: "#/$defs/Missing"}}}
+    description: >-
+      Pinned observation copy must match the session attempt and its original
+      publication bytes. Missing client telemetry cannot erase application facts
+      or be replaced by assumed user actions.
+    x-status: proposed
+    x-source: *w
+
+  SessionAnalysisInputs:
+    type: object
+    additionalProperties: false
+    required: [application, observation]
+    properties:
+      application: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+      observation: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  SessionDiagnosticValue:
+    type: object
+    additionalProperties: false
+    required: [diagnostic_id, analysis_revision, diagnostic, input_prefix, inputs, classifier, replay_receipts]
+    properties:
+      diagnostic_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *k}
+      analysis_revision: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *k}
+      diagnostic: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *k}
+      input_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *k}
+      inputs: {$ref: "#/$defs/SessionAnalysisInputs", x-status: proposed, x-source: *w}
+      classifier: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *k}
+      replay_receipts:
+        type: array
+        items: {$ref: "#/$defs/ArtifactReference"}
+        x-status: inferred
+        x-source: *k
+    description: >-
+      The diagnostic is a kernel DiagnosticDocument and receipts are kernel
+      ReplayReceipts. Their pinned manifest, prefix, and classifier must agree.
+      A new receipt does not mutate the diagnostic. Inputs may lag the current
+      session domains; display that lag rather than inventing current analysis.
+    x-status: proposed
+    x-source: *w
+
+  DataDomainRevision:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, entity, registration_digest, domain, owner_domain, writer_id, revision, previous_revision, evidence_prefix, evidence_refs, value]
+    properties:
+      record_type: {const: owned_domain_revision, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      entity:
+        oneOf: [{$ref: "#/$defs/JobEntityKey"}, {$ref: "#/$defs/SessionEntityKey"}]
+        x-status: proposed
+        x-source: *w
+      registration_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      domain: {enum: [crawler, downstream, application, observation, diagnostic], x-status: proposed, x-source: *w}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *s}
+      writer_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *s}
+      revision: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *s}
+      previous_revision: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: extracted, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *k}
+      value: {type: object, x-status: proposed, x-source: *w}
+    allOf:
+      - if: {properties: {entity: {properties: {entity_type: {const: job}}}}}
+        then: {properties: {domain: {enum: [crawler, downstream]}}}
+        else: {properties: {domain: {enum: [application, observation, diagnostic]}}}
+      - if: {properties: {domain: {const: crawler}}}
+        then: {properties: {value: {$ref: "#/$defs/JobCrawlerValue"}}}
+      - if: {properties: {domain: {const: downstream}}}
+        then: {properties: {value: {$ref: "#/$defs/JobDownstreamValue"}}}
+      - if: {properties: {domain: {const: application}}}
+        then: {properties: {value: {$ref: "#/$defs/SessionApplicationValue"}}}
+      - if: {properties: {domain: {const: observation}}}
+        then: {properties: {value: {$ref: "#/$defs/SessionObservationValue"}}}
+      - if: {properties: {domain: {const: diagnostic}}}
+        then: {properties: {value: {$ref: "#/$defs/SessionDiagnosticValue"}}}
+    description: >-
+      Complete owner-authenticated publication document. Evidence prefix supports
+      its inputs and effects; the document's own artifact registration occurs
+      afterward. Header identity is checked against registration, not trusted.
+    x-status: proposed
+    x-source: *w
+
+  OwnedRevision:
+    oneOf:
+      - $ref: "#/$defs/DataDomainRevision"
+      - $ref: "#/$defs/AxisRevision"
+    x-status: proposed
+    x-source: *w
+
+  UnpublishedDomain:
+    type: object
+    additionalProperties: false
+    required: [revision, value]
+    properties:
+      revision: {const: 0, x-status: extracted, x-source: *l}
+      value: {$ref: "#/$defs/Missing", x-status: extracted, x-source: *l}
+    description: Cannot replace an already published revision to erase history or conceal storage loss.
+    x-status: inferred
+    x-source: *l
+
+  PublishedDomain:
+    type: object
+    additionalProperties: false
+    required: [revision, document, publication_ref, snapshot]
+    properties:
+      revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      document: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      publication_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      snapshot: {$ref: "#/$defs/OwnedRevision", x-status: proposed, x-source: *w}
+    description: >-
+      document hashes the canonical complete snapshot. revision equals the
+      embedded revision. publication_ref proves complete installation in the
+      seal's read view before the seal-selection event.
+    x-status: proposed
+    x-source: *w
+
+  DomainSlot:
+    oneOf:
+      - $ref: "#/$defs/UnpublishedDomain"
+      - $ref: "#/$defs/PublishedDomain"
+    x-status: proposed
+    x-source: *w
+
+  JobDomainMap:
+    type: object
+    additionalProperties: false
+    required: [crawler, downstream]
+    properties:
+      crawler:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties:
+              snapshot:
+                allOf:
+                  - $ref: "#/$defs/DataDomainRevision"
+                  - properties: {entity: {$ref: "#/$defs/JobEntityKey"}, domain: {const: crawler}}
+        x-status: proposed
+        x-source: *w
+      downstream:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties:
+              snapshot:
+                allOf:
+                  - $ref: "#/$defs/DataDomainRevision"
+                  - properties: {entity: {$ref: "#/$defs/JobEntityKey"}, domain: {const: downstream}}
+        x-status: proposed
+        x-source: *w
+    x-status: proposed
+    x-source: *w
+
+  AttemptDomainMap:
+    type: object
+    additionalProperties: false
+    required: [dispatch, observation, execution, application, report]
+    properties:
+      dispatch:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties: {snapshot: {allOf: [{$ref: "#/$defs/AxisRevision"}, {properties: {axis: {const: dispatch}}}]}}
+        x-status: proposed
+        x-source: *w
+      observation:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties: {snapshot: {allOf: [{$ref: "#/$defs/AxisRevision"}, {properties: {axis: {const: observation}}}]}}
+        x-status: proposed
+        x-source: *w
+      execution:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties: {snapshot: {allOf: [{$ref: "#/$defs/AxisRevision"}, {properties: {axis: {const: execution}}}]}}
+        x-status: proposed
+        x-source: *w
+      application:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties: {snapshot: {allOf: [{$ref: "#/$defs/AxisRevision"}, {properties: {axis: {const: application}}}]}}
+        x-status: proposed
+        x-source: *w
+      report:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties: {snapshot: {allOf: [{$ref: "#/$defs/AxisRevision"}, {properties: {axis: {const: report}}}]}}
+        x-status: proposed
+        x-source: *w
+    x-status: proposed
+    x-source: *w
+
+  SessionDomainMap:
+    type: object
+    additionalProperties: false
+    required: [application, observation, diagnostic]
+    properties:
+      application:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties:
+              snapshot:
+                allOf:
+                  - $ref: "#/$defs/DataDomainRevision"
+                  - properties: {entity: {$ref: "#/$defs/SessionEntityKey"}, domain: {const: application}}
+        x-status: proposed
+        x-source: *w
+      observation:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties:
+              snapshot:
+                allOf:
+                  - $ref: "#/$defs/DataDomainRevision"
+                  - properties: {entity: {$ref: "#/$defs/SessionEntityKey"}, domain: {const: observation}}
+        x-status: proposed
+        x-source: *w
+      diagnostic:
+        allOf:
+          - $ref: "#/$defs/DomainSlot"
+          - properties:
+              snapshot:
+                allOf:
+                  - $ref: "#/$defs/DataDomainRevision"
+                  - properties: {entity: {$ref: "#/$defs/SessionEntityKey"}, domain: {const: diagnostic}}
+        x-status: proposed
+        x-source: *w
+    x-status: proposed
+    x-source: *w
+
+  JobVersionVector:
+    type: object
+    additionalProperties: false
+    required: [crawler, downstream]
+    properties:
+      crawler: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      downstream: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+    x-status: inferred
+    x-source: *s
+
+  AttemptVersionVector:
+    type: object
+    additionalProperties: false
+    required: [dispatch, observation, execution, application, report]
+    properties:
+      dispatch: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *l}
+      observation: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *l}
+      execution: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *l}
+      application: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *l}
+      report: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *l}
+    x-status: extracted
+    x-source: *l
+
+  SessionVersionVector:
+    type: object
+    additionalProperties: false
+    required: [application, observation, diagnostic]
+    properties:
+      application: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      observation: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      diagnostic: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  SealPoint:
+    type: object
+    additionalProperties: false
+    required: [seal_id, name, view_id, versions, sealed_at, input_prefix, evidence_refs]
+    properties:
+      seal_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      name:
+        enum: [published, fetch_key_replacement, commissioned, observation_closed, evidence_updated, session_admitted, diagnostic_published]
+        x-status: proposed
+        x-source: *w
+      view_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      versions:
+        oneOf:
+          - $ref: "#/$defs/JobVersionVector"
+          - $ref: "#/$defs/AttemptVersionVector"
+          - $ref: "#/$defs/SessionVersionVector"
+        x-status: inferred
+        x-source: *h
+      sealed_at: {$ref: "#/$defs/TimePoint", x-status: inferred, x-source: *k}
+      input_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+    description: >-
+      The prefix pins registration, complete locally installed publications, and
+      seal selection. It excludes this row's later registration. Vector entries
+      exactly equal domain-slot revisions; no domain may be omitted.
+    x-status: proposed
+    x-source: *w
+
+  LogicalRow:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, entity, registration_digest, registration, domains, seal_point]
+    properties:
+      record_type: {const: logical_row, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      entity: {$ref: "#/$defs/EntityKey", x-status: proposed, x-source: *w}
+      registration_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      registration: {$ref: "#/$defs/EntityRegistration", x-status: proposed, x-source: *w}
+      domains: {type: object, x-status: proposed, x-source: *w}
+      seal_point: {$ref: "#/$defs/SealPoint", x-status: inferred, x-source: *h}
+    allOf:
+      - if: {properties: {entity: {properties: {entity_type: {const: job}}}}}
+        then:
+          properties:
+            domains: {$ref: "#/$defs/JobDomainMap"}
+            seal_point:
+              properties:
+                versions: {$ref: "#/$defs/JobVersionVector"}
+                name: {enum: [published, fetch_key_replacement, evidence_updated]}
+      - if: {properties: {entity: {properties: {entity_type: {const: application_attempt}}}}}
+        then:
+          properties:
+            domains: {$ref: "#/$defs/AttemptDomainMap"}
+            seal_point:
+              properties:
+                versions: {$ref: "#/$defs/AttemptVersionVector"}
+                name: {enum: [commissioned, observation_closed, evidence_updated]}
+      - if: {properties: {entity: {properties: {entity_type: {const: hellscape_session}}}}}
+        then:
+          properties:
+            domains: {$ref: "#/$defs/SessionDomainMap"}
+            seal_point:
+              properties:
+                versions: {$ref: "#/$defs/SessionVersionVector"}
+                name: {enum: [session_admitted, observation_closed, diagnostic_published, evidence_updated]}
+      - if:
+          properties:
+            entity: {properties: {entity_type: {const: application_attempt}}}
+            registration:
+              properties:
+                identity:
+                  properties:
+                    execution: {properties: {mode: {const: manual}}}
+        then:
+          properties:
+            domains:
+              properties:
+                dispatch:
+                  allOf:
+                    - $ref: "#/$defs/UnpublishedDomain"
+                    - properties: {value: {$ref: "#/$defs/Inapplicable"}}
+                execution:
+                  allOf:
+                    - $ref: "#/$defs/UnpublishedDomain"
+                    - properties: {value: {$ref: "#/$defs/Inapplicable"}}
+      - if:
+          properties:
+            entity: {properties: {entity_type: {const: application_attempt}}}
+            seal_point: {properties: {name: {const: observation_closed}}}
+        then:
+          properties:
+            domains:
+              properties:
+                observation:
+                  allOf:
+                    - $ref: "#/$defs/PublishedDomain"
+                    - properties:
+                        snapshot:
+                          properties:
+                            axis: {const: observation}
+                            value: {properties: {state: {const: closed}}}
+      - if:
+          properties:
+            entity: {properties: {entity_type: {const: hellscape_session}}}
+            seal_point: {properties: {name: {const: observation_closed}}}
+        then:
+          properties:
+            domains:
+              properties:
+                observation:
+                  allOf:
+                    - $ref: "#/$defs/PublishedDomain"
+                    - properties:
+                        snapshot:
+                          properties:
+                            value:
+                              properties:
+                                attempt_observation:
+                                  allOf:
+                                    - $ref: "#/$defs/AxisRevision"
+                                    - properties:
+                                        axis: {const: observation}
+                                        value: {properties: {state: {const: closed}}}
+      - if: {properties: {seal_point: {properties: {name: {const: diagnostic_published}}}}}
+        then:
+          properties:
+            domains:
+              properties:
+                diagnostic: {$ref: "#/$defs/PublishedDomain"}
+      - if: {properties: {seal_point: {properties: {name: {const: fetch_key_replacement}}}}}
+        then:
+          properties:
+            domains:
+              properties:
+                crawler: {$ref: "#/$defs/PublishedDomain"}
+    description: >-
+      Derived complete read value, never a write command. Entity identities and
+      registration digest agree throughout. A zero slot is visible missingness,
+      not a default domain body. Publication/analysis freshness is established
+      from pins, not inferred from read time or an overall status.
+    x-status: proposed
+    x-source: *w
+
+  PublicationReceipt:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - receipt_id
+      - entity
+      - registration_digest
+      - view_id
+      - publisher_id
+      - domain
+      - revision
+      - document
+      - supersedes
+      - observed_owner_head
+      - source_prefix
+      - installed_at
+      - publication_ref
+      - publication_delay
+    properties:
+      record_type: {const: domain_publication_receipt, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      receipt_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      entity: {$ref: "#/$defs/EntityKey", x-status: proposed, x-source: *w}
+      registration_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      view_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      publisher_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      domain: {$ref: "#/$defs/DomainName", x-status: proposed, x-source: *w}
+      revision: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *s}
+      document: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      supersedes: {$ref: "#/$defs/DomainPin", x-status: proposed, x-source: *w}
+      observed_owner_head:
+        oneOf:
+          - $ref: "#/$defs/DomainPin"
+          - $ref: "#/$defs/Missing"
+        description: Last evidenced durable source head; unknown is not assumed equal to the installed revision.
+        x-status: proposed
+        x-source: *w
+      source_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      installed_at: {$ref: "#/$defs/TimePoint", x-status: inferred, x-source: *k}
+      publication_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      publication_delay:
+        $ref: "#/$defs/MeasurementEvidence"
+        description: Same-clock or evidenced-bound measurement; unavailable with reason when comparison is unsupported.
+        x-status: inferred
+        x-source: *k
+    description: >-
+      Issued only after complete installation and atomic pointer advance.
+      revision is greater than supersedes.revision; identical retries return the
+      prior receipt. publication_ref records installation without containing this
+      receipt's later digest. The referenced document must validate as the exact
+      OwnedRevision for this entity/domain/revision and registered writer.
+      Rejected or stale deliveries are journaled incidents, not success receipts.
+    x-status: proposed
+    x-source: *w
+
+  ArchivedPublishedDomain:
+    type: object
+    additionalProperties: false
+    required: [revision, document, publication_ref]
+    properties:
+      revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      document: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      publication_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+    description: Expansion adds snapshot from the verified immutable document bytes.
+    x-status: proposed
+    x-source: *w
+
+  ArchiveDomainSlot:
+    oneOf:
+      - $ref: "#/$defs/UnpublishedDomain"
+      - $ref: "#/$defs/ArchivedPublishedDomain"
+    x-status: proposed
+    x-source: *w
+
+  ArchiveStorageManifest:
+    type: object
+    additionalProperties: false
+    required: [encoding, schema_version, entity, registration, domains, seal_point]
+    properties:
+      encoding: {const: owner-domain-extents/1, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      entity: {$ref: "#/$defs/EntityKey", x-status: proposed, x-source: *w}
+      registration: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      domains:
+        type: object
+        propertyNames: {$ref: "#/$defs/DomainName"}
+        additionalProperties: {$ref: "#/$defs/ArchiveDomainSlot"}
+        x-status: proposed
+        x-source: *w
+      seal_point: {$ref: "#/$defs/SealPoint", x-status: proposed, x-source: *w}
+    allOf:
+      - if: {properties: {entity: {properties: {entity_type: {const: job}}}}}
+        then:
+          properties:
+            domains:
+              required: [crawler, downstream]
+              propertyNames: {enum: [crawler, downstream]}
+            seal_point: {properties: {versions: {$ref: "#/$defs/JobVersionVector"}}}
+      - if: {properties: {entity: {properties: {entity_type: {const: application_attempt}}}}}
+        then:
+          properties:
+            domains:
+              required: [dispatch, observation, execution, application, report]
+              propertyNames: {enum: [dispatch, observation, execution, application, report]}
+            seal_point: {properties: {versions: {$ref: "#/$defs/AttemptVersionVector"}}}
+      - if: {properties: {entity: {properties: {entity_type: {const: hellscape_session}}}}}
+        then:
+          properties:
+            domains:
+              required: [application, observation, diagnostic]
+              propertyNames: {enum: [application, observation, diagnostic]}
+            seal_point: {properties: {versions: {$ref: "#/$defs/SessionVersionVector"}}}
+    description: >-
+      Physical archive root. Every component is an immutable local extent with
+      verified bytes, not a promise to fetch a peer's current data later.
+      All nested artifact dependencies are retained transitively. The manifest
+      alone is not a conforming full logical archive response.
+    x-status: proposed
+    x-source: *w
+
+  ArchiveRecord:
+    type: object
+    additionalProperties: false
+    required: [record_type, schema_version, root, storage_manifest, payload_json]
+    properties:
+      record_type: {const: logical_row_archive, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      root:
+        $ref: "#/$defs/ArtifactReference"
+        description: Digest and size of canonical storage_manifest bytes; not a digest of this wrapper.
+        x-status: proposed
+        x-source: *w
+      storage_manifest: {$ref: "#/$defs/ArchiveStorageManifest", x-status: proposed, x-source: *w}
+      payload_json:
+        $ref: "#/$defs/LogicalRow"
+        description: Complete previous logical row, including every owner domain and every reasoned null.
+        x-status: extracted
+        x-source: *s
+    description: >-
+      A logical archive read returns this complete shape. Physical storage may
+      stream expansion from immutable extents. Expansion must equal payload_json
+      exactly. If any component is restricted, the root and archive response
+      are restricted; possession of a digest grants no access.
+    x-status: proposed
+    x-source: *w
+
+  FetchKeyReplacement:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - replacement_id
+      - entity
+      - registration_digest
+      - old_crawler
+      - old_fetch_key
+      - new_crawler
+      - archive_root
+      - archived_vector
+      - retention_pin_id
+      - commit_ref
+      - evidence_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: fetch_key_replacement, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      replacement_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      entity: {$ref: "#/$defs/JobEntityKey", x-status: extracted, x-source: *c}
+      registration_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      old_crawler: {$ref: "#/$defs/NonzeroDomainPin", x-status: inferred, x-source: *s}
+      old_fetch_key: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *c}
+      new_crawler:
+        allOf:
+          - $ref: "#/$defs/DataDomainRevision"
+          - properties:
+              entity: {$ref: "#/$defs/JobEntityKey"}
+              domain: {const: crawler}
+              value:
+                properties:
+                  replacement_lineage: {$ref: "#/$defs/ReplacementLink"}
+        x-status: proposed
+        x-source: *w
+      archive_root: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *s}
+      archived_vector: {$ref: "#/$defs/JobVersionVector", x-status: inferred, x-source: *s}
+      retention_pin_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      commit_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *s}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    description: >-
+      Committed-effect receipt, not a replacement command. archive_root resolves
+      to an ArchiveRecord with a fetch_key_replacement seal, matching entity,
+      registration, old crawler document, old fetch key, and archived_vector.
+      new_crawler.previous_revision equals old_crawler.revision and its fetch key
+      differs. Its ReplacementLink names this replacement and archive root.
+      The active retention pin must already protect the root and all dependencies.
+      The atomic commit event records these identities without a cyclic reference
+      to this receipt's later artifact digest.
+    x-status: proposed
+    x-source: *w
+
+  RetentionDependent:
+    type: object
+    additionalProperties: false
+    required: [entity, kind, root_id]
+    properties:
+      entity: {$ref: "#/$defs/EntityKey", x-status: proposed, x-source: *w}
+      kind: {enum: [live_replacement, retained_archive, retained_evidence], x-status: proposed, x-source: *w}
+      root_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+    description: Stable journaled retention-root identity, not a caller-selected excuse to delete an archive.
+    x-status: proposed
+    x-source: *w
+
+  RetentionPinRevision:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - pin_id
+      - owner_domain
+      - writer_id
+      - revision
+      - previous_revision
+      - dependent
+      - archive_root
+      - state
+      - release_ref
+      - evidence_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: archive_retention_pin, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      pin_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      writer_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      previous_revision: {$ref: "#/$defs/Revision", x-status: proposed, x-source: *w}
+      dependent: {$ref: "#/$defs/RetentionDependent", x-status: proposed, x-source: *w}
+      archive_root: {$ref: "#/$defs/ArtifactReference", x-status: proposed, x-source: *w}
+      state: {enum: [active, released], x-status: proposed, x-source: *w}
+      release_ref: {$ref: "#/$defs/MaybeEvidenceRef", x-status: proposed, x-source: *w}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *k}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *k}
+    allOf:
+      - if: {properties: {state: {const: active}}}
+        then: {properties: {release_ref: {$ref: "#/$defs/Inapplicable"}}}
+        else: {properties: {release_ref: {$ref: "#/$defs/EvidenceRef"}}}
+    description: >-
+      Written only by the registered retention authority for the archive's
+      persistence domain. Initial revision is active. dependent and archive_root
+      never change under a pin ID. Release requires evidenced retirement of
+      that root and preserves other roots' protection. GC may reclaim bytes
+      only after all direct and transitive protections are absent under a
+      concurrency-safe check. Released pins and retention history remain
+      journaled; they do not mutate archived content.
+    x-status: proposed
+    x-source: *w

@@ -1,0 +1,2453 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: urn:job-application:contracts:evidence-kernel:0.1.0
+title: Shared evidence kernel
+description: >-
+  Review draft for recording discovery, practice, and production work without
+  turning declarations, transport acknowledgements, or missing observations into
+  success. This schema defines six durable record types. All references to
+  schema definitions are local to this file.
+x-status: proposed
+x-source: "1-handoff-brief.txt, Parts VI and VIII: versioned shared evidence contract."
+
+x-source-index:
+  handoff: &h "1-handoff-brief.txt, Parts VI and VIII–X"
+  boundary: &b "1-handoff-brief.txt, Parts III–V"
+  storage: &s "2-state-bank-crawler-blueprint.json, §11 and Decision 8"
+  lease: &l "2-state-bank-crawler-blueprint.json, §11.15"
+  diagnostic: &d "3-hellscape-blueprint.md, §§4 and 10"
+  fixture: &f "3-hellscape-blueprint.md, §§6.5, 9, 10, and 12"
+  qualification: &q "5-browser-qualification.md, Evidence discipline"
+  native: &n "4-circus-tent-arch.md, §§5.6–5.8"
+  product: &j "6-get-a-job.xml.txt, capability_profile.txt and job_search_queries.txt"
+  wire: &w >-
+    Proposed wire design implementing 1-handoff-brief.txt Parts VI and VIII;
+    identifiers, discriminators, encodings, and local type names are contract
+    proposals, not claims about existing implementations.
+
+x-contract:
+  name: evidence-kernel
+  version: 0.1.0
+  maturity: review_draft
+  owner: contracts
+  consumers: [crawler, Circus Tent, Ringmaster, Hellscape, job-hunter]
+  conformance_suite: conformance/00-evidence-kernel.md
+  validation_gate: structural_validation_and_semantic_rules
+  reference_implementation:
+    product: Hellscape
+    milestone: M1
+    implementation_status: planned_not_certified
+    x-status: extracted
+    x-source: *h
+  purpose: >-
+    Permit a real manually executed application to be commissioned, evidenced,
+    and tracked before any browser executor or laboratory is available.
+    Laboratory results improve execution; they do not replace production work.
+  x-status: inferred
+  x-source: "Governing task; 1-handoff-brief.txt Parts VII–X; 6-get-a-job.xml.txt capability_profile.txt."
+
+x-ownership:
+  x-status: inferred
+  x-source: *h
+  records:
+    manifest: >-
+      The run commissioner authors the input; the admitting kernel authenticates
+      and freezes it. Later changes require a new manifest, not an in-place edit.
+    journal_event: >-
+      Exactly one journal authority assigns ordering, ingestion provenance,
+      event identities, and hashes. Producers author only their authorized
+      content. Journal authority is not authority over every business fact.
+    diagnostic: >-
+      The diagnostic analyzer writes immutable derived revisions. It may assess
+      claims against facts but may not overwrite either.
+    replay_receipt: >-
+      The replay worker writes an immutable receipt about an offline replay.
+      It has no authority to repeat a production action.
+    lease_record: >-
+      The resource owner's lease authority writes the lease domain and its
+      journal atomically. Workers request changes; they do not self-issue leases.
+    capability_descriptor: >-
+      The authenticated subject connector or native binding declares a scoped
+      descriptor. Consumers assess evidence independently. Declaration is not
+      self-certification.
+
+x-validation:
+  x-status: proposed
+  x-source: *w
+  requirements:
+    - >-
+      Decode YAML into JSON-compatible values before validation. Reject duplicate
+      mapping keys, non-finite numbers, and values outside declared numeric bounds.
+      YAML anchors in this schema are annotation abbreviations, not wire features.
+    - >-
+      Enforce JSON Schema 2020-12, including date-time format assertions.
+      Reject unknown record versions and unknown properties on closed objects.
+      Never insert success, zero, false, or an empty object as a missing-value default.
+    - >-
+      A JSON Schema pass establishes structural validity only. Full conformance
+      also requires every applicable EK rule below: authorization, hash checking,
+      reference resolution, cross-field arithmetic, and transition fencing.
+    - >-
+      The only accepted serialized null is Missing.value. Raw native bytes may
+      contain literal nulls, but must remain in an artifact until explicitly
+      normalized. Omitting a required field is not an alternative to Missing.
+    - >-
+      Event-specific business data uses EvidenceMap. Its interpretation is owned
+      by the registered event kind and version, not by a generic success heuristic.
+      Observed numeric metrics and durations belong in Measurement, not hidden
+      untyped timing fields in data.
+
+x-canonicalization:
+  profile: kernel-jcs-sha256/1
+  x-status: proposed
+  x-source: *w
+  rationale: >-
+    One specified byte representation is needed for independent Go, Rust, Python,
+    and TypeScript implementations to agree on evidence identities.
+  rules:
+    encoding: UTF-8
+    structured_bytes: RFC8785_JSON_Canonicalization_Scheme
+    digest: "sha256:<64 lowercase hexadecimal digits>"
+    artifact_digest: SHA-256_of_exact_stored_bytes
+    manifest_digest: SHA-256_of_canonical_complete_manifest
+    event_digest: SHA-256_of_canonical_event_with_only_event_hash_removed
+    diagnostic_digest: SHA-256_of_canonical_complete_diagnostic
+    journal_prefix_digest: event_hash_at_last_sequence
+    ordering: Preserve_array_order_and_string_contents
+    exclusions: >-
+      Do not silently redact, normalize Unicode, reorder arrays, or omit null
+      envelopes while hashing. A redacted export is a different artifact with
+      a journaled derivation, not the original bytes under the original digest.
+  flip_condition: >-
+    Change the profile only through a versioned contract revision if cross-language
+    conformance exposes an ambiguity or an unsupported numeric representation.
+    Existing receipts continue to name their original profile.
+
+x-source-reconciliation:
+  - decision: >-
+      The handoff's capability, opportunity, and result enums are authoritative.
+      Hellscape's extra blocked and not_applicable result values are not retained.
+      A legacy blocked result becomes opportunity=blocked plus not_exercised or
+      indeterminate according to the evidence. Inapplicability is recorded in
+      capability/scope and rationale, with result=not_exercised.
+    x-status: extracted
+    x-source: "1-handoff-brief.txt Part VI overrides 3-hellscape-blueprint.md §4.4."
+  - decision: >-
+      Hellscape's nullable fields become typed Missing envelopes with exactly the
+      handoff's six reasons. manual_fixture_validation is a rationale, not a
+      seventh null reason.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§4.2–4.5."
+  - decision: >-
+      Hellscape's flat timing fields become a discriminated estimate. A native
+      zero remains an exact subject-reported zero; it is neither discarded nor
+      substituted for an unavailable independently measured interval.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§1.3, 4.5, 10.4."
+  - decision: >-
+      Stage1's authoritative lease time is retained, but A5's assumed clock skew
+      and its default lease duration are not portfolio guarantees. Lease
+      comparisons use one authority clock epoch; restart fencing is explicit.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 2-state-bank-crawler-blueprint.json A5 and §11.15."
+  - decision: >-
+      A native completed response remains an execution claim unless its documented
+      semantics establish something narrower or stronger. Firestore tracker
+      status and a native response status cannot become a portfolio-wide outcome.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §4.6; 6-get-a-job.xml.txt docs/contracts/firestore-collections.md."
+  - decision: >-
+      Replay receipts are separate immutable records. Publishing a replay result
+      does not mutate the diagnostic it compared or introduce a self-referential
+      diagnostic hash.
+    x-status: proposed
+    x-source: *d
+  - decision: >-
+      Qualification's evidence discipline is retained. Its standalone product,
+      exit-code gate, and particular live-workflow restrictions do not become
+      prerequisites for commissioning a job application.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Parts I, V, VII–IX; 5-browser-qualification.md."
+  - decision: >-
+      No governing handoff invariant or provisional is amended by this file.
+      Wire-format proposals below make the handoff implementable without
+      certifying any current native deployment.
+    x-status: proposed
+    x-source: *w
+
+x-semantic-rules:
+  - id: EK-JOURNAL
+    classification: invariant
+    rule: >-
+      An acknowledged event is durably appended. Sequences are contiguous and
+      strictly increasing within a journal, beginning at 1. The first event is
+      manifest_admitted and pins the complete immutable manifest. All subsequent
+      events name the same run, journal, and manifest digest. Events are never
+      edited, deleted, resequenced, or backdated into an earlier prefix.
+    consequence: >-
+      A diagnostic may cite only events in its named prefix, including locally
+      journaled imports. Materialized state, logs, screenshots, and memory not
+      registered in that prefix are not independent evidence for that diagnostic.
+    derivation: >-
+      Retroactively adding evidence would make a previously published diagnostic
+      impossible to reproduce.
+    x-status: extracted
+    x-source: *h
+
+  - id: EK-ATOMICITY
+    classification: invariant
+    rule: >-
+      A locally authoritative operation commits its admitted input, idempotency
+      record, authoritative effects, journal events, and replayable response as
+      one owner-local durable effect before acknowledgement. Install referenced
+      artifact bytes durably before that commit. Cross-owner publication remains
+      asynchronous; this rule does not authorize a shared transaction across owners.
+    consequence: >-
+      A remote employer's action cannot be atomically committed with this journal.
+      Persist intent before dispatch and retain uncertain delivery or outcome
+      when acknowledgement evidence is missing. Never replay the external write
+      merely to repair the local journal.
+    derivation: >-
+      Separate log and effect commits can claim an effect that did not occur or
+      lose evidence of an effect that did.
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 2-state-bank-crawler-blueprint.json Decision 8; 3-hellscape-blueprint.md §§10.1, 10.6."
+
+  - id: EK-HASHES
+    classification: proposed_mechanism
+    rule: >-
+      Verify all content digests. At sequence 1, previous_event_hash is
+      Missing(not_applicable). At sequence n>1 it equals event_hash at n-1.
+      JournalPrefix.head_hash equals the event hash at last_sequence.
+      Resolve an EvidenceRef by journal, sequence, event ID, hash, and JSON pointer;
+      all must agree. A hash chain detects changed content but is not authentication.
+    x-status: proposed
+    x-source: *w
+
+  - id: EK-PROVENANCE
+    classification: invariant
+    rule: >-
+      The ingestion authority assigns producer identity, provenance, owner_domain,
+      role, assertion_kind, event ID, sequence, receipt time, and hashes using
+      authenticated producer registration and the manifest's event registry.
+      Untrusted callers submit EventSubmission, never JournalEnvelope.
+      Reject submitted server/provenance/authority fields rather than trusting them.
+    consequence: >-
+      Verify the producer's allowed kind, version, role, and owner domain before
+      append. Only application_origin producers may emit authoritative application
+      effects. Fixture telemetry, subjects, connectors, importers, and manual
+      observers cannot manufacture submission commitment or identity verification.
+      The server provenance label alone does not establish an application fact.
+    derivation: "An HTTP 200, an accepted telemetry packet, and authentication are different facts."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§3.3, 5.3, 10.3."
+
+  - id: EK-OBSERVATION
+    classification: invariant
+    rule: >-
+      Producer IDs identify one sequence lifetime. Deduplicate identical
+      (producer_id, producer_sequence) deliveries without duplicating effects.
+      Conflicting content under that key is an integrity incident, not last-write-wins.
+      Journal gaps, overflow, loss, flush receipts, and producer closure.
+      A closed HTTP connection is not producer completeness or execution termination.
+    consequence: >-
+      A complete producer assessment requires an evidenced terminal sequence and
+      no unresolved gap. Late evidence appends at the current head and produces
+      a new diagnostic revision, never a silent repair of the old revision.
+    derivation: "Silence cannot distinguish successful termination from lost observation."
+    x-status: inferred
+    x-source: *d
+
+  - id: EK-NULL
+    classification: invariant
+    rule: >-
+      Every null is Missing(value=null, reason=<one of the six reasons>).
+      Empty arrays mean an established empty collection, not unknown contents.
+      Unknown semantic states remain explicit enums; false and zero are never
+      missing-value sentinels. manual_override requires an authenticated journaled
+      operator decision and preserves the superseded observation.
+    derivation: "Ambiguous missingness becomes an integration bug."
+    x-status: extracted
+    x-source: *h
+
+  - id: EK-TIME
+    classification: invariant
+    rule: >-
+      Every Measurement and TimePoint identifies its origin, clock, and boot.
+      Register clocks in the manifest or a clock_registered event. Persist
+      monotonic offsets relative to that boot. A clock_registered event may
+      atomically introduce the clock used for its own receipt timestamp.
+      Never subtract across clock IDs or boots. UTC is annotation only.
+    consequence: >-
+      For endpoint_difference, both endpoints must match the measurement's clock,
+      boot, and origin; end must be at least start, and estimate.value must equal
+      end minus start. A bounded estimate has at least one numeric bound and
+      lower_bound <= upper_bound when both exist. Duration values and bounds
+      are nonnegative. Exact zero is valid.
+    derivation: "The diagnosed circus-tent _elapsed() zero defect demonstrates the failure."
+    x-status: extracted
+    x-source: *h
+
+  - id: EK-TIMING-INTERPRETATION
+    classification: invariant
+    rule: >-
+      Exact describes the recorded value at its declared origin, not its truth
+      across origins. Preserve subject reports unchanged. Assign an opaque
+      report clock when native clock coordinates are unavailable; do not invent
+      native endpoints. Compare independently derived durations only for matching
+      semantic boundaries or an evidenced bound. A comparability_group name alone
+      is insufficient. Never divide aggregate runtime into invented step durations.
+    consequence: >-
+      Harness deadlines, native timeouts, browser elapsed time, server elapsed
+      time, and manual stopwatch references remain separate observations.
+      Observation loss yields bounds or unavailable, not an exact truncated duration.
+    derivation: "A harness timeout is not a native timeout; unlike intervals cannot establish a timing lie."
+    x-status: inferred
+    x-source: "3-hellscape-blueprint.md §4.5; 5-browser-qualification.md."
+
+  - id: EK-CAPABILITY
+    classification: invariant
+    rule: >-
+      A descriptor applies to exactly one subject_id, subject_version, configured
+      mode, and interface surface. Its catalog must enumerate every capability
+      for that scope. Every new subject version starts unknown until its own
+      evidence establishes another availability. Omission and predecessor
+      descriptors do not imply inheritance, presence, or absence.
+    consequence: >-
+      Scope every cited capability to the assessed version. A non-unknown
+      availability requires journaled evidence and limitations. Documentation
+      may support a declaration but not a run-success finding. A harness watchdog
+      cannot establish native cancellation; fixture namespacing cannot establish
+      browser isolation; unsupported connector mapping is not native absence.
+    derivation: "Version inheritance converts a prior finding into an untested assumption."
+    x-status: extracted
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §4.3."
+
+  - id: EK-ASSESSMENT
+    classification: invariant
+    rule: >-
+      Capability, opportunity, and result are independent fields. satisfied or
+      violated requires a valid exposed opportunity, applicable controls, and
+      supporting evidence. native_absence requires a required, evidenced absent
+      native capability in the exact scope, not mere failure to reach a step.
+      Unexposed work is not_exercised; blocked or invalidly controlled work is
+      not_exercised or indeterminate according to what was actually observed.
+    consequence: >-
+      A capability may be absent while its unexercised facet remains not_exercised.
+      Invalid isolation write controls cannot establish non-isolation.
+      A missing dependency is an infrastructure/prerequisite finding, not a driver
+      failure. A skipped required step is not a pass.
+    derivation: "A single availability/outcome enum cannot represent these cases without losing evidence."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§1.3, 4; 5-browser-qualification.md."
+
+  - id: EK-CLAIMS
+    classification: invariant
+    rule: >-
+      Preserve claim source, semantic scope, receipt time, and knowledge boundary.
+      None, protocol acknowledgement, HTTP success, and execution completion
+      do not establish application commitment. Authentication and correlation
+      are independent checks. A valid signature with a trace mismatch remains
+      authenticated but not reliably correlated to the claimed attempt.
+    consequence: >-
+      The analyzer compares claims with authoritative postconditions without
+      rewriting either. Close-time outcome-unknown is not contradicted by later
+      commitment. A definite no-commit/cancel claim may be contradicted by later
+      correlated commitment. Forced termination and fixture sealing are not
+      native cancellation or rollback.
+    derivation: "The cancellation observations require distinct claim, effect, close, and reconciliation facts."
+    x-status: extracted
+    x-source: "1-handoff-brief.txt Part VI; 3-hellscape-blueprint.md §§4.6, 5.3–5.5."
+
+  - id: EK-ATTEMPT-SCOPE
+    classification: invariant
+    rule: >-
+      An application attempt has immutable kind at commissioning. A laboratory
+      fixture is practice and held_in. An employer origin is held_out; production
+      requires an employer origin. derived_from references only the same kind.
+      rehearsal_of links practice to production; performance_of links production
+      to practice. These are lineage links, never evidence promotion.
+    consequence: >-
+      Production postconditions may not cite practice commitment as proof of
+      production commitment. Imported historical qualification material is
+      historical_unscored. Real job content used in a fixture does not make
+      fixture forms origin-representative.
+    derivation: "Tuning against Hellscape cannot qualify an executor for an untested employer form."
+    x-status: extracted
+    x-source: *b
+
+  - id: EK-MANUAL
+    classification: invariant
+    rule: >-
+      Manual execution has no automation subject, connector version, or binding
+      version. It may produce genuine production observations and origin receipts.
+      Human actions and notes retain manual provenance and disclosed assistance.
+      An operator note alone cannot set an authoritative business predicate.
+    consequence: >-
+      In manual fixture validation, subject requirement facets are not_exercised,
+      with rationale manual_fixture_validation. Do not fabricate a subject
+      capability descriptor or credit a browser framework with human completion.
+      No automation or laboratory dependency is required to admit the manual run.
+    derivation: "Human assistance is not unattended completion; the system must produce applications before its infrastructure is finished."
+    x-status: inferred
+    x-source: "1-handoff-brief.txt Parts VII–IX; 3-hellscape-blueprint.md §§4.4, 11.1, 12; 5-browser-qualification.md."
+
+  - id: EK-DIAGNOSTIC
+    classification: invariant
+    rule: >-
+      A diagnostic is a deterministic function of its immutable manifest, named
+      journal prefix, and pinned classifier bundle. The bundle includes requirement
+      and optional fix registries. It uses no current wall time, unrecorded network
+      lookups, or mutable application rows as additional evidence.
+    consequence: >-
+      Its prefix ends at its analysis_requested event, which pins diagnostic ID,
+      analysis revision, and analysis versions. All copied observations and
+      evidence references must be supported by that prefix. Corrections, late
+      evidence, or classifier changes create a new request and immutable revision.
+      Readable reports render this same object.
+    derivation: "Replay must be re-derivation, not reproduction of an edited report."
+    x-status: inferred
+    x-source: *d
+
+  - id: EK-REPLAY
+    classification: invariant
+    rule: >-
+      Exact fixture replay consumes recorded external inputs and lifecycle
+      observations, recomputes derived outputs, and compares semantic events,
+      final state, and the diagnostic. It must not feed recorded derived outputs
+      back as authoritative inputs. Diagnostic-only replay may re-derive a
+      production diagnostic, but cannot replay an employer mutation.
+    consequence: >-
+      Replay invokes no browser, subject, or external write. Recorded timing is
+      input; replay does not sleep to simulate it. matched requires every
+      mode-required comparison to be available and equal. Missing inputs cannot
+      yield matched. Live reproduction is a new attempt, not an exact replay.
+    derivation: "Identical fixture inputs can reproduce fixture semantics, not unknown live browser behavior."
+    x-status: extracted
+    x-source: *f
+
+  - id: EK-LEASE
+    classification: invariant
+    rule: >-
+      Claim atomically checks eligible resource state and absence of an unexpired
+      lease, assigns a unique fencing lease_id and owner epoch, advances the entity
+      revision, clears last_failure_reason, and appends evidence without changing
+      resource_state. Completion checks lease ID, unexpired authority-clock
+      deadline, entity/input revisions, and applicable owner/session epochs.
+      A rejected stale completion has no effect.
+    consequence: >-
+      Release, expiry, and confirmed-death recovery clear ownership atomically.
+      A failed claim generation increments its entity retry_count at most once.
+      If retries remain, preserve the pending state; otherwise apply the owner's
+      terminal route and dead-letter occurrence with its reason or retry_exhausted.
+      A successful completion is not a failed retry.
+    derivation: "Lease ownership is orthogonal to queue state; duplicated reclamation must not consume retries twice."
+    x-status: extracted
+    x-source: *l
+
+  - id: EK-LEASE-RESTART
+    classification: proposed_mechanism
+    rule: >-
+      leased_at and lease_expires_at use one registered lease-authority clock and
+      boot; expiry must be later than issue. Renewal requires a still-current
+      token and epoch. On authority restart, durably fence the old authority epoch
+      before reclaiming its leases. Never compare old offsets with the new boot,
+      and never infer elapsed downtime from UTC.
+    consequence: >-
+      Reclamation revokes local commit authority, not proof that a worker or
+      external application stopped. Recovery of a side-effecting attempt must
+      retain outcome uncertainty until separately reconciled.
+    rationale: "This preserves monotonic timing without relying on Stage1 A5's unverified skew bound."
+    flip_condition: >-
+      Replace epoch invalidation with a durable external lease clock only after
+      that authority's persistence and comparison semantics pass the same fencing
+      and restart corpus.
+    x-status: proposed
+    x-source: "1-handoff-brief.txt Part VI; 2-state-bank-crawler-blueprint.json A5 and §11.15."
+
+  - id: EK-ARTIFACTS
+    classification: invariant
+    rule: >-
+      Citable artifacts are immutable, content-addressed, access-classified, and
+      registered by journal events. Retain bytes while a retained manifest,
+      journal prefix, diagnostic, replay bundle, or archive depends on them.
+      Do not substitute a locator or hash alone for promised archived content.
+    consequence: >-
+      Credentials and session secrets do not enter ordinary journal payloads.
+      Restricted native bodies and personal application receipts use controlled
+      artifact storage. If bytes are lost, preserve their known identity and
+      append observation_lost; never silently replace them or claim exact replay.
+    derivation: "A durable evidence reference to absent or mutable bytes is not durable evidence."
+    x-status: inferred
+    x-source: "2-state-bank-crawler-blueprint.json §11 and Decision 8; 3-hellscape-blueprint.md §§10.1–10.2; 6-get-a-job.xml.txt AGENTS.md."
+
+x-open-evidence:
+  - missing: >-
+      The raw cancellation-fixed.jsonl, isolation-fixed.jsonl, FINDINGS-v2.md,
+      native response bodies, and executable legacy schemas are not included.
+    resolution: >-
+      Import available originals with checksums, source scope, and historical
+      classification. Until then, retain the blueprint's descriptions as
+      documentary evidence, not newly executed or current-version observations.
+      This is not a pre-M1 or production-application gate.
+    x-status: uncertain
+    x-source: "3-hellscape-blueprint.md §1.3 names these artifacts but does not supply their bytes."
+
+oneOf:
+  - $ref: "#/$defs/Manifest"
+  - $ref: "#/$defs/JournalEnvelope"
+  - $ref: "#/$defs/DiagnosticDocument"
+  - $ref: "#/$defs/ReplayReceipt"
+  - $ref: "#/$defs/LeaseRecord"
+  - $ref: "#/$defs/CapabilityDescriptor"
+
+$defs:
+  SchemaVersion:
+    const: evidence-kernel/0.1.0
+    x-status: proposed
+    x-source: *w
+
+  Identifier:
+    type: string
+    minLength: 1
+    description: Opaque identifier; no identity, authority, or ordering is inferred from its spelling.
+    x-status: inferred
+    x-source: *s
+
+  Revision:
+    type: integer
+    minimum: 0
+    maximum: 9007199254740991
+    x-status: proposed
+    x-source: *w
+
+  PositiveInteger:
+    type: integer
+    minimum: 1
+    maximum: 9007199254740991
+    x-status: proposed
+    x-source: *w
+
+  NonNegativeNumber:
+    type: number
+    minimum: 0
+    x-status: extracted
+    x-source: *h
+
+  Digest:
+    type: string
+    pattern: '^sha256:[0-9a-f]{64}$'
+    x-status: proposed
+    x-source: *w
+
+  NullReason:
+    type: string
+    enum:
+      - not_enabled
+      - not_applicable
+      - not_observed
+      - observation_lost
+      - unsupported_by_subject
+      - manual_override
+    x-status: extracted
+    x-source: *h
+    x-meanings:
+      not_enabled: The facility or analysis was deliberately disabled.
+      not_applicable: The field has no meaning in this declared scope.
+      not_observed: The value was not established by observation.
+      observation_lost: An expected or previously available observation is unavailable through loss.
+      unsupported_by_subject: The subject lacks the scoped native facility needed to supply this value.
+      manual_override: An authenticated operator explicitly withheld or superseded the value.
+
+  Missing:
+    type: object
+    additionalProperties: false
+    required: [value, reason]
+    properties:
+      value: {type: "null", x-status: proposed, x-source: *w}
+      reason: {$ref: "#/$defs/NullReason", x-status: extracted, x-source: *h}
+      detail: {type: string, minLength: 1, x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  Inapplicable:
+    allOf:
+      - $ref: "#/$defs/Missing"
+      - properties:
+          reason: {const: not_applicable, x-status: extracted, x-source: *h}
+    x-status: proposed
+    x-source: *w
+
+  MaybeString:
+    oneOf:
+      - $ref: "#/$defs/Identifier"
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  MaybeDigest:
+    oneOf:
+      - $ref: "#/$defs/Digest"
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  MaybeNumber:
+    oneOf:
+      - type: number
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  MaybeNonNegative:
+    oneOf:
+      - $ref: "#/$defs/NonNegativeNumber"
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  MaybeBoolean:
+    oneOf:
+      - type: boolean
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  EvidenceValue:
+    anyOf:
+      - type: string
+      - type: number
+      - type: boolean
+      - $ref: "#/$defs/Missing"
+      - type: array
+        items: {$ref: "#/$defs/EvidenceValue"}
+      - $ref: "#/$defs/EvidenceMap"
+    description: JSON evidence values with reasoned nulls at every nesting depth.
+    x-status: proposed
+    x-source: *w
+
+  EvidenceMap:
+    type: object
+    additionalProperties: {$ref: "#/$defs/EvidenceValue"}
+    x-status: proposed
+    x-source: *w
+
+  Scope:
+    type: object
+    additionalProperties: false
+    required: [kind, id]
+    properties:
+      kind:
+        type: string
+        enum: [run, session, connector_call, workflow_step, application_operation, native_primitive, recovery, discovery, capability, resource]
+        x-status: proposed
+        x-source: *d
+      id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+    x-status: proposed
+    x-source: *w
+
+  EvidenceRef:
+    type: object
+    additionalProperties: false
+    required: [journal_id, sequence, event_id, event_hash, pointer]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      sequence: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *d}
+      event_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      event_hash: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      pointer:
+        type: string
+        pattern: '^(?:/(?:[^~/]|~[01])*)*$'
+        description: JSON Pointer; empty string cites the entire event.
+        x-status: proposed
+        x-source: *w
+    x-status: proposed
+    x-source: *w
+
+  EvidenceRefs:
+    type: array
+    items: {$ref: "#/$defs/EvidenceRef"}
+    uniqueItems: true
+    x-status: proposed
+    x-source: *w
+
+  SupportRefs:
+    allOf:
+      - $ref: "#/$defs/EvidenceRefs"
+      - minItems: 1
+    x-status: inferred
+    x-source: *h
+
+  JournalPrefix:
+    type: object
+    additionalProperties: false
+    required: [journal_id, last_sequence, head_hash]
+    properties:
+      journal_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      last_sequence: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *d}
+      head_hash: {$ref: "#/$defs/Digest", x-status: inferred, x-source: *d}
+    description: A nonempty, immutable prefix; admission is its first event.
+    x-status: proposed
+    x-source: *w
+
+  ArtifactReference:
+    type: object
+    additionalProperties: false
+    required: [digest, size_bytes, media_type, owner_domain, access]
+    properties:
+      digest: {$ref: "#/$defs/Digest", x-status: inferred, x-source: *d}
+      size_bytes: {$ref: "#/$defs/Revision", x-status: inferred, x-source: *d}
+      media_type: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *d}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *s}
+      access:
+        enum: [public, restricted]
+        x-status: proposed
+        x-source: *w
+    description: >-
+      Immutable byte identity, not a credential-bearing URL. The owner's resolver
+      supplies a locator. Possession of this reference grants no read authority.
+    x-status: proposed
+    x-source: *w
+
+  ArtifactSlot:
+    type: object
+    additionalProperties: false
+    required: [name, expected_digest, content, evidence_refs]
+    properties:
+      name: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      expected_digest: {$ref: "#/$defs/MaybeDigest", x-status: proposed, x-source: *w}
+      content:
+        oneOf:
+          - $ref: "#/$defs/ArtifactReference"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+    description: >-
+      Missing retrieval does not erase an already known digest. If content exists,
+      expected_digest must equal content.digest.
+    x-status: proposed
+    x-source: *w
+
+  VersionPin:
+    type: object
+    additionalProperties: false
+    required: [id, version, artifact_digest]
+    properties:
+      id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      artifact_digest: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *d}
+    description: A known immutable code, schema, policy, catalog, or registry artifact.
+    x-status: inferred
+    x-source: *d
+
+  MeasurementOrigin:
+    enum: [engine_measured, browser_measured, subject_reported, manual_reference]
+    x-status: extracted
+    x-source: *d
+
+  ClockDescriptor:
+    type: object
+    additionalProperties: false
+    required: [clock_id, boot_id, origin, source_id, basis, unit]
+    properties:
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *h}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      origin: {$ref: "#/$defs/MeasurementOrigin", x-status: extracted, x-source: *d}
+      source_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      basis:
+        enum: [monotonic_offset, opaque_report]
+        x-status: proposed
+        x-source: *w
+      unit: {const: ms, x-status: proposed, x-source: *w}
+    description: >-
+      An opaque-report clock identifies a reporting source and its lifetime, not
+      a known native monotonic epoch. A browser document gets a new clock lifetime
+      on document replacement.
+    x-status: inferred
+    x-source: *d
+
+  TimePoint:
+    type: object
+    additionalProperties: false
+    required: [clock_id, boot_id, origin, monotonic_offset_ms, utc_annotation]
+    properties:
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *h}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      origin: {$ref: "#/$defs/MeasurementOrigin", x-status: extracted, x-source: *h}
+      monotonic_offset_ms: {$ref: "#/$defs/NonNegativeNumber", x-status: inferred, x-source: *d}
+      utc_annotation:
+        oneOf:
+          - type: string
+            format: date-time
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *h
+    description: >-
+      A coordinate in a registered monotonic clock. A scheduled deadline may use
+      the same coordinate system, but is not evidence that the clock reached it.
+    x-status: inferred
+    x-source: *h
+
+  MaybeTimePoint:
+    oneOf:
+      - $ref: "#/$defs/TimePoint"
+      - $ref: "#/$defs/Missing"
+    x-status: proposed
+    x-source: *w
+
+  Estimate:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: exact, x-status: extracted, x-source: *h}
+          value: {type: number, x-status: proposed, x-source: *w}
+      - type: object
+        additionalProperties: false
+        required: [kind, lower_bound, upper_bound]
+        properties:
+          kind: {const: bounded, x-status: extracted, x-source: *h}
+          lower_bound: {$ref: "#/$defs/MaybeNumber", x-status: inferred, x-source: *d}
+          upper_bound: {$ref: "#/$defs/MaybeNumber", x-status: inferred, x-source: *d}
+        anyOf:
+          - properties: {lower_bound: {type: number}}
+          - properties: {upper_bound: {type: number}}
+      - type: object
+        additionalProperties: false
+        required: [kind, value]
+        properties:
+          kind: {const: unavailable, x-status: extracted, x-source: *h}
+          value: {$ref: "#/$defs/Missing", x-status: extracted, x-source: *h}
+    x-status: proposed
+    x-source: *w
+
+  Measurement:
+    type: object
+    additionalProperties: false
+    required:
+      - measurement_id
+      - name
+      - scope
+      - quantity
+      - unit
+      - origin
+      - clock_id
+      - boot_id
+      - method
+      - start
+      - end
+      - estimate
+      - resolution
+      - censoring
+      - comparability_group
+    properties:
+      measurement_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      name: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      scope: {$ref: "#/$defs/Scope", x-status: inferred, x-source: *d}
+      quantity: {enum: [duration, scalar], x-status: proposed, x-source: *w}
+      unit: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      origin: {$ref: "#/$defs/MeasurementOrigin", x-status: extracted, x-source: *d}
+      clock_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *h}
+      boot_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      method:
+        enum: [endpoint_difference, source_value, evidence_bound, unavailable]
+        x-status: proposed
+        x-source: *w
+      start: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *d}
+      end: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *d}
+      estimate: {$ref: "#/$defs/Estimate", x-status: inferred, x-source: *h}
+      resolution:
+        $ref: "#/$defs/MaybeNonNegative"
+        description: Declared granularity in unit; it is not a default error tolerance.
+        x-status: inferred
+        x-source: *d
+      censoring:
+        enum: [none, left, right, both, unavailable]
+        description: The explicit censoring flag; no competing boolean is used.
+        x-status: extracted
+        x-source: *d
+      comparability_group: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *d}
+    allOf:
+      - if:
+          properties: {quantity: {const: duration}}
+        then:
+          properties:
+            unit: {const: ms}
+            estimate:
+              properties:
+                value: {minimum: 0}
+                lower_bound: {minimum: 0}
+                upper_bound: {minimum: 0}
+      - if:
+          properties: {estimate: {properties: {kind: {const: exact}}}}
+        then:
+          properties:
+            censoring: {const: none}
+            method: {enum: [endpoint_difference, source_value]}
+      - if:
+          properties: {estimate: {properties: {kind: {const: bounded}}}}
+        then:
+          properties:
+            censoring: {enum: [none, left, right, both]}
+            method: {const: evidence_bound}
+      - if:
+          properties: {estimate: {properties: {kind: {const: unavailable}}}}
+        then:
+          properties:
+            censoring: {const: unavailable}
+            method: {const: unavailable}
+      - if:
+          properties: {method: {const: endpoint_difference}}
+        then:
+          properties:
+            quantity: {const: duration}
+            start: {$ref: "#/$defs/TimePoint"}
+            end: {$ref: "#/$defs/TimePoint"}
+            estimate: {properties: {kind: {const: exact}}}
+    x-status: proposed
+    x-source: *w
+
+  MeasurementEvidence:
+    type: object
+    additionalProperties: false
+    required: [measurement, evidence_refs]
+    properties:
+      measurement: {$ref: "#/$defs/Measurement", x-status: inferred, x-source: *d}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *h}
+    description: >-
+      A diagnostic's copied measurement must resolve to the matching journaled
+      measurement. The journal's original measurement need not self-reference.
+    x-status: proposed
+    x-source: *w
+
+  ComponentIdentity:
+    type: object
+    additionalProperties: false
+    required: [component, reported_version, build_digest, configuration_digest]
+    properties:
+      component: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *q}
+      reported_version: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *d}
+      build_digest: {$ref: "#/$defs/MaybeDigest", x-status: inferred, x-source: *d}
+      configuration_digest: {$ref: "#/$defs/MaybeDigest", x-status: inferred, x-source: *q}
+    x-status: proposed
+    x-source: *w
+
+  SubjectIdentity:
+    type: object
+    additionalProperties: false
+    required:
+      - subject_id
+      - subject_version
+      - revision_basis
+      - native_revision
+      - configured_mode
+      - interface_surface
+      - configuration_digest
+      - stack
+    properties:
+      subject_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      subject_version:
+        $ref: "#/$defs/Identifier"
+        description: >-
+          Immutable evidence-catalog version key. An operator-scoped version key
+          is not a claim that a native revision endpoint exists.
+        x-status: proposed
+        x-source: *w
+      revision_basis:
+        enum: [native_revision, source_digest, operator_attestation, unknown]
+        x-status: inferred
+        x-source: *d
+      native_revision: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *d}
+      configured_mode: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      interface_surface: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      configuration_digest: {$ref: "#/$defs/Digest", x-status: inferred, x-source: *q}
+      stack:
+        type: array
+        items: {$ref: "#/$defs/ComponentIdentity"}
+        description: Browser, binary, driver, planner, and other relevant configured components.
+        x-status: inferred
+        x-source: *q
+    x-status: inferred
+    x-source: *d
+
+  AssistanceRecord:
+    type: object
+    additionalProperties: false
+    required: [planning_owner, assistance_track, planner_identity, plan, online_replanning, description]
+    properties:
+      planning_owner:
+        enum: [subject, external_planner, operator, none]
+        x-status: inferred
+        x-source: *d
+      assistance_track: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      planner_identity: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *d}
+      plan:
+        oneOf:
+          - $ref: "#/$defs/ArtifactReference"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      online_replanning: {type: boolean, x-status: inferred, x-source: *d}
+      description: {type: string, minLength: 1, x-status: proposed, x-source: *w}
+    description: Declared assistance at admission; realized assistance must also be journaled.
+    x-status: inferred
+    x-source: *d
+
+  ExecutionDescriptor:
+    type: object
+    additionalProperties: false
+    required: [mode, subject, connector_version, binding_version, assistance]
+    properties:
+      mode:
+        enum: [manual, subject, service]
+        description: Service covers discovery or kernel operation without a judged automation subject.
+        x-status: proposed
+        x-source: *w
+      subject:
+        oneOf:
+          - $ref: "#/$defs/SubjectIdentity"
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *d
+      connector_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *d}
+      binding_version: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *d}
+      assistance: {$ref: "#/$defs/AssistanceRecord", x-status: extracted, x-source: *d}
+    allOf:
+      - if:
+          properties: {mode: {const: manual}}
+        then:
+          properties:
+            subject: {$ref: "#/$defs/Inapplicable"}
+            connector_version: {$ref: "#/$defs/Inapplicable"}
+            binding_version: {$ref: "#/$defs/Inapplicable"}
+      - if:
+          properties: {mode: {const: subject}}
+        then:
+          properties:
+            subject: {$ref: "#/$defs/SubjectIdentity"}
+            connector_version: {$ref: "#/$defs/Identifier"}
+            binding_version: {$ref: "#/$defs/Identifier"}
+      - if:
+          properties: {mode: {const: service}}
+        then:
+          properties:
+            subject: {$ref: "#/$defs/Inapplicable"}
+    x-status: proposed
+    x-source: *w
+
+  AttemptReference:
+    type: object
+    additionalProperties: false
+    required: [attempt_id, kind]
+    properties:
+      attempt_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      kind: {enum: [practice, production], x-status: extracted, x-source: *h}
+    x-status: proposed
+    x-source: *w
+
+  AttemptContext:
+    type: object
+    additionalProperties: false
+    required:
+      - attempt_id
+      - kind
+      - target_class
+      - target_id
+      - evaluation_partition
+      - rehearsal_of
+      - performance_of
+      - derived_from
+    properties:
+      attempt_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      kind: {enum: [practice, production], x-status: extracted, x-source: *h}
+      target_class:
+        enum: [laboratory_fixture, employer_origin]
+        x-status: inferred
+        x-source: *b
+      target_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      evaluation_partition: {enum: [held_in, held_out], x-status: extracted, x-source: *b}
+      rehearsal_of:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: proposed
+        x-source: *h
+      performance_of:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: proposed
+        x-source: *h
+      derived_from:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/AttemptReference"}
+        x-status: extracted
+        x-source: *h
+    allOf:
+      - if:
+          properties: {target_class: {const: laboratory_fixture}}
+        then:
+          properties:
+            kind: {const: practice}
+            evaluation_partition: {const: held_in}
+      - if:
+          properties: {target_class: {const: employer_origin}}
+        then:
+          properties:
+            evaluation_partition: {const: held_out}
+      - if:
+          properties: {kind: {const: practice}}
+        then:
+          properties:
+            performance_of: {maxItems: 0}
+            rehearsal_of:
+              items: {properties: {kind: {const: production}}}
+            derived_from:
+              items: {properties: {kind: {const: practice}}}
+      - if:
+          properties: {kind: {const: production}}
+        then:
+          properties:
+            target_class: {const: employer_origin}
+            rehearsal_of: {maxItems: 0}
+            performance_of:
+              items: {properties: {kind: {const: practice}}}
+            derived_from:
+              items: {properties: {kind: {const: production}}}
+    description: >-
+      References must resolve to commissioned identities, match the referenced
+      kind, and form no self-link or derivation cycle. Empty linkage arrays mean
+      no such linkage. No lifecycle axis is defined by this context.
+    x-status: proposed
+    x-source: *w
+
+  Provenance:
+    enum: [server, fixture_client, connector, subject, manual_observer, importer]
+    description: >-
+      Ingestion-assigned source class. subject and importer extend Hellscape's
+      original classes without giving either server or origin authority.
+    x-status: proposed
+    x-source: *d
+
+  ProducerRole:
+    enum: [kernel, application_origin, connector, subject, observer, analyzer, lease_authority, importer]
+    x-status: proposed
+    x-source: *w
+
+  EventKindDeclaration:
+    type: object
+    additionalProperties: false
+    required: [event_kind, event_schema_version, role, assertion_kind, writer_roles]
+    properties:
+      event_kind: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      event_schema_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      role:
+        enum: [external_input, derived_output, lifecycle_observation]
+        x-status: extracted
+        x-source: *d
+      assertion_kind:
+        enum: [observation, claim, authoritative_effect, derived_assessment]
+        x-status: proposed
+        x-source: *w
+      writer_roles:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {$ref: "#/$defs/ProducerRole"}
+        x-status: proposed
+        x-source: *w
+    description: >-
+      A manifest-pinned registry entry. The pair of kind and version is unique.
+      Application authoritative_effect entries admit application_origin only.
+      Kind names do not bypass producer authorization.
+    x-status: proposed
+    x-source: *w
+
+  ProducerDescriptor:
+    type: object
+    additionalProperties: false
+    required: [producer_id, principal_id, owner_domain, role, provenance, sequence_required, allowed_event_kinds]
+    properties:
+      producer_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      principal_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *s}
+      role: {$ref: "#/$defs/ProducerRole", x-status: proposed, x-source: *w}
+      provenance: {$ref: "#/$defs/Provenance", x-status: inferred, x-source: *h}
+      sequence_required: {type: boolean, x-status: proposed, x-source: *w}
+      allowed_event_kinds:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: inferred
+        x-source: *d
+    description: >-
+      Assigned by the authenticated control plane. Registration conveys a bounded
+      write grant, never a control credential. Producer IDs cannot be recycled.
+    x-status: proposed
+    x-source: *w
+
+  Manifest:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - manifest_id
+      - run_id
+      - journal_id
+      - owner_domain
+      - commissioner_id
+      - activity
+      - attempt
+      - execution
+      - task
+      - task_semantic_hash
+      - effective_configuration
+      - environment
+      - seed
+      - build_pins
+      - event_registry
+      - producers
+      - clocks
+    properties:
+      record_type: {const: manifest, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      manifest_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      run_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *q}
+      journal_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *s}
+      commissioner_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      activity:
+        enum: [discovery, application_attempt, kernel_conformance]
+        x-status: proposed
+        x-source: *w
+      attempt:
+        oneOf:
+          - $ref: "#/$defs/AttemptContext"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *h
+      execution: {$ref: "#/$defs/ExecutionDescriptor", x-status: inferred, x-source: *d}
+      task: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *d}
+      task_semantic_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *d}
+      effective_configuration:
+        $ref: "#/$defs/ArtifactReference"
+        description: >-
+          Complete admitted policy, declared budgets, origin permissions, context
+          policy, and fixture features when applicable. Configuration limits are
+          declarations, not measured elapsed time.
+        x-status: inferred
+        x-source: *d
+      environment: {$ref: "#/$defs/EvidenceMap", x-status: inferred, x-source: *q}
+      seed: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *d}
+      build_pins:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/VersionPin"}
+        description: Recorder/fixture build and assets as applicable; no invented subject build.
+        x-status: inferred
+        x-source: *d
+      event_registry:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/EventKindDeclaration"}
+        x-status: proposed
+        x-source: *w
+      producers:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/ProducerDescriptor"}
+        x-status: proposed
+        x-source: *w
+      clocks:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/ClockDescriptor"}
+        x-status: inferred
+        x-source: *d
+    allOf:
+      - if:
+          properties: {activity: {const: application_attempt}}
+        then:
+          properties: {attempt: {$ref: "#/$defs/AttemptContext"}}
+      - if:
+          properties: {activity: {const: discovery}}
+        then:
+          properties: {attempt: {$ref: "#/$defs/Inapplicable"}}
+    description: >-
+      Admission registers the manifest and all pinned input artifacts. Practice
+      and production share this structure; discovery does not fabricate an
+      application attempt. No global timeout, browser choice, or storage vendor
+      is selected by the kernel.
+    x-status: proposed
+    x-source: *w
+
+  EventSubmission:
+    type: object
+    additionalProperties: false
+    required: [producer_sequence, event_kind, event_schema_version, occurred_at, payload]
+    properties:
+      producer_sequence:
+        oneOf:
+          - $ref: "#/$defs/PositiveInteger"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      event_kind: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      event_schema_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      occurred_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *d}
+      payload: {$ref: "#/$defs/EvidencePayload", x-status: proposed, x-source: *w}
+    description: >-
+      Ingress shape only, not a durable record type. The authenticated channel
+      supplies producer and run identity. Missing producer_sequence is allowed
+      only when the registered producer does not require sequencing.
+    x-status: proposed
+    x-source: *w
+
+  EvidencePayload:
+    type: object
+    additionalProperties: false
+    required: [data, measurements, evidence_refs, artifact_refs]
+    properties:
+      data: {$ref: "#/$defs/EvidenceMap", x-status: proposed, x-source: *w}
+      measurements:
+        type: array
+        items: {$ref: "#/$defs/Measurement"}
+        x-status: inferred
+        x-source: *d
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *h}
+      artifact_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/ArtifactReference"}
+        x-status: inferred
+        x-source: *d
+    description: >-
+      All nested artifact identities must appear in artifact_refs for retention.
+      Raw vendor bodies are artifacts, not unvalidated EvidenceMap values.
+    x-status: proposed
+    x-source: *w
+
+  ManifestAdmission:
+    type: object
+    additionalProperties: false
+    required: [manifest]
+    properties:
+      manifest: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *d}
+    x-status: proposed
+    x-source: *w
+
+  AnalysisRequest:
+    type: object
+    additionalProperties: false
+    required: [diagnostic_id, analysis_revision, classifier, requirement_registry, fix_registry]
+    properties:
+      diagnostic_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      analysis_revision: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *d}
+      classifier: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *d}
+      requirement_registry: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *d}
+      fix_registry:
+        oneOf:
+          - $ref: "#/$defs/VersionPin"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+    description: >-
+      Revisions increase within a run. The event carrying this request is the
+      last event in the requested analysis prefix. Its own resulting diagnostic
+      is published only afterward, avoiding a hash cycle.
+    x-status: proposed
+    x-source: *w
+
+  JournalEnvelope:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - run_id
+      - journal_id
+      - manifest_hash
+      - journal_sequence
+      - event_id
+      - event_kind
+      - event_schema_version
+      - role
+      - assertion_kind
+      - owner_domain
+      - producer_id
+      - producer_sequence
+      - provenance
+      - evidence_scope
+      - recorded_at
+      - occurred_at
+      - causal_refs
+      - payload
+      - previous_event_hash
+      - event_hash
+    properties:
+      record_type: {const: journal_event, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      run_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *q}
+      journal_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      manifest_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *d}
+      journal_sequence: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *d}
+      event_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      event_kind: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      event_schema_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      role:
+        enum: [external_input, derived_output, lifecycle_observation]
+        x-status: extracted
+        x-source: *d
+      assertion_kind:
+        enum: [observation, claim, authoritative_effect, derived_assessment]
+        x-status: proposed
+        x-source: *w
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *s}
+      producer_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      producer_sequence:
+        oneOf:
+          - $ref: "#/$defs/PositiveInteger"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      provenance: {$ref: "#/$defs/Provenance", x-status: extracted, x-source: *h}
+      evidence_scope:
+        enum: [current_run, historical_unscored, synthetic]
+        description: >-
+          Assigned at ingestion. Observing a real manual walkthrough of a
+          synthetic application is current_run practice evidence; fabricated
+          backend responses and test vectors are synthetic evidence.
+        x-status: proposed
+        x-source: *d
+      recorded_at: {$ref: "#/$defs/TimePoint", x-status: inferred, x-source: *d}
+      occurred_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *d}
+      causal_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+      payload: {$ref: "#/$defs/EvidencePayload", x-status: proposed, x-source: *w}
+      previous_event_hash: {$ref: "#/$defs/MaybeDigest", x-status: proposed, x-source: *w}
+      event_hash: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+    allOf:
+      - if:
+          properties: {journal_sequence: {const: 1}}
+        then:
+          properties:
+            event_kind: {const: manifest_admitted}
+            provenance: {const: server}
+            role: {const: external_input}
+            previous_event_hash: {$ref: "#/$defs/Inapplicable"}
+        else:
+          properties:
+            previous_event_hash: {$ref: "#/$defs/Digest"}
+      - if:
+          properties: {event_kind: {const: manifest_admitted}}
+        then:
+          properties:
+            journal_sequence: {const: 1}
+            payload:
+              properties: {data: {$ref: "#/$defs/ManifestAdmission"}}
+      - if:
+          properties: {event_kind: {const: clock_registered}}
+        then:
+          properties:
+            provenance: {const: server}
+            payload:
+              properties: {data: {$ref: "#/$defs/ClockDescriptor"}}
+      - if:
+          properties: {event_kind: {const: producer_registered}}
+        then:
+          properties:
+            provenance: {const: server}
+            payload:
+              properties: {data: {$ref: "#/$defs/ProducerDescriptor"}}
+      - if:
+          properties: {event_kind: {const: analysis_requested}}
+        then:
+          properties:
+            provenance: {const: server}
+            role: {const: lifecycle_observation}
+            payload:
+              properties: {data: {$ref: "#/$defs/AnalysisRequest"}}
+      - if:
+          properties: {provenance: {enum: [fixture_client, subject, manual_observer, importer]}}
+        then:
+          properties:
+            assertion_kind: {enum: [observation, claim]}
+    x-status: proposed
+    x-source: *w
+
+  CapabilityEvidence:
+    type: object
+    additionalProperties: false
+    required: [basis, ref]
+    properties:
+      basis:
+        enum: [documentation, executed_observation, source_diagnosis, operator_attestation]
+        x-status: extracted
+        x-source: *d
+      ref: {$ref: "#/$defs/EvidenceRef", x-status: extracted, x-source: *d}
+    x-status: extracted
+    x-source: *d
+
+  CapabilityRecord:
+    type: object
+    additionalProperties: false
+    required: [capability_id, requirement_refs, availability, claim_origin, evidence, limitations]
+    properties:
+      capability_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      requirement_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *d
+      availability:
+        enum: [present, absent, unknown, not_applicable]
+        x-status: extracted
+        x-source: *h
+      claim_origin:
+        enum: [native, composed_subject, harness]
+        x-status: extracted
+        x-source: *d
+      evidence:
+        type: array
+        items: {$ref: "#/$defs/CapabilityEvidence"}
+        x-status: extracted
+        x-source: *d
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+    allOf:
+      - if:
+          properties: {availability: {enum: [present, absent, not_applicable]}}
+        then:
+          properties: {evidence: {minItems: 1}}
+    description: >-
+      Scope is the descriptor's complete SubjectIdentity. A harness-origin record
+      cannot satisfy a requirement for the native form of that capability.
+    x-status: inferred
+    x-source: *h
+
+  CapabilityDescriptor:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - descriptor_id
+      - descriptor_revision
+      - declared_by
+      - subject
+      - catalog
+      - evidence_prefix
+      - supersedes
+      - capabilities
+    properties:
+      record_type: {const: capability_descriptor, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      descriptor_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      descriptor_revision: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      declared_by: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      subject: {$ref: "#/$defs/SubjectIdentity", x-status: extracted, x-source: *d}
+      catalog: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      evidence_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *h}
+      supersedes:
+        $ref: "#/$defs/MaybeDigest"
+        description: Prior descriptor digest within this exact subject/version/mode/surface only.
+        x-status: inferred
+        x-source: *d
+      capabilities:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/CapabilityRecord"}
+        x-status: extracted
+        x-source: *d
+    description: >-
+      Each catalog capability appears exactly once, including explicit unknown
+      entries. The descriptor is journaled as a declaration before consumers may
+      cite it. No opportunity or result field belongs in this record.
+    x-status: inferred
+    x-source: *h
+
+  CapabilityReference:
+    type: object
+    additionalProperties: false
+    required: [descriptor_digest, capability_id, evidence_ref]
+    properties:
+      descriptor_digest: {$ref: "#/$defs/Digest", x-status: proposed, x-source: *w}
+      capability_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      evidence_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *h}
+    x-status: proposed
+    x-source: *w
+
+  Opportunity:
+    type: object
+    additionalProperties: false
+    required: [state, evidence_refs, rationale]
+    properties:
+      state: {enum: [exposed, unexposed, blocked], x-status: extracted, x-source: *h}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *d}
+      rationale: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+    x-status: inferred
+    x-source: *h
+
+  RequirementAssessment:
+    type: object
+    additionalProperties: false
+    required:
+      - requirement_id
+      - facet
+      - contract_version
+      - scope
+      - capability_refs
+      - opportunity
+      - result
+      - evidence_refs
+      - contrary_evidence_refs
+      - finding_refs
+      - rationale
+    properties:
+      requirement_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      facet: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      contract_version: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      scope: {$ref: "#/$defs/Scope", x-status: inferred, x-source: *d}
+      capability_refs:
+        type: array
+        items: {$ref: "#/$defs/CapabilityReference"}
+        x-status: extracted
+        x-source: *d
+      opportunity: {$ref: "#/$defs/Opportunity", x-status: extracted, x-source: *h}
+      result:
+        enum: [satisfied, violated, native_absence, indeterminate, not_exercised]
+        x-status: extracted
+        x-source: *h
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *d}
+      contrary_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+      finding_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *d
+      rationale: {type: string, minLength: 1, x-status: extracted, x-source: *d}
+    allOf:
+      - if:
+          properties: {result: {enum: [satisfied, violated]}}
+        then:
+          properties:
+            opportunity: {properties: {state: {const: exposed}}}
+      - if:
+          properties: {result: {const: native_absence}}
+        then:
+          properties: {capability_refs: {minItems: 1}}
+    description: >-
+      Requirement IDs belong to the pinned registry. Hellscape uses R1–R10;
+      discovery and other consumers may use their own explicitly versioned
+      requirements without pretending to exercise a browser-subject requirement.
+    x-status: proposed
+    x-source: *w
+
+  PredicateResult:
+    type: object
+    additionalProperties: false
+    required: [predicate_id, scope, truth, authority_domain, evidence_refs]
+    properties:
+      predicate_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *d}
+      scope: {$ref: "#/$defs/Scope", x-status: inferred, x-source: *d}
+      truth:
+        enum: [satisfied, unsatisfied, unknown]
+        x-status: proposed
+        x-source: *d
+      authority_domain: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *h}
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+    allOf:
+      - if:
+          properties: {truth: {enum: [satisfied, unsatisfied]}}
+        then:
+          properties:
+            authority_domain: {$ref: "#/$defs/Identifier"}
+            evidence_refs: {minItems: 1}
+    description: >-
+      A known authoritative predicate requires evidence from its actual owning
+      authority. Absence from an incomplete trace cannot establish unsatisfied.
+    x-status: inferred
+    x-source: *d
+
+  StepAttempt:
+    type: object
+    additionalProperties: false
+    required: [ordinal, disposition, evidence_refs, postconditions, measurement_refs]
+    properties:
+      ordinal: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      disposition:
+        enum: [accepted, rejected, unknown]
+        x-status: proposed
+        x-source: *d
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *d}
+      postconditions:
+        type: array
+        items: {$ref: "#/$defs/PredicateResult"}
+        x-status: inferred
+        x-source: *d
+      measurement_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: proposed
+        x-source: *w
+    description: A rejected attempt is retained even when a later correction succeeds.
+    x-status: inferred
+    x-source: *f
+
+  StepDiagnostic:
+    type: object
+    additionalProperties: false
+    required: [step_id, contract_id, status, attempts, authoritative_postconditions, measurement_refs, finding_refs]
+    properties:
+      step_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      contract_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      status:
+        enum: [passed, recovered, failed, blocked, skipped, unobserved]
+        description: Analyzer-owned status of this step contract, not an overall attempt state.
+        x-status: extracted
+        x-source: *d
+      attempts:
+        type: array
+        items: {$ref: "#/$defs/StepAttempt"}
+        x-status: extracted
+        x-source: *d
+      authoritative_postconditions:
+        type: array
+        items: {$ref: "#/$defs/PredicateResult"}
+        x-status: extracted
+        x-source: *d
+      measurement_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: proposed
+        x-source: *w
+      finding_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *d
+    x-status: inferred
+    x-source: *d
+
+  Claim:
+    type: object
+    additionalProperties: false
+    required:
+      - claim_id
+      - source
+      - scope
+      - proposition
+      - made_at
+      - received_at
+      - evidence_refs
+      - evidence_available_to_claimant
+      - knowledge_limitations
+      - comparison
+      - comparison_evidence_refs
+    properties:
+      claim_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      source:
+        enum: [native_framework, native_planner, connector, manual_operator]
+        x-status: extracted
+        x-source: *d
+      scope:
+        enum: [primitive, application_postcondition, execution_lifecycle, unknown]
+        x-status: extracted
+        x-source: *d
+      proposition: {$ref: "#/$defs/EvidenceMap", x-status: extracted, x-source: *d}
+      made_at: {$ref: "#/$defs/MaybeTimePoint", x-status: extracted, x-source: *d}
+      received_at: {$ref: "#/$defs/TimePoint", x-status: extracted, x-source: *d}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+      evidence_available_to_claimant: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+      knowledge_limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: proposed
+        x-source: *w
+      comparison:
+        enum: [consistent, contradicted, not_comparable, indeterminate]
+        x-status: extracted
+        x-source: *d
+      comparison_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+    allOf:
+      - if:
+          properties: {comparison: {enum: [consistent, contradicted]}}
+        then:
+          properties: {comparison_evidence_refs: {minItems: 1}}
+    x-status: extracted
+    x-source: *d
+
+  FixReference:
+    type: object
+    additionalProperties: false
+    required: [registry, rule_instance_id, evidence_refs, verification_plan]
+    properties:
+      registry: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *h}
+      rule_instance_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *h}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+      verification_plan: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *h}
+    description: A recommendation reference, never a claim that a change has been implemented or verified.
+    x-status: inferred
+    x-source: *h
+
+  Finding:
+    type: object
+    additionalProperties: false
+    required:
+      - finding_id
+      - kind
+      - requirement_refs
+      - symptom
+      - scope
+      - causal_role
+      - trigger_feature_refs
+      - defect_locus
+      - attribution
+      - evidence_refs
+      - contrary_evidence_refs
+      - limitations
+      - suggested_fix
+    properties:
+      finding_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      kind:
+        enum:
+          - native_capability_absent
+          - requirement_violation
+          - claim_contradiction
+          - measurement_discrepancy
+          - observation
+          - indeterminate
+          - fixture_error
+          - harness_error
+        x-status: extracted
+        x-source: *d
+      requirement_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *d
+      symptom: {type: string, minLength: 1, x-status: extracted, x-source: *d}
+      scope: {$ref: "#/$defs/Scope", x-status: extracted, x-source: *d}
+      causal_role:
+        enum: [primary, contributing, downstream, not_applicable]
+        x-status: extracted
+        x-source: *d
+      trigger_feature_refs:
+        type: array
+        uniqueItems: true
+        items: {$ref: "#/$defs/Identifier"}
+        x-status: extracted
+        x-source: *d
+      defect_locus:
+        enum: [subject, external_planner, connector, fixture, environment, policy, unknown, not_applicable]
+        x-status: extracted
+        x-source: *d
+      attribution:
+        enum: [confirmed, supported, suspected, unknown]
+        x-status: extracted
+        x-source: *d
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *d}
+      contrary_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+      suggested_fix:
+        oneOf:
+          - $ref: "#/$defs/FixReference"
+          - $ref: "#/$defs/Missing"
+        description: M1 may use not_enabled; insufficient observed support uses not_observed with detail.
+        x-status: inferred
+        x-source: *d
+    x-status: extracted
+    x-source: *d
+
+  SequenceRange:
+    type: object
+    additionalProperties: false
+    required: [first, last]
+    properties:
+      first: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+      last: {$ref: "#/$defs/PositiveInteger", x-status: proposed, x-source: *w}
+    description: first <= last; ranges are ordered and non-overlapping within a collection.
+    x-status: proposed
+    x-source: *w
+
+  ProducerCompleteness:
+    type: object
+    additionalProperties: false
+    required: [producer_id, state, observed_ranges, missing_ranges, final_sequence, evidence_refs]
+    properties:
+      producer_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      state:
+        enum: [complete, incomplete, unknown, not_applicable]
+        x-status: proposed
+        x-source: *d
+      observed_ranges:
+        type: array
+        items: {$ref: "#/$defs/SequenceRange"}
+        x-status: proposed
+        x-source: *w
+      missing_ranges:
+        type: array
+        items: {$ref: "#/$defs/SequenceRange"}
+        x-status: proposed
+        x-source: *w
+      final_sequence:
+        oneOf:
+          - $ref: "#/$defs/Revision"
+          - $ref: "#/$defs/Missing"
+        description: Zero means an evidenced producer closure with no emitted events, never unknown.
+        x-status: proposed
+        x-source: *w
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *d}
+    allOf:
+      - if:
+          properties: {state: {const: complete}}
+        then:
+          properties:
+            final_sequence: {$ref: "#/$defs/Revision"}
+            missing_ranges: {maxItems: 0}
+    x-status: proposed
+    x-source: *w
+
+  ValidityCheck:
+    type: object
+    additionalProperties: false
+    required: [check_id, scope, state, evidence_refs, rationale]
+    properties:
+      check_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      scope: {$ref: "#/$defs/Scope", x-status: inferred, x-source: *d}
+      state:
+        enum: [valid, invalid, incomplete, not_applicable]
+        x-status: inferred
+        x-source: *d
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *d}
+      rationale: {type: string, minLength: 1, x-status: inferred, x-source: *d}
+    x-status: proposed
+    x-source: *w
+
+  EvidenceNote:
+    type: object
+    additionalProperties: false
+    required: [code, detail, evidence_refs]
+    properties:
+      code: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      detail: {type: string, minLength: 1, x-status: proposed, x-source: *w}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+    x-status: proposed
+    x-source: *w
+
+  DiagnosticValidity:
+    type: object
+    additionalProperties: false
+    required: [scoped_checks, producer_completeness, infrastructure_incidents, limitations]
+    properties:
+      scoped_checks:
+        type: array
+        items: {$ref: "#/$defs/ValidityCheck"}
+        x-status: extracted
+        x-source: *d
+      producer_completeness:
+        type: array
+        items: {$ref: "#/$defs/ProducerCompleteness"}
+        x-status: extracted
+        x-source: *d
+      infrastructure_incidents:
+        type: array
+        items: {$ref: "#/$defs/EvidenceNote"}
+        x-status: extracted
+        x-source: *d
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+    description: A failed control invalidates only the conclusions that depend on that control.
+    x-status: inferred
+    x-source: *d
+
+  ObservedAction:
+    type: object
+    additionalProperties: false
+    required: [action_id, kind, target_alias, frame_alias, render_generation, evidence_refs, observed_effect, provenance, limitations]
+    properties:
+      action_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      kind: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      target_alias: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *d}
+      frame_alias: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *d}
+      render_generation:
+        oneOf:
+          - $ref: "#/$defs/Revision"
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *d
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *d}
+      observed_effect:
+        oneOf:
+          - $ref: "#/$defs/EvidenceMap"
+          - $ref: "#/$defs/Missing"
+        x-status: extracted
+        x-source: *d
+      provenance:
+        $ref: "#/$defs/Provenance"
+        description: Copied from supporting journal events; the analyzer cannot upgrade it.
+        x-status: inferred
+        x-source: *h
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: extracted
+        x-source: *d
+    x-status: inferred
+    x-source: *d
+
+  FeatureExposure:
+    type: object
+    additionalProperties: false
+    required: [instance_id, configured, rendered_or_armed, exposed, activated, recovery_observed, evidence_refs]
+    properties:
+      instance_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      configured: {type: boolean, x-status: extracted, x-source: *d}
+      rendered_or_armed: {type: boolean, x-status: extracted, x-source: *d}
+      exposed: {type: boolean, x-status: extracted, x-source: *d}
+      activated: {type: boolean, x-status: extracted, x-source: *d}
+      recovery_observed: {$ref: "#/$defs/MaybeBoolean", x-status: extracted, x-source: *d}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: extracted, x-source: *d}
+    allOf:
+      - if:
+          properties: {activated: {const: true}}
+        then:
+          properties: {exposed: {const: true}}
+      - if:
+          properties: {exposed: {const: true}}
+        then:
+          properties: {rendered_or_armed: {const: true}, configured: {const: true}}
+    description: Configured but unexposed features receive no behavioral success or failure credit.
+    x-status: extracted
+    x-source: *d
+
+  AnalysisSection:
+    type: object
+    additionalProperties: false
+    required: [data, evidence_refs]
+    properties:
+      data:
+        oneOf:
+          - $ref: "#/$defs/Missing"
+          - allOf:
+              - $ref: "#/$defs/EvidenceMap"
+              - not: {$ref: "#/$defs/Missing"}
+        x-status: inferred
+        x-source: *d
+      evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+    description: Disabled analyses are Missing(not_enabled), never zero-valued score objects.
+    x-status: inferred
+    x-source: *d
+
+  ApplicationSummary:
+    type: object
+    additionalProperties: false
+    required: [goal, as_of_sequence, postconditions, commitment_refs, confirmation_refs]
+    properties:
+      goal:
+        enum: [completed, not_completed, unknown, not_applicable]
+        x-status: extracted
+        x-source: *d
+      as_of_sequence: {$ref: "#/$defs/PositiveInteger", x-status: inferred, x-source: *d}
+      postconditions:
+        type: array
+        items: {$ref: "#/$defs/PredicateResult"}
+        x-status: inferred
+        x-source: *d
+      commitment_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *h}
+      confirmation_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+    description: >-
+      Derived origin/fixture postconditions at the cutoff, not a subject execution
+      claim or a lifecycle write. Confirmation rendering and commitment remain
+      separately cited. No commitment observation means unknown unless an
+      authoritative no-commit fact establishes not_completed.
+    x-status: inferred
+    x-source: *d
+
+  ObservationSummary:
+    type: object
+    additionalProperties: false
+    required: [opened_ref, closed_ref, closure_reason, lifecycle_refs, containment_refs, late_evidence_refs]
+    properties:
+      opened_ref: {$ref: "#/$defs/EvidenceRef", x-status: inferred, x-source: *d}
+      closed_ref:
+        oneOf:
+          - $ref: "#/$defs/EvidenceRef"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      closure_reason: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *d}
+      lifecycle_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *h}
+      containment_refs: {$ref: "#/$defs/EvidenceRefs", x-status: inferred, x-source: *d}
+      late_evidence_refs: {$ref: "#/$defs/EvidenceRefs", x-status: extracted, x-source: *d}
+    description: >-
+      References retain dispatch, observation, execution claims, application
+      facts, and reconciliation separately. This summary neither defines nor
+      collapses the five application-attempt lifecycle axes.
+    x-status: inferred
+    x-source: *h
+
+  DiagnosticDocument:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - diagnostic_id
+      - analysis_revision
+      - run_id
+      - manifest_hash
+      - input_prefix
+      - analysis_request_ref
+      - classifier
+      - requirement_registry
+      - fix_registry
+      - attempt
+      - execution
+      - delivered_task_hash
+      - native_request_hash
+      - validity
+      - capability_descriptors
+      - requirement_assessments
+      - observed_actions
+      - feature_exposures
+      - steps
+      - measurements
+      - claims
+      - findings
+      - observation
+      - application
+      - behavioral_profile
+      - fingerprint_profile
+      - artifacts
+    properties:
+      record_type: {const: diagnostic, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      diagnostic_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *d}
+      analysis_revision: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *d}
+      run_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *q}
+      manifest_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *d}
+      input_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *d}
+      analysis_request_ref: {$ref: "#/$defs/EvidenceRef", x-status: proposed, x-source: *w}
+      classifier: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *d}
+      requirement_registry: {$ref: "#/$defs/VersionPin", x-status: inferred, x-source: *d}
+      fix_registry:
+        oneOf:
+          - $ref: "#/$defs/VersionPin"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *d
+      attempt:
+        oneOf:
+          - $ref: "#/$defs/AttemptContext"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *h
+      execution: {$ref: "#/$defs/ExecutionDescriptor", x-status: extracted, x-source: *d}
+      delivered_task_hash: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *d}
+      native_request_hash: {$ref: "#/$defs/MaybeDigest", x-status: extracted, x-source: *d}
+      validity: {$ref: "#/$defs/DiagnosticValidity", x-status: extracted, x-source: *d}
+      capability_descriptors:
+        type: array
+        items: {$ref: "#/$defs/ArtifactSlot"}
+        x-status: inferred
+        x-source: *d
+      requirement_assessments:
+        type: array
+        items: {$ref: "#/$defs/RequirementAssessment"}
+        x-status: extracted
+        x-source: *d
+      observed_actions:
+        type: array
+        items: {$ref: "#/$defs/ObservedAction"}
+        x-status: extracted
+        x-source: *d
+      feature_exposures:
+        type: array
+        items: {$ref: "#/$defs/FeatureExposure"}
+        x-status: extracted
+        x-source: *d
+      steps:
+        type: array
+        items: {$ref: "#/$defs/StepDiagnostic"}
+        x-status: extracted
+        x-source: *d
+      measurements:
+        type: array
+        items: {$ref: "#/$defs/MeasurementEvidence"}
+        x-status: inferred
+        x-source: *d
+      claims:
+        type: array
+        items: {$ref: "#/$defs/Claim"}
+        x-status: extracted
+        x-source: *d
+      findings:
+        type: array
+        items: {$ref: "#/$defs/Finding"}
+        x-status: extracted
+        x-source: *d
+      observation: {$ref: "#/$defs/ObservationSummary", x-status: inferred, x-source: *d}
+      application: {$ref: "#/$defs/ApplicationSummary", x-status: inferred, x-source: *h}
+      behavioral_profile: {$ref: "#/$defs/AnalysisSection", x-status: extracted, x-source: *d}
+      fingerprint_profile: {$ref: "#/$defs/AnalysisSection", x-status: extracted, x-source: *d}
+      artifacts:
+        type: array
+        items: {$ref: "#/$defs/ArtifactSlot"}
+        x-status: extracted
+        x-source: *d
+    description: >-
+      IDs for findings, actions, steps, claims, and measurements are unique within
+      the diagnostic; every internal reference resolves. attempt matches the
+      manifest. Realized execution/assistance is supported by journal evidence.
+      There is deliberately no overall attempt status or self-certification flag.
+    x-status: proposed
+    x-source: *w
+
+  HashComparison:
+    type: object
+    additionalProperties: false
+    required: [output, expected, actual, result]
+    properties:
+      output:
+        enum: [semantic_events, final_state, diagnostic]
+        x-status: inferred
+        x-source: *f
+      expected: {$ref: "#/$defs/Digest", x-status: inferred, x-source: *f}
+      actual: {$ref: "#/$defs/MaybeDigest", x-status: inferred, x-source: *f}
+      result:
+        enum: [matched, mismatched, unavailable]
+        x-status: proposed
+        x-source: *w
+    allOf:
+      - if:
+          properties: {result: {const: unavailable}}
+        then:
+          properties: {actual: {$ref: "#/$defs/Missing"}}
+        else:
+          properties: {actual: {$ref: "#/$defs/Digest"}}
+    description: matched requires equal digests; mismatched requires unequal digests.
+    x-status: proposed
+    x-source: *w
+
+  ReplayReceipt:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - replay_id
+      - mode
+      - run_id
+      - manifest_hash
+      - source_prefix
+      - source_diagnostic
+      - input_bundle
+      - classifier
+      - reducer
+      - replay_engine
+      - comparisons
+      - result
+      - limitations
+      - invoked_browser
+      - invoked_subject
+      - performed_external_writes
+    properties:
+      record_type: {const: replay_receipt, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      replay_id: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      mode:
+        enum: [exact_fixture, diagnostic_rederivation]
+        x-status: proposed
+        x-source: *f
+      run_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *q}
+      manifest_hash: {$ref: "#/$defs/Digest", x-status: extracted, x-source: *d}
+      source_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *d}
+      source_diagnostic: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *f}
+      input_bundle: {$ref: "#/$defs/ArtifactReference", x-status: inferred, x-source: *f}
+      classifier: {$ref: "#/$defs/VersionPin", x-status: extracted, x-source: *d}
+      reducer:
+        oneOf:
+          - $ref: "#/$defs/VersionPin"
+          - $ref: "#/$defs/Missing"
+        x-status: inferred
+        x-source: *f
+      replay_engine: {$ref: "#/$defs/VersionPin", x-status: proposed, x-source: *w}
+      comparisons:
+        type: array
+        minItems: 1
+        maxItems: 3
+        items: {$ref: "#/$defs/HashComparison"}
+        x-status: inferred
+        x-source: *f
+      result:
+        enum: [matched, mismatched, unavailable]
+        description: Replay-worker conclusion only; not an application-attempt outcome.
+        x-status: proposed
+        x-source: *w
+      limitations:
+        type: array
+        items: {type: string, minLength: 1}
+        x-status: inferred
+        x-source: *d
+      invoked_browser: {const: false, x-status: extracted, x-source: *f}
+      invoked_subject: {const: false, x-status: extracted, x-source: *f}
+      performed_external_writes: {const: false, x-status: inferred, x-source: *h}
+    allOf:
+      - if:
+          properties: {mode: {const: exact_fixture}}
+        then:
+          properties:
+            reducer: {$ref: "#/$defs/VersionPin"}
+            comparisons:
+              minItems: 3
+              maxItems: 3
+      - if:
+          properties: {mode: {const: diagnostic_rederivation}}
+        then:
+          properties:
+            reducer: {$ref: "#/$defs/Inapplicable"}
+            comparisons:
+              minItems: 1
+              maxItems: 1
+              items:
+                properties: {output: {const: diagnostic}}
+    description: >-
+      Comparison output names are unique. exact_fixture requires all three.
+      Aggregate result is mismatched if any required comparison mismatches;
+      otherwise unavailable if any is unavailable; otherwise matched. An
+      unavailable comparison retains its enumerated reason. Receipt registration
+      occurs after its inputs and does not alter the compared diagnostic.
+    x-status: proposed
+    x-source: *w
+
+  ResourceReference:
+    type: object
+    additionalProperties: false
+    required: [owner_domain, entity_type, entity_id]
+    properties:
+      owner_domain: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *s}
+      entity_type: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+      entity_id: {$ref: "#/$defs/Identifier", x-status: extracted, x-source: *l}
+    description: Non-posting resources use their own identity, never a fabricated job ID.
+    x-status: inferred
+    x-source: *s
+
+  LeaseRecord:
+    type: object
+    additionalProperties: false
+    required:
+      - record_type
+      - schema_version
+      - resource
+      - policy
+      - issuer_id
+      - authority_epoch
+      - entity_revision
+      - input_revision
+      - generation_id
+      - resource_state
+      - eligible_state
+      - lease_state
+      - lease_id
+      - lease_owner
+      - owner_epoch
+      - session_epoch
+      - leased_at
+      - lease_expires_at
+      - retry_count
+      - max_retries_effective
+      - last_failure_reason
+      - journal_prefix
+      - evidence_refs
+    properties:
+      record_type: {const: lease_record, x-status: proposed, x-source: *w}
+      schema_version: {$ref: "#/$defs/SchemaVersion", x-status: proposed, x-source: *w}
+      resource: {$ref: "#/$defs/ResourceReference", x-status: inferred, x-source: *l}
+      policy:
+        $ref: "#/$defs/VersionPin"
+        description: Owner-specific eligibility, duration, renewal, retry, and terminal-routing policy.
+        x-status: proposed
+        x-source: *l
+      issuer_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *l}
+      authority_epoch: {$ref: "#/$defs/Identifier", x-status: proposed, x-source: *w}
+      entity_revision: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *s}
+      input_revision: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *s}
+      generation_id: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *s}
+      resource_state:
+        $ref: "#/$defs/Identifier"
+        description: State of this owner's claimable resource, not a composite application status.
+        x-status: inferred
+        x-source: *l
+      eligible_state: {$ref: "#/$defs/Identifier", x-status: inferred, x-source: *l}
+      lease_state: {enum: [unleased, held], x-status: proposed, x-source: *w}
+      lease_id:
+        $ref: "#/$defs/MaybeString"
+        description: Unique fencing token; it is never reused for a later claim.
+        x-status: extracted
+        x-source: *l
+      lease_owner: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *l}
+      owner_epoch: {$ref: "#/$defs/MaybeString", x-status: inferred, x-source: *l}
+      session_epoch: {$ref: "#/$defs/MaybeString", x-status: extracted, x-source: *s}
+      leased_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *l}
+      lease_expires_at: {$ref: "#/$defs/MaybeTimePoint", x-status: inferred, x-source: *l}
+      retry_count: {$ref: "#/$defs/Revision", x-status: extracted, x-source: *l}
+      max_retries_effective: {$ref: "#/$defs/PositiveInteger", x-status: extracted, x-source: *l}
+      last_failure_reason:
+        $ref: "#/$defs/MaybeString"
+        description: Declared owner-policy failure code; cleared on claim with not_applicable.
+        x-status: inferred
+        x-source: *l
+      journal_prefix: {$ref: "#/$defs/JournalPrefix", x-status: inferred, x-source: *h}
+      evidence_refs: {$ref: "#/$defs/SupportRefs", x-status: inferred, x-source: *h}
+    allOf:
+      - if:
+          properties: {lease_state: {const: unleased}}
+        then:
+          properties:
+            lease_id: {$ref: "#/$defs/Inapplicable"}
+            lease_owner: {$ref: "#/$defs/Inapplicable"}
+            owner_epoch: {$ref: "#/$defs/Inapplicable"}
+            session_epoch: {$ref: "#/$defs/Inapplicable"}
+            leased_at: {$ref: "#/$defs/Inapplicable"}
+            lease_expires_at: {$ref: "#/$defs/Inapplicable"}
+      - if:
+          properties: {lease_state: {const: held}}
+        then:
+          properties:
+            lease_id: {$ref: "#/$defs/Identifier"}
+            lease_owner: {$ref: "#/$defs/Identifier"}
+            owner_epoch: {$ref: "#/$defs/Identifier"}
+            session_epoch:
+              oneOf:
+                - $ref: "#/$defs/Identifier"
+                - $ref: "#/$defs/Inapplicable"
+            leased_at: {$ref: "#/$defs/TimePoint"}
+            lease_expires_at: {$ref: "#/$defs/TimePoint"}
+    description: >-
+      A journal-derived snapshot, not a claim command. A held lease requires
+      resource_state=eligible_state and current generation/authority fencing.
+      Claiming does not change that resource state. Renewal, completion, expiry,
+      and release must satisfy EK-LEASE and EK-LEASE-RESTART. The kernel chooses
+      no default TTL, retry limit, database, or cross-owner transaction.
+    x-status: inferred
+    x-source: *l

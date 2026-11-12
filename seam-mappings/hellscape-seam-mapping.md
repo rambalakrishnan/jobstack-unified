@@ -1,0 +1,2203 @@
+# Track 2.4: Hellscape Seam Mapping
+
+## 1. Authority, scope, and implementation status
+
+### 1.1 Purpose
+
+This specification maps the complete Hellscape laboratory boundary to the shared evidence, lifecycle, connector, and owner-separation contracts. It specifies ownership, durable representations, field transformations, state transitions, authorization, failure behavior, publication, replay, and conformance.
+
+It is a specification, not a claim that Hellscape M1, its manual acceptance walkthrough, its isolation tests, or any live subject integration has already been implemented or certified.
+
+The applicable sources are:
+
+| Reference | Source |
+|---|---|
+| Handoff | `full-featured-blueprints/1-handoff-brief.txt` |
+| Inventory | `feature-inventories/hellscape-feature-inventory.md` |
+| Qualification inventory | `feature-inventories/m0-qualification-feature-inventory.md` |
+| EK | `contracts/00-evidence-kernel.yaml`, `evidence-kernel/0.1.0` |
+| LIFE | `contracts/01-application-attempt-lifecycle.yaml`, `application-attempt-lifecycle/0.1.0` |
+| EXT | `contracts/02-external-connector.yaml`, `external-connector/0.1.0` |
+| OWD | `contracts/04-owner-separated-write-domains.yaml`, `owner-separated-write-domains/0.1.0` |
+
+Named types in this document mean the complete definitions in those versions, including required fields, closed-object restrictions, conditional constraints, and semantic rules. They are incorporated by reference, not abbreviated replacement schemas.
+
+### 1.2 Precedence and reconciliation
+
+Apply this precedence:
+
+1. Handoff invariants.
+2. Shared contract structural and semantic rules.
+3. Explicit Hellscape binding decisions in this specification.
+4. Inventory implementation details.
+5. Historical qualification implementation details.
+
+The resulting mandatory changes are:
+
+| Legacy design | Required transformation |
+|---|---|
+| One SQLite database | Three independently writable SQLite WAL databases |
+| `hellscape.diagnostic/1` as exchange format | EK `DiagnosticDocument` |
+| Bare normalized nulls | EK `Missing` |
+| Flat elapsed/bound timing fields | EK `Measurement` and discriminated `Estimate` |
+| Journal-array digest as journal head | EK event hash chain and `JournalPrefix` |
+| One lifecycle status | Five independent LIFE axes |
+| Confirmation-render flag in application state | Observation-owned rendering evidence |
+| Native completion interpreted as application success | Execution claim separate from origin fact |
+| Internal connector method calls as portfolio integration | EXT’s nine asynchronous task-shaped verbs |
+| Historical capabilities inherited by a new build | Complete new-version catalog initialized unknown |
+| Practice completion as a production trigger | Prohibited |
+| Shared mutable rows | Complete immutable owner revisions and asynchronous read compositions |
+
+The contracts are review drafts. This specification pins them without representing them as deployed native capabilities.
+
+### 1.3 Product boundary
+
+Hellscape is a form-fidelity laboratory, not an ATS, employer, production application dispatcher, browser engine, or framework repair service.
+
+Every Hellscape application attempt has:
+
+- `kind: practice`
+- `target_class: laboratory_fixture`
+- `evaluation_partition: held_in`
+
+These values are immutable and checked at admission, commissioning, preparation, publication, analysis, export, and replay.
+
+Real job content may be an authorized fixture input. It does not make the fixture’s forms origin-representative.
+
+Hellscape never:
+
+- Submits real applications through its fixture workflow.
+- Requires real identities.
+- Solves production CAPTCHAs or uses paid solving services.
+- Supplies undisclosed planning or recovery.
+- Automatically changes subject source code.
+- Treats process termination as rollback.
+- Treats fixture sealing as native cancellation.
+- Claims that a missing interaction reveals private subject reasoning.
+- Introduces a shared internal browser abstraction.
+
+### 1.4 M1 and later work
+
+M1 consists of:
+
+- Cooperative SPA and application reducer.
+- Manual walkthrough diagnostics.
+- Durable evidence and exact fixture replay.
+- Owner-separated persistence and publication.
+- Shared connector lifecycle implementation and synthetic-backend conformance.
+- Explicit unsupported-operation and missing-evidence handling.
+
+No live subject participates in M1 acceptance. M2 is the first live subject use.
+
+Hostile composition, adaptive curriculum, full causal minimization, behavioral scoring, transport fingerprint analysis, production-quality transport injection, and multiple live integrations are not M1 acceptance dependencies.
+
+---
+
+## 2. Identity, state, and authority boundaries
+
+### 2.1 Identity registry
+
+| Identifier | Meaning | Rule |
+|---|---|---|
+| `session_id` | Hellscape laboratory session | Allocated once; immutable |
+| `run_id` | EK run | Bound to session admission |
+| `attempt_id` | Commissioned practice application attempt | Never reused for another logical attempt |
+| `journal_id` | One ordered journal | One ordering authority |
+| `manifest_id` | Immutable manifest identity | Allocated before admission |
+| `manifest_hash` | Complete canonical manifest digest | Verified from bytes |
+| `commission_id` | Immutable commission identity | Allocated before registration |
+| `commission_digest` | Complete commission digest | Pins attempt and owners |
+| `producer_id` | One producer sequence lifetime | Never recycled |
+| `clock_id`, `boot_id` | Clock and lifetime | Registered before use |
+| `local_handle` | Connector logical execution | Durable before native delivery |
+| `native_run_id` | Actual native execution identifier | Attached only when received and correlated |
+| `idempotency_key` | Command identity within its declared namespace | Bound to request content |
+| `operation_id` | One control-operation history | Groups request, acknowledgement, effect, timeout |
+| `control_event_id` | One immutable control observation | Unique per observation |
+| `diagnostic_id` | Requested diagnostic identity | Pinned by `analysis_requested` |
+| `analysis_revision` | Diagnostic revision within a run | Positive and increasing |
+| `registration_id` | OWD entity registration | Immutable |
+| `view_id` | Named asynchronous read view | Authenticated configuration |
+| `seal_id` | Immutable view selection | Pins complete domain revisions |
+| Artifact digest | Exact byte identity | Not a credential or locator |
+
+Identifier spelling conveys no authority, ordering, or equivalence. Session IDs, attempt IDs, connector handles, and native IDs remain distinct.
+
+### 2.2 Three state domains
+
+| Domain | Contents | Authority |
+|---|---|---|
+| Fixture application | Accepted values, validation generations, upload, identity, review, commitment | Application reducer |
+| Browser state | Cookies, local storage, IndexedDB, profile | Native browser environment |
+| Framework learning state | Selector caches, demonstrations, memory, recovery history | Subject |
+
+Fixture namespacing does not establish browser isolation. A fresh browser profile does not establish clean framework learning state.
+
+R2 experiments deliberately preserve relevant origin and storage-key identities between compared browser sessions while independently binding server-side application records.
+
+### 2.3 Six separation boundaries
+
+1. **Application truth:** only the application origin accepts business data and commits submissions.
+2. **Observation:** telemetry, native responses, notes, and transport capture retain their source limitations.
+3. **Execution:** the connector dispatches supported work and records responses.
+4. **Judgment:** the analyzer evaluates evidence without modifying the run.
+5. **Policy:** curriculum selects future manifests, never silently changes an active one.
+6. **Containment:** harness limits remain explicitly harness-owned.
+
+### 2.4 Three logical surfaces
+
+| Surface | Permitted access |
+|---|---|
+| Application plane | SPA assets and ordinary attempt-bound application APIs |
+| Telemetry plane | Bounded write-only ingestion for registered fixture producers |
+| Control plane | Authenticated admission, administration, evidence, diagnostics, export, replay |
+
+Application cookies and entry credentials never authorize control-plane operations. CORS is not authentication.
+
+Diagnostic aliases remain internal. Debug selector aliases require a labeled non-comparable session.
+
+---
+
+## 3. Common evidence types and transformations
+
+### 3.1 Missingness
+
+Every normalized absence is `EK.Missing`:
+
+| Field | Type |
+|---|---|
+| `value` | JSON null |
+| `reason` | One of the six `NullReason` values |
+| `detail` | Optional nonempty string; required by this binding when the reason alone is insufficient |
+
+Reasons and usage:
+
+| Reason | Meaning in Hellscape |
+|---|---|
+| `not_enabled` | Deliberately disabled analysis or facility |
+| `not_applicable` | No meaning in the declared mode or scope |
+| `not_observed` | Value not established |
+| `observation_lost` | Expected or previously available observation lost |
+| `unsupported_by_subject` | Scoped evidence establishes missing native support needed to supply the value |
+| `manual_override` | Authenticated journaled operator withholding or supersession |
+
+`manual_fixture_validation` is a rationale, not a seventh reason.
+
+Raw native bytes may contain null. Those bytes remain artifacts until explicitly normalized.
+
+The following are prohibited:
+
+- Missing duration represented by zero.
+- Unknown completion represented by false.
+- Unknown collection represented by an empty array.
+- Native absence represented by an empty capability object.
+- Omission of a required field instead of `Missing`.
+
+SQL index columns may use database null internally, but normalized durable records and exchanged documents must preserve the complete reasoned representation.
+
+### 3.2 Digests and canonicalization
+
+Shared digests have the form `sha256:` followed by 64 lowercase hexadecimal digits.
+
+| Object | Digest basis |
+|---|---|
+| Artifact | Exact stored bytes |
+| Manifest | Complete RFC 8785 canonical JSON |
+| Event | Canonical envelope with only `event_hash` removed |
+| Diagnostic | Complete canonical diagnostic |
+| Journal prefix | Event hash at the final sequence |
+| Native request | Exact retained native request bytes |
+| Delivered task | Exact retained subject-facing task bytes |
+| Structured owner publication | Complete canonical publication |
+
+Canonicalization preserves array order and string contents. It does not silently redact, normalize Unicode, substitute aliases, or remove missing-value envelopes.
+
+Redacted exports have new identities and journaled derivations.
+
+Legacy semantic hashes may be retained under their original named profile. They cannot be relabeled as EK record hashes.
+
+### 3.3 Evidence references
+
+`EvidenceRef` contains exactly:
+
+- `journal_id`
+- `sequence`
+- `event_id`
+- `event_hash`
+- `pointer`
+
+The pointer is a valid JSON Pointer; empty string cites the complete event.
+
+All coordinates must agree. A legacy event ID alone must be resolved to a complete retained reference. Unresolvable legacy references remain historical data with explicit limitations, not fabricated EK references.
+
+`JournalPrefix` contains:
+
+- `journal_id`
+- `last_sequence`
+- `head_hash`
+
+A diagnostic can cite only evidence available through its named prefix, including locally registered imports and their retained dependencies.
+
+### 3.4 Artifacts
+
+`ArtifactReference` contains:
+
+- `digest`
+- `size_bytes`
+- `media_type`
+- `owner_domain`
+- `access: public | restricted`
+
+`ArtifactSlot` contains:
+
+- `name`
+- `expected_digest: Digest | Missing`
+- `content: ArtifactReference | Missing`
+- `evidence_refs`
+
+Available content must match the expected digest. Known identity survives loss.
+
+Legacy access classifications map as follows:
+
+| Legacy | Shared |
+|---|---|
+| `public_fixture` | `public`, after checking for secrets/personal data |
+| `restricted_raw_native` | `restricted` |
+| `operator_only` | `restricted` |
+
+Possession of a digest grants no read authority.
+
+### 3.5 TimePoint and ClockDescriptor
+
+Every `TimePoint` contains:
+
+- `clock_id`
+- `boot_id`
+- `origin`
+- `monotonic_offset_ms`
+- `utc_annotation`
+
+Origins are:
+
+- `engine_measured`
+- `browser_measured`
+- `subject_reported`
+- `manual_reference`
+
+Offsets are finite and nonnegative. UTC is a date-time annotation or `Missing`, never a basis for cross-clock duration subtraction.
+
+Every clock descriptor contains:
+
+- `clock_id`
+- `boot_id`
+- `origin`
+- `source_id`
+- `basis: monotonic_offset | opaque_report`
+- `unit: ms`
+
+Engine restart and browser document replacement create new clock lifetimes.
+
+A native duration without native clock coordinates uses an opaque-report clock. Native endpoints are not invented.
+
+### 3.6 Measurement
+
+Every `Measurement` contains:
+
+| Field | Constraint |
+|---|---|
+| `measurement_id` | Unique within the diagnostic |
+| `name` | Registered semantic measurement name |
+| `scope` | `Scope` containing kind and ID |
+| `quantity` | `duration` or `scalar` |
+| `unit` | `ms` for duration |
+| `origin` | One of the four origins |
+| `clock_id`, `boot_id` | Registered source lifetime |
+| `method` | `endpoint_difference`, `source_value`, `evidence_bound`, or `unavailable` |
+| `start`, `end` | `TimePoint` or `Missing` |
+| `estimate` | Exact, bounded, or unavailable alternative |
+| `resolution` | Nonnegative number or `Missing` |
+| `censoring` | `none`, `left`, `right`, `both`, or `unavailable` |
+| `comparability_group` | Identifier or `Missing` |
+
+Estimate alternatives:
+
+- Exact: `kind=exact`, numeric `value`.
+- Bounded: `kind=bounded`, `lower_bound` and `upper_bound`, each numeric or `Missing`, with at least one numeric.
+- Unavailable: `kind=unavailable`, `value=Missing`.
+
+Rules:
+
+1. Duration values and bounds are nonnegative.
+2. Exact endpoint subtraction requires one clock, boot, and origin.
+3. End is not before start.
+4. The value equals the endpoint difference within serialization resolution.
+5. Both numeric bounds require lower ≤ upper.
+6. Exact estimates have no censoring.
+7. Bounded estimates use `evidence_bound`.
+8. Unavailable estimates use unavailable method and censoring.
+9. Reported zero remains exact reported zero.
+10. A comparability-group label alone does not prove compatible boundaries.
+11. Aggregate runtime is never divided into invented primitive durations.
+12. Human pauses remain workflow elapsed time, not framework primitive time.
+
+`MeasurementEvidence` pairs the complete measurement with nonempty supporting references.
+
+### 3.7 Legacy timing conversion
+
+| Legacy field | Shared mapping |
+|---|---|
+| `elapsed_ms` | Exact estimate when established |
+| `lower_bound_ms`, `upper_bound_ms` | Bounded estimate |
+| `resolution_ms` | `resolution` |
+| `start_ref`, `end_ref` | Supporting references to recorded endpoints |
+| `clock_id` | Registered clock identity |
+| Missing boot identity | Historical limitation; no invented cross-restart comparability |
+| `unavailable_reason` | Enumerated reason plus detail |
+| Scope string | `Scope.kind`; measured entity becomes `Scope.id` |
+| `censoring` | Preserved after consistency validation |
+
+---
+
+## 4. Three-database persistence architecture
+
+### 4.1 Database allocation
+
+| Database | Local authority | Authoritative session value |
+|---|---|---|
+| `application.db` | Application origin | `OWD.SessionApplicationValue` |
+| `observation.db` | Observation recorder/ingester | `OWD.SessionObservationValue` |
+| `diagnostic.db` | Analyzer and separately authorized admission/composition services | `OWD.SessionDiagnosticValue` and immutable control/composition metadata |
+
+All three use SQLite WAL and `synchronous=FULL`.
+
+Each has independent:
+
+- Connections.
+- Writer queue.
+- Transaction admission.
+- Checkpoint scheduling.
+- Journal sequencing.
+- Failure reporting.
+- Artifact installation work.
+- Publication outbox.
+
+Prohibited mechanisms:
+
+- `ATTACH DATABASE` for shared commits.
+- Cross-database transactions.
+- A single serialized writer for all three databases.
+- Application acknowledgement waiting for observation or diagnostic publication.
+- Diagnostic work holding an application write lock.
+
+A shared disk is still a shared resource. Database separation alone is not proof of I/O isolation.
+
+### 4.2 Attempt ownership versus session ownership
+
+LIFE’s five axes remain independent:
+
+| Axis | Authority | Hellscape storage treatment |
+|---|---|---|
+| Dispatch | Connector | Imported complete publication |
+| Observation | Connector or manual recorder | Imported connector publication or recorder-authored manual publication |
+| Execution | Subject | Imported faithfully delegated claim publication |
+| Application | Fixture origin | Derived from application-origin transactions |
+| Report | Reconciler | Derived comparisons in diagnostic authority |
+
+The session’s three domains do not replace these axes.
+
+The session observation domain contains a verified copy of the attempt observation publication, not a second lifecycle authority.
+
+### 4.3 Connector persistence boundary
+
+The external connector owns preparation, handle allocation, dispatch intent, native transports, and native-message persistence.
+
+Hellscape invokes it through EXT and stores verified imported copies.
+
+The reference circus-tent binding and synthetic connector implementation may ship with the source distribution, but their authoritative execution service is not merged into Hellscape’s application or analyzer authority. Their source storage is outside the three laboratory databases.
+
+An in-process synthetic test can validate wire behavior. It cannot prove independent owner write paths merely by separating tables.
+
+This reconciliation preserves:
+
+- M1’s shipped connector implementation.
+- The shared external interface.
+- Independent component shipment.
+- Exactly three Hellscape session databases.
+- No cross-owner transaction.
+
+### 4.4 Required durable record families
+
+| Database | Record families |
+|---|---|
+| Application | Local manifests; local journal; operation ledger; reducer state; artifact registry; application-domain revisions; origin-fact publications; publication outbox |
+| Observation | Local manifests/journal; producers; sequence ledger; clocks; native/connector imports; handle/preparation cache; manual observations; completeness materializations; observation-domain revisions; publication outbox |
+| Diagnostic | Primary manifests/journal; commissions; entity registrations; installed source publications; analysis requests; diagnostics; readable reports; report-axis revisions; diagnostic-domain revisions; read-view roots; replay receipts; exports; retention roots |
+
+Stored shared records retain complete canonical bytes. Indexed columns are projections, not separate evidence.
+
+### 4.5 Owner-local journals and primary composition journal
+
+Each database has its own ordering authority and journal.
+
+Each journal:
+
+- Starts at sequence 1.
+- Begins with `manifest_admitted`.
+- Pins its complete immutable manifest.
+- Uses contiguous sequences and an EK hash chain.
+
+The primary session composition journal resides in `diagnostic.db`. Its manifest is referenced by the session identity, commission, diagnostic, and replay receipt.
+
+Application and observation manifests have their own journal IDs and owner domains. They preserve the admitted attempt, task, execution configuration, and effective fixture configuration, but are distinct complete manifests with distinct digests.
+
+Source sequences are never copied into the primary journal as if they were locally assigned sequences.
+
+### 4.6 Imported evidence
+
+A registered source-event import contains:
+
+- Complete original `JournalEnvelope`.
+- Artifact reference to its exact canonical bytes.
+- Source manifest artifact.
+- Source prefix.
+- Source authentication/correlation checks.
+- Import-policy pin.
+
+The outer import event has importer provenance and observation assertion kind. It does not become an application effect.
+
+Verification covers:
+
+- Source manifest and chain.
+- Producer registration.
+- Kind/version authorization.
+- Owner domain.
+- Run/session/attempt correlation.
+- Referenced bytes.
+- Supporting reference closure.
+
+Every nested artifact appears in `artifact_refs`.
+
+Diagnostics cite the local import and preserve the original source authority. Import does not turn a manual note, connector claim, or historical event into an origin fact.
+
+Identical imports deduplicate. Conflicting bytes under the same source identity create an integrity incident.
+
+### 4.7 Transaction boundaries
+
+**Application transaction:** atomically commits admitted command, idempotency record, reducer effect, business events, replayable response, resulting state revision, and local outbox metadata.
+
+**Observation transaction:** atomically commits authenticated ingress, producer deduplication, installed-artifact registrations, authorized observations, gap/conflict/loss evidence, observation materialization, and local outbox metadata.
+
+**Diagnostic transaction:** atomically registers already installed diagnostic/report bytes, advances the diagnostic-owned revision, records exact input pins, and publishes local metadata.
+
+No transaction spans these boundaries.
+
+### 4.8 Artifact installation
+
+Before a database references new bytes:
+
+1. Write a bounded temporary file.
+2. Hash exact bytes.
+3. Flush file data.
+4. Atomically install under the owner’s content-addressed root.
+5. Perform required filesystem durability operations.
+6. Commit the database reference.
+
+A crash may leave an unreferenced artifact. It must not leave an acknowledged upload pointing to absent bytes.
+
+Byte identity and session association are separate records; one artifact may be retained by multiple sessions.
+
+### 4.9 Legacy table and column mapping
+
+| Legacy table | Complete disposition |
+|---|---|
+| `sessions` | `session_id` remains identity; `experiment_group_id` becomes admitted configuration; manifest reference becomes primary EK manifest; mode becomes execution descriptor; admission fields become admission evidence; lifecycle/termination become recorder lifecycle evidence; authority seal moves to application; journal heads become per-journal heads; UTC columns remain annotations |
+| `manifests` | Canonical manifest/digest become EK manifest; task semantic hash uses EXT profile; fixture/frontend hashes become build pins; creation time remains admission annotation |
+| `events` | All fields become the complete EK envelope; provenance and roles are revalidated |
+| `operations` | Attempt/key, operation kind, canonical request digest, expected/resulting revisions, transition references, committed response status/body, and commit sequence remain application-owned |
+| `application_state` | State/workflow/job; contact/history revisions, generations, accepted values; upload digest/metadata; identity receipt/epoch/verification; review currency; submission/receipt; state hash remain application-owned; confirmation rendering is removed |
+| `connector_attempts` | Handle, versions, request binding, assistance, semantic/delivered/native hashes, native IDs, artifacts, callbacks, and dispatch boundaries become EXT/LIFE imports; changing lifecycle fields are not authoritative cache writes |
+| `capability_snapshots` | Become complete EK capability descriptor artifacts with exact subject/version/mode/surface scope |
+| `artifacts` | Digest/size/type/access become artifact identity; path remains private; kind becomes registered artifact role/name; retention becomes dependency-aware |
+| `diagnostic_revisions` | Become EK diagnostic artifacts plus OWD diagnostic-domain revisions; version strings become pins; cutoff becomes prefix; source state becomes pinned evidence; JSON/Markdown remain immutable; legacy semantic hashes retain separate profiles |
+
+---
+
+## 5. Admission, registration, and publication
+
+### 5.1 Admission is a saga
+
+Admission proceeds through independently durable steps:
+
+1. Authenticate and authorize the commissioner.
+2. Validate complete configuration and finite limits.
+3. Enforce practice/held-in partitioning.
+4. Install primary manifest and required artifacts.
+5. Commit primary manifest admission.
+6. Register the attempt commission.
+7. Register attempt and session owner bindings.
+8. Asynchronously initialize application and observation owners.
+9. Record their initialization receipts.
+10. Make the entry usable and permit subject preparation only after required initialization.
+
+A durably admitted session receives a diagnostic even if subsequent initialization fails, subject to explicit storage-failure limitations.
+
+A failure before durable admission is an admission refusal, not a lost admitted session.
+
+### 5.2 Manifest field mapping
+
+| Field | Source |
+|---|---|
+| `record_type`, `schema_version` | EK manifest discriminator/version |
+| `manifest_id`, `run_id`, `journal_id` | Allocated immutable identities |
+| `owner_domain` | Registered journal authority |
+| `commissioner_id` | Authenticated commissioner |
+| `activity` | `application_attempt`; synthetic corpus may use `kernel_conformance` |
+| `attempt` | Practice laboratory context |
+| `execution` | Manual or subject descriptor |
+| `task` | Immutable task artifact |
+| `task_semantic_hash` | EXT semantic profile |
+| `effective_configuration` | Complete immutable fixture configuration |
+| `environment` | Declared deployment/browser/origin evidence map |
+| `seed` | Recorded seed or reasoned inapplicability |
+| `build_pins` | Fixture, frontend, reducer, schemas, policies, registries |
+| `event_registry` | Complete kind/version authorization registry |
+| `producers` | Initial authenticated producer registrations |
+| `clocks` | Initial clock registrations |
+
+Later producer/clock additions are events, not manifest edits.
+
+The effective configuration retains:
+
+- Expected outcome.
+- Feature instances, parameters, recipes, dependencies, exclusions, and digests.
+- Task and application data-schema pins.
+- Origin topology.
+- All observation/control/task budgets.
+- Browser and learning-state requests.
+- Upload size/type limits.
+- Validation dependency and identity epoch policies.
+- Authority-seal policy.
+- Telemetry bounds.
+- Analysis enablement.
+- Retention/export policy.
+- Experiment lineage.
+- Debug comparability designation.
+- Randomness profile.
+
+No deployment-wide numeric defaults are inferred from the inventory.
+
+### 5.3 AttemptContext and lineage
+
+`AttemptContext` retains attempt ID, kind, target class/ID, evaluation partition, rehearsal links, performance links, and derivation links.
+
+For Hellscape:
+
+- Performance links are empty.
+- Rehearsal links may point to already commissioned production attempts.
+- Derivation links point only to practice attempts.
+- Links resolve, match kind, and form no derivation cycle.
+- No reciprocal mutation of an earlier commission is required.
+- Links convey lineage, not inherited commitment or qualification.
+
+### 5.4 Commission fields
+
+Every `AttemptCommission` field is populated:
+
+| Field group | Mapping |
+|---|---|
+| Record/version/kernel version | Exact LIFE/EK versions |
+| Commission/run/journal/manifest identities | Primary admission |
+| `admission_ref` | Actual admission event |
+| Commissioner/time | Authenticated principal and registered `TimePoint` |
+| Attempt | Same practice context |
+| Candidate ID/profile | Synthetic identity and artifact or honest missingness |
+| Job | Local job ID, source target/source ID or missingness, immutable snapshot |
+| Selection evidence | Actual task selection or operator decision |
+| Task/hash/materials | Same admitted task and initial synthetic documents |
+| Execution | Exact mode, subject, versions, assistance |
+| Owners | Five complete authority bindings |
+| Idempotency key | Commissioning logical identity |
+| Authorization/recovery review | Actual journaled authority and duplicate-risk review |
+| Observation policy | Active, drain, cancel-wait, cleanup-wait limits; `seal_after_drain` |
+| Origin policy | Pinned local-origin verification policy |
+
+### 5.5 Execution and assistance fields
+
+`ExecutionDescriptor` contains mode, subject, connector version, binding version, and assistance.
+
+Manual mode requires subject, connector version, and binding version to be `Missing(not_applicable)`.
+
+`AssistanceRecord` contains:
+
+- Planning owner.
+- Assistance track.
+- Planner identity.
+- Plan artifact or Missing.
+- Online-replanning permission.
+- Description.
+
+Preparation costs and public observation inputs remain separately journaled evidence.
+
+`SubjectIdentity` contains subject ID/version, revision basis, native revision, configured mode, interface surface, configuration digest, and stack.
+
+Each stack component contains component name, reported version, build digest, and configuration digest.
+
+An operator-attested version key does not invent a native revision endpoint.
+
+### 5.6 OWD registrations and revisions
+
+Session registration contains record/version, registration ID, session entity key, complete `SessionIdentity`, complete `SessionOwners`, evidence prefix, and support.
+
+`SessionIdentity` contains run ID, primary journal ID, manifest artifact, fixture-build pin, practice attempt, execution descriptor, and optional job-content artifact.
+
+Session owners are application/origin, observation/observer, and diagnostic/analyzer. Each has source ID, writer ID, distinct owner domain, and publication policy.
+
+Every `DataDomainRevision` contains:
+
+- Record/version.
+- Entity.
+- Registration digest.
+- Domain.
+- Owner domain.
+- Writer ID.
+- Revision and previous revision.
+- Evidence prefix/support.
+- Complete typed value.
+
+Revision starts at 1 and advances by exactly one. Identical retries are idempotent; changed bytes under the same revision key conflict.
+
+### 5.7 Asynchronous publication
+
+Publication consists of:
+
+1. Owner-local durable effect.
+2. Complete immutable domain document.
+3. Durable document installation and registration.
+4. Outbox enqueue.
+5. Asynchronous transfer.
+6. Source, identity, lineage, reference, and checksum verification.
+7. Complete installation in the receiving view.
+8. Atomic pointer advance.
+9. Publication receipt.
+
+Failures before pointer advance leave the previous complete revision visible.
+
+Reordered delivery cannot roll the pointer backward. Skipped visible revisions require verified lineage.
+
+`PublicationReceipt` retains receipt/entity/registration/view/publisher identities, domain, revision, document, superseded pin, observed owner head or Missing, source prefix, installation time, publication reference, and publication-delay measurement.
+
+Publication delay is unavailable or bounded when compatible clocks are absent.
+
+### 5.8 LogicalRow and seals
+
+A session `LogicalRow` contains record/version, entity, registration digest, complete registration, all three domain slots, and seal.
+
+Published slots contain revision, document artifact, publication reference, and complete snapshot.
+
+Unpublished slots contain revision zero and Missing. They cannot erase previously published history.
+
+Session seals are:
+
+- `session_admitted`
+- `observation_closed`
+- `diagnostic_published`
+- `evidence_updated`
+
+A seal contains ID, name, view, exact three-domain version vector, time, input prefix, and support.
+
+The selection event precedes the row’s registration. A row never cites its own future registration.
+
+---
+
+## 6. Application API and authoritative reducer
+
+### 6.1 Attempt binding and common mutation semantics
+
+Application routing uses an immutable opaque attempt binding. It is not a global active-session cookie.
+
+Every mutation has:
+
+- Operation identity.
+- Expected state revision.
+- Applicable section value revision.
+- Applicable validation generation.
+- Endpoint-specific validated payload.
+- Server-computed canonical request digest.
+
+Endpoint payload data is validated against the admitted, versioned application schema. The supplied sources do not establish field names for every contact/history value; this seam preserves the complete schema-validated value object rather than inventing undocumented native fields.
+
+The normalized admitted command explicitly represents inapplicable section coordinates.
+
+The request digest includes operation kind, attempt identity, payload, and applicable revision/generation references. Transport credentials are excluded.
+
+Processing order is:
+
+1. Authenticate and authorize the attempt.
+2. Resolve operation identity.
+3. Return the stored response for identical key/digest.
+4. Reject changed content under an existing key.
+5. Check authority, revisions, generation, and business guards.
+6. Commit accepted effect or durable rejection.
+7. Acknowledge after commit.
+
+Returning a prior response creates no new business effect, including after authority sealing.
+
+### 6.2 Endpoint map
+
+| Endpoint | Accepted behavior | Rejection boundary |
+|---|---|---|
+| `GET …/api/jobs` | Synthetic listing | No mutation or success inference |
+| `GET …/api/jobs/{id}` | Synthetic detail | Unknown job is not selection |
+| `POST …/api/job-selection` | Store existing selected job; enter DETAIL | Invalid job/stale revision |
+| `GET …/api/draft` | Current user-visible accepted draft, revisions, generations, workflow | No private feature schedules or control secrets |
+| `PUT …/api/contact` | Validate/accept current contact; enter CONTACT | Invalid data or stale binding |
+| `POST …/api/history/enter` | Verify contact currency; enter HISTORY | Missing/stale contact |
+| `PUT …/api/history` | Validate/accept current history; enter UPLOAD | Invalid interval remains HISTORY |
+| `POST …/api/upload` | Bound, hash, durably install document; enter IDENTITY | Size/type/integrity/storage failure |
+| `POST …/api/identity/verify` | Verify local attempt/epoch receipt; enter REVIEW | Token possession without valid verification |
+| `POST …/api/review/validate` | Validate current accepted prerequisites | Any stale dependency |
+| `POST …/api/submit` | Revalidate and commit at most once; enter CONFIRMATION | Invalid/stale prerequisites or key conflict |
+| `GET …/api/confirmation` | Existing committed receipt | No invented receipt or rendering assertion |
+
+Responses are structured validation, conflict, or accepted results. Connection completion is not frontend success.
+
+### 6.3 Eight-state transition table
+
+| State | Authoritative meaning | Normal next transition |
+|---|---|---|
+| LISTING | Initialized attempt, no selected-job milestone | Valid selection → DETAIL |
+| DETAIL | Selected job exists | Accepted contact → CONTACT |
+| CONTACT | Current contact accepted | Explicit continue → HISTORY |
+| HISTORY | History entry active | Valid history → UPLOAD |
+| UPLOAD | Required history accepted | Accepted document → IDENTITY |
+| IDENTITY | Required upload accepted | Verified local identity → REVIEW |
+| REVIEW | Identity verified; submission guarded | Current review plus submit → CONFIRMATION |
+| CONFIRMATION | Submission committed | No additional commitment |
+
+These are server milestones, not mandatory separate routes. Contact remains on the detail view.
+
+### 6.4 Revision and validation rules
+
+1. Validation binds to section, value revision, and validation generation.
+2. Stale validation cannot authorize current progress.
+3. Rejected attempts remain in the journal.
+4. Entering a section does not imply acceptance.
+5. Accepted edits invalidate dependent acceptance under the pinned dependency policy.
+6. Review is invalidated whenever a referenced prerequisite changes.
+7. Identity remains attempt- and epoch-bound.
+8. Client-only unsaved edits do not silently change authoritative values.
+9. Frontend readiness is rendered-and-enabled controls, not network silence.
+10. A committed submission is immutable.
+11. New operations after sealing cannot create new effects.
+12. Repeated identical operations replay exact stored responses.
+
+The dependency policy must enumerate dependencies and invalidation behavior. It is fixture semantics, not an analyzer guess.
+
+### 6.5 Submission checks
+
+Submission checks, in the same application transaction:
+
+- Selected job exists.
+- Contact acceptance is current.
+- History acceptance is current.
+- Upload bytes exist and digest matches.
+- Identity receipt is verified for the attempt and epoch.
+- Review references current accepted data.
+- No second commitment is created.
+
+Same key and digest returns the same receipt.
+
+Different content under the key conflicts.
+
+A different key never authorizes a second application. Any accepted repeat resolves to the existing commitment under the pinned reducer policy; stale or incompatible content rejects.
+
+Lost response delivery is not evidence of non-commitment.
+
+### 6.6 SessionApplicationValue
+
+| Field | Mapping |
+|---|---|
+| `state_revision` | Reducer revision, distinct from publication revision |
+| `workflow_state` | Eight-state enum |
+| `selected_job` | Accepted identifier or Missing |
+| `accepted_sections` | Current contact/history/review acceptance |
+| `upload` | Accepted artifact or Missing |
+| `identity_receipt` | Verified receipt artifact or Missing |
+| `authoritative_state` | Full immutable reducer and idempotency snapshot |
+| `submission` | Fixture commitment or Missing |
+| `mutation_authority` | `open` or `sealed` |
+| `authority_seal_ref` | Actual seal evidence, otherwise inapplicable |
+
+Each section acceptance contains section, value revision, validation generation, accepted-data artifact, and support.
+
+Each fixture commitment contains application ID, operation key, request digest, receipt artifact, committed-at time, and commit reference.
+
+The authoritative-state artifact retains selected job, all current section revisions/generations/accepted values, upload metadata/digest, identity epoch and verification, review dependencies, submission, authority state, and complete operation-response ledger.
+
+Publication metadata and the artifact’s own digest are excluded from that artifact.
+
+### 6.7 Confirmation rendering
+
+Legacy `confirmation_rendered` leaves application state.
+
+The replacement is a fixture-client or manual observation with source provenance, retained in `SessionObservationValue.confirmation_render_refs`.
+
+Commitment, receipt retrieval, and receipt rendering are three separate facts.
+
+Missing rendering telemetry cannot erase commitment.
+
+---
+
+## 7. Observation ingress and journal mapping
+
+### 7.1 EventSubmission
+
+Untrusted ingress accepts only:
+
+- Producer sequence.
+- Event kind.
+- Event schema version.
+- Occurrence time or Missing.
+- Evidence payload.
+
+Authenticated registration supplies producer/run identity.
+
+The authority assigns event ID, sequence, provenance, owner domain, role, assertion kind, receipt time, evidence scope, manifest hash, and chain hashes.
+
+Caller-supplied authority fields are rejected.
+
+### 7.2 Complete JournalEnvelope
+
+Every stored envelope contains:
+
+- Record type/version.
+- Run ID.
+- Journal ID.
+- Manifest hash.
+- Journal sequence.
+- Event ID.
+- Event kind/version.
+- Role.
+- Assertion kind.
+- Owner domain.
+- Producer ID/sequence.
+- Provenance.
+- Evidence scope.
+- Recorded time.
+- Occurrence time.
+- Causal references.
+- Payload.
+- Previous-event hash.
+- Event hash.
+
+Payload contains exactly data, measurements, evidence references, and artifact references.
+
+Every nested artifact is listed for retention. Observed metrics belong in typed measurements, not untyped timing fields.
+
+### 7.3 Event authority matrix
+
+| Category | Semantic producer | Treatment |
+|---|---|---|
+| Admission | Kernel | Authorized external input |
+| Start/end | Recorder/kernel | Lifecycle observation |
+| Component ready | Fixture client | Observation |
+| Input/click/change | Fixture client/manual recorder | Observation |
+| Request admitted | Application origin | External input |
+| Request completed/rejected | Application origin | Derived output |
+| Validation accepted/rejected/superseded | Application origin | Derived output |
+| Workflow transition | Application origin | Authoritative effect |
+| Upload stored | Application origin | Authoritative effect |
+| Identity verified | Application origin | Authoritative effect |
+| Submission committed | Application origin | Authoritative effect |
+| Confirmation rendered | Client/manual observer | Observation |
+| Dispatch/result/transport close | Connector source | Observation or faithful claim |
+| Callback receipt/authentication/rejection | Verification path | Separate observations |
+| Deadline/closure | Observation owner | Lifecycle observation |
+| Producer gap/flush/closure | Ingestion authority | Lifecycle observation |
+| Fixture seal | Application origin | Authoritative effect |
+| Analysis request | Analysis coordinator | Lifecycle observation |
+| Diagnostic registration | Analyzer/publication service | Derived assessment |
+| Historical import | Importer | Historical-unscored observation |
+| Synthetic backend response | Registered synthetic source | Synthetic evidence |
+
+A server provenance label alone does not establish application authority.
+
+### 7.4 Sequence, loss, and completeness
+
+| Condition | Required handling |
+|---|---|
+| New authorized sequence | Append once |
+| Identical repeat | Return prior receipt; no duplicate effect |
+| Same sequence/different content | Integrity incident; retain conflict |
+| Out-of-order delivery | Track observed and missing ranges |
+| Overflow | Record loss; never claim completeness |
+| Flush without terminal sequence | Flush observed, completeness unresolved |
+| Terminal sequence and no gaps | Complete |
+| Connection close without terminal evidence | Incomplete or unknown |
+| Late tail | Append at current head; revise assessment |
+
+Telemetry batching is permitted. Destructive trailing debounce is not.
+
+`ProducerCompleteness` contains producer ID, state, observed ranges, missing ranges, final sequence, and support.
+
+Complete requires an evidenced final sequence and no unresolved gap. Zero final sequence means an evidenced empty producer lifetime.
+
+### 7.5 SessionObservationValue
+
+All fields are populated:
+
+- Exact copied attempt observation publication or Missing.
+- Reference to that exact publication.
+- Producer completeness.
+- Observed-action references.
+- Confirmation-render references.
+- Late-evidence references.
+- Measurement evidence.
+- Infrastructure incidents.
+
+Each incident contains code, detail, and support.
+
+A late completeness correction creates a new observation revision but does not rewrite close-time knowledge.
+
+---
+
+## 8. External connector transformation
+
+### 8.1 Envelope and carrier
+
+A request contains record/version, request ID, connector ID, operation, call limit, and typed payload.
+
+A response contains record/version, matching request ID, connector ID, operation, and typed result.
+
+The proposed carrier is authenticated JSON `POST /connector`. It is not a claim that circus-tent natively exposes that route.
+
+All references are authorization-checked. IDs and digests are not bearer authority.
+
+### 8.2 Nine operations
+
+| Verb | Request payload | Result | Semantic boundary |
+|---|---|---|---|
+| Describe | Empty closed object | Connector descriptor | No probes, browsing, or certification |
+| Prepare | Scope, configuration, task, assistance, planning evidence, preparation measurements, runtime access | Prepared result | Non-executing |
+| Start | Preparation, logical key, accepted concerns, authority, recovery | Local start receipt | Not native acceptance |
+| Observe | Handle, cursor, cutoff, item limit, wait limit | Observation page | Journal-backed read |
+| RequestNativeCancel | Handle, reason, authority | Control receipt | Request is not effect |
+| CloseObservationConnection | Handle, reason, end flag, authority | Control receipt | Close is not cancel |
+| CollectArtifacts | Handle, selector | Inventory or chunk | No workflow rerun |
+| ReleaseNativeContext | Handle, context reference, authority | Control receipt | No silent purge/reset |
+| Contain | Handle, registered target, policy, reason, authority | Control receipt | Harness effect only |
+
+No Page, ElementHandle, DOM node handle, selector engine, or shared synchronous primitive is introduced.
+
+### 8.3 Descriptor and capability fields
+
+`ConnectorDescriptor` contains record/version, connector ID/version, build pin, binding pin, subject, capability descriptor, nine operation mappings, task mappings, observation channels, action grounding, execution substrate, limits, budget-accounting pin, and evidence prefix.
+
+Each operation mapping contains operation, implementation, native contract, capability references, evidence, and limitations.
+
+Implementation is connector-local, native-mapping, or unmapped. Handler existence does not establish native support.
+
+Each task mapping contains task type, input form, mapping pin, planning owner, recovery owner, and limitations.
+
+Minimum capability IDs:
+
+- `native_goal_task`
+- `native_plan_execution`
+- `native_cancel`
+- `native_context_release`
+- `native_artifact_retrieval`
+- `native_revision`
+- `native_dom_access`
+- `browser_state_isolation`
+- `browser_state_persistence`
+- `learning_state_control`
+
+Configured limits retain maximum call wait, observation items, request bytes, response bytes, artifact chunk bytes, queued tasks, and active tasks.
+
+These are declarations, not measured capacity.
+
+### 8.4 TaskEnvelope
+
+Every task contains:
+
+- Record/version.
+- Task ID/type.
+- Entry logical ID and URL.
+- Goal.
+- Success criteria with unique IDs/descriptions.
+- Named input artifacts and purposes.
+- Permitted origins with logical IDs.
+- Permitted interfaces.
+- Effect policy.
+- Budgets.
+- Context policy.
+- Output-schema pin or Missing.
+
+Apply uses commissioned-application effects and ordinary-browser access.
+
+Extract/discover tasks are read-only and require an output schema. Standalone extraction uses discovery scope, not a fabricated application attempt.
+
+Task budgets contain active limit, action limit, observation-byte limit, recovery limit, and model-token limit.
+
+Context policy independently describes browser and learning state. Each policy contains mode, required/best-effort designation, resource reference, and baseline artifact.
+
+Browser modes are fresh, reuse, subject-default, or inapplicable. Frozen is allowed only for learning state.
+
+The task excludes control credentials, hidden aliases, feature schedules, expected failures, private class maps, and oracle answers.
+
+### 8.5 Task hashing
+
+The semantic hash removes task ID, replaces entry URL with its logical ID, and replaces each permitted-origin URL with its logical ID. All other values and array order remain.
+
+Full task bytes, actual destinations, preparation, subject identity, permissions, and native request remain separately pinned.
+
+Equal semantic hashes do not authorize changed destinations or bypass commissioning checks.
+
+### 8.6 WorkScope and configuration
+
+`WorkScope` contains activity, run/journal/manifest identities, admission reference, attempt, commission artifact/reference, authorization references, and observation policy.
+
+Application work must resolve the exact commission and match subject mode, task, key, authority, and policy.
+
+`ConfigurationPin` contains connector ID/version, binding pin, subject, descriptor artifact, and descriptor reference.
+
+Every copied field is verified against the descriptor bytes.
+
+### 8.7 Prepare and PreparedTask
+
+`PrepareRequest` contains scope, configuration, task, assistance, planning evidence, preparation measurement evidence, and runtime-access entries.
+
+Runtime access contains purpose, opaque access reference, and authorization references. Purposes are application entry, account session, and input artifact. Secret bytes are not serialized here.
+
+`PreparedTask` contains:
+
+- Record/version.
+- Preparation ID.
+- Scope/configuration.
+- Complete task and semantic hash.
+- Assistance and planning references.
+- Runtime-access bindings.
+- Delivered-task artifact/hash.
+- Native-request artifact/hash.
+- Translation pin.
+- Budget mappings.
+- Concerns.
+- Evidence prefix.
+
+The five budget mappings are active observation, action count, observation bytes, recovery count, and model tokens. Each states enforcer, evidence, and limitations.
+
+Concerns contain ID, category, disposition, detail, and support. Categories cover native absence/unknown, unenforced budget, unverified state policy, assistance limitation, and observation limitation.
+
+Only informational or explicitly accepted nonblocking concerns produce startable preparation.
+
+Prepare does not browse, test login, reset context, invoke a planner, add sleeps, add selector alternatives, or repair a plan.
+
+Incomplete mapping returns `UNSUPPORTED_MAPPING`.
+
+### 8.8 Start and idempotency
+
+`StartRequest` contains preparation reference, logical idempotency key, accepted concern IDs, authorization references, and recovery.
+
+A preparation reference contains ID, artifact, and registration reference.
+
+A handle reference contains connector ID and local handle.
+
+`ConnectorHandle` contains record/version, handle reference, preparation reference, scope, logical key, and creation time.
+
+`StartResult` contains kind, disposition, complete handle, handle artifact, and receipt reference.
+
+Dispositions are locally accepted, existing handle, or authorized resume.
+
+Before native delivery, the connector durably records handle, immutable request binding, logical key, and dispatch intent.
+
+Command idempotency uses authenticated principal, connector ID, and request ID. Logical execution idempotency additionally uses the Start key and commission.
+
+Changing request IDs, callers, keys, or executors cannot give one commission a second logical execution.
+
+Resume requires existing handle/key, checkpoint artifact, evidenced native resume contract, recovery authority, same context/request, and open observation. It cannot repeat completed side effects.
+
+### 8.9 Observe
+
+A cursor contains handle, journal ID, sequence, and event hash. Zero begins before admission and has an inapplicable hash.
+
+A page contains kind, handle, original cursor, fixed cutoff, next scanned cursor, `has_more`, close reference, items, and limitations.
+
+Rules:
+
+- Items are unique and increasing.
+- Request cursor < item sequence ≤ next ≤ cutoff.
+- Next means last scanned position, including non-connector events.
+- `has_more` is exactly next < cutoff.
+- Continuation preserves cutoff.
+- Fixed cutoff requires zero wait.
+- Empty page does not mean termination.
+- Lost cursor history is explicit.
+- Oversized items error rather than disappear.
+- Late evidence requires a new live cutoff.
+
+### 8.10 ObservationItem alternatives
+
+Every item contains event reference, recorded time, provenance, payload, measurement evidence, and artifact references.
+
+| Kind | Required content |
+|---|---|
+| Native report | Channel, raw artifact, source event, source checks, mapping, normalized claims, limitations |
+| Context observation | Domain, requested-policy reference, realization, context reference, support, limitations |
+| Task output | Name, schema, content, completeness, support, limitations |
+| Incident | Code, scope, detail, support |
+| Control observation | Complete control record |
+| Lifecycle publication | Typed immutable publication reference |
+| Artifact available | Artifact slot |
+| Clock registered | Clock descriptor |
+
+Lifecycle references contain LIFE version, attempt, commission digest, axis, revision, owner domain, artifact, and registration reference. Connector-carried axes are dispatch, observation, and execution only.
+
+### 8.11 SourceChecks and normalization
+
+Source checks retain:
+
+- Authentication: verified, failed, unknown.
+- Correlation: matched, mismatched, unknown.
+- Trace correlation: matched, mismatched, not observed, inapplicable.
+- Verification-policy pin.
+- Actual matching-input names.
+- Evidence.
+
+Accepted claims require verified source and matched attempt correlation.
+
+Trace mismatch remains visible even when alternate correlation succeeds.
+
+Unverified/uncorrelated messages retain raw bytes but produce no accepted normalized claims.
+
+Native nulls, malformed bodies, unsupported shapes, explicit unknown, missing fields, and conflicting responses remain distinct.
+
+### 8.12 ControlObservation
+
+Every control record contains:
+
+- Control-event ID and operation ID.
+- Operation and target scope.
+- Disposition.
+- Time.
+- Authorization reference.
+- Capability reference or Missing.
+- Opportunity.
+- Request/response references.
+- Response checks.
+- Native claim references.
+- Effect references.
+- Known affected attempts.
+- Measurements.
+- Limitations.
+
+Dispositions are not requested, unsupported, requested, acknowledged, effect observed, or unknown.
+
+Cancel targets native execution; close targets observation connection; release targets native context; containment targets fixture authority, local process, deployment slot, or harness resources.
+
+Acknowledgement requires verified response evidence. Effect-observed requires independent effect evidence.
+
+`end_observation=false` closes only the native observation transport. `true` additionally begins bounded local finalization. Neither implies cancellation.
+
+Release failure cannot silently trigger containment.
+
+### 8.13 Artifact transfer
+
+Selectors are inventory, named artifacts, or bytes by digest/offset/max bytes.
+
+Inventory contains handle, slots, coverage, prefix, and limitations. Named requests return exactly those names, including Missing slots.
+
+Chunks contain handle, full digest/size, offset, returned count, canonical padded base64, chunk digest, EOF flag, and support.
+
+Verify decoded size, chunk digest, bounds, EOF arithmetic, and assembled full digest. Non-EOF success must advance. EOF may return zero bytes.
+
+Collection cannot fetch arbitrary URLs/paths, rerun actions, create sessions, or imply native retrieval support merely because local response bytes were captured.
+
+### 8.14 Error taxonomy
+
+Every connector error contains kind, code, fault domain, sanitized detail, operation delivery, retry guidance, retry-after declaration or Missing, handle or Missing, and evidence.
+
+Codes are:
+
+`INVALID_REQUEST`, `UNSUPPORTED_VERSION`, `UNAUTHENTICATED`, `FORBIDDEN`, `UNKNOWN_HANDLE`, `UNKNOWN_PREPARATION`, `STALE_PREPARATION`, `IDEMPOTENCY_CONFLICT`, `UNSUPPORTED_MAPPING`, `PREREQUISITE_UNAVAILABLE`, `BUDGET_EXCEEDED`, `NOT_ADMITTED`, `OBSERVATION_CLOSED`, `STALE_CONTEXT`, `RESOURCE_BUSY`, `STORAGE_UNAVAILABLE`, `DELIVERY_UNCERTAIN`, `CURSOR_INVALID`, `CURSOR_UNAVAILABLE`, `OBSERVATION_LOST`, `RESPONSE_TOO_LARGE`, `ARTIFACT_UNAVAILABLE`, `NATIVE_PROTOCOL_ERROR`, `INTEGRITY_CONFLICT`, `INTERNAL_ERROR`.
+
+Delivery concerns this operation only: not dispatched, may have dispatched, dispatched, or inapplicable.
+
+Retry guidance is same-command only, new command only if not dispatched, operator review, or do not retry.
+
+Observed native failure is normal Observe evidence, not automatically a connector failure.
+
+### 8.15 Initial circus-tent binding
+
+Established documentary mapping:
+
+- Recorded plan → `POST /run`.
+- Eligible extraction → `POST /extract`.
+- Optional operational observations → `GET /health`, `GET /shards`.
+- Results → terminal response and authenticated correlated callback.
+
+Not established:
+
+- Goal endpoint.
+- Native run polling.
+- Native cancel.
+- Fresh-context creation.
+- Context release.
+- Native revision endpoint.
+- Artifact-download endpoint.
+
+Actual native schemas and callback signing must be pinned from retained implementation evidence. Until verified, preserve raw observations without accepted authenticated claims.
+
+No speculative endpoint probe or pre-M1 live gate is introduced.
+
+---
+
+## 9. Lifecycle state transformations
+
+### 9.1 AxisRevision
+
+Every axis revision contains record/version, attempt, commission digest, axis, owner domain, writer, revision, previous revision, evidence prefix, support, and complete typed value.
+
+Exactly one authorized writer publishes each applicable axis. A report writer has no execution/application grant.
+
+### 9.2 Dispatch transitions
+
+| From | Allowed next |
+|---|---|
+| Unpublished | Not started, prepared, rejected |
+| Not started | Prepared, rejected |
+| Prepared | Dispatching, rejected |
+| Dispatching | Accepted, rejected, uncertain |
+| Uncertain | Uncertain, accepted, rejected |
+| Accepted | Accepted |
+| Rejected | Rejected |
+
+`DispatchValue` contains state, local handle, native ID, request digest, delivery references, acceptance references, recovery-authorization references, and reason.
+
+Guards:
+
+- Prepared requires request digest.
+- Dispatching requires durable handle/request/intent.
+- Accepted requires correlated native evidence.
+- Rejection after possible delivery requires non-acceptance evidence.
+- Lost acknowledgement yields uncertain.
+- Same-state revisions add evidence, not another execution.
+
+Legacy mapping:
+
+| Legacy | Shared |
+|---|---|
+| `prepared` | Prepared |
+| `dispatch_beginning` | Dispatching; uncertain after ambiguous crash |
+| `in_flight` | Dispatching or accepted according to evidence |
+| `dispatch_uncertain` | Uncertain |
+| `terminal_received` | Accepted plus separate execution claim |
+| `transport_closed` | Observation control, dispatch unchanged |
+| `timed_out` | Observation deadline, not native failure |
+| `contained` | Containment evidence, not execution outcome |
+
+### 9.3 Observation transitions
+
+| From | Allowed next |
+|---|---|
+| Unpublished | Not opened, open, closed |
+| Not opened | Open, closed |
+| Open | Open, draining, closed |
+| Draining | Draining, closed |
+| Closed | Closed |
+
+`ObservationValue` contains state, window ID, opened time, active deadline, drain start/deadline, closed time, close reason, close snapshot, cumulative controls, late evidence, and measurements.
+
+Reasons are normal completion, operator stop, local deadline, translation failure, launch failure, subject terminal, connection lost, or infrastructure interruption.
+
+Closed-first publication is valid for launch/translation failure.
+
+Closed-to-closed preserves original closure fields while appending late/cleanup evidence.
+
+### 9.4 CloseSnapshot
+
+Contains closure ID, boundary reference, known-version pins, execution knowledge/support, application knowledge/support, and limitations.
+
+Pins cover dispatch, execution, application, and report.
+
+Execution knowledge is running, terminal, unknown, or inapplicable. Application knowledge is committed, not committed, or unknown.
+
+Only boundary-available evidence supports the snapshot. Earlier running or absence evidence does not automatically establish close-time state.
+
+### 9.5 Execution history
+
+Execution publications contain cumulative immutable claims, not a latest-state overwrite.
+
+Each claim contains:
+
+- Claim ID/scope.
+- Claimed state or Missing.
+- Application assertions.
+- Native run/message IDs.
+- Raw report artifact.
+- Mapping pin.
+- Verified checks.
+- Made/received times.
+- Claimant-available evidence.
+- Support and limitations.
+
+States are running, completed, failed, stopped, or explicit unknown.
+
+Missing state is not an explicit unknown claim.
+
+Primitive claims have inapplicable execution state and no application assertions.
+
+Each commitment assertion has ID, value, temporal span, boundary reference, and support. Values are committed, not committed, or outcome unknown; spans are at boundary, after boundary, or entire attempt.
+
+Contradictory claims remain preserved.
+
+### 9.6 Application history
+
+Each origin fact contains:
+
+- Fact/origin/candidate/job IDs.
+- Committed or not-committed state.
+- At-boundary or final-for-attempt coverage.
+- Boundary reference.
+- Origin application ID/revision.
+- Receipt artifact.
+- Verification kind.
+- Verified checks.
+- Authority-seal reference.
+- Occurrence/receipt times.
+- Support.
+
+Hellscape uses local-origin-transaction verification.
+
+Final absence requires origin-owned finality, not observation timeout. Sealing must fence new mutations and account for already admitted transactions.
+
+An earlier as-of absence and later commitment are compatible.
+
+### 9.7 Report history
+
+`ReportValue` contains state, coverage, input pins, evaluator, comparisons, issues, limitations, and optional already-journaled diagnostic.
+
+Decided state is reconciled or contradicted. Undecidable/inapplicable state uses Missing.
+
+Coverage is complete, incomplete, or inapplicable.
+
+Each comparison contains claim/assertion IDs, claim reference, fact IDs/references, result, temporal relation, rationale, and limitations.
+
+Results are consistent, contradicted, not comparable, or indeterminate.
+
+Temporal relation requires same-clock evidence, causality, or documented origin sequence. Receipt order is insufficient.
+
+Issues include origin conflict, subject conflict, insufficient evidence, incomparable scope, untrusted observation, mapping error, and multiple commitments.
+
+Any proved contradiction yields contradicted. Otherwise unresolved comparisons remain incomplete/Missing. No subject claims yield inapplicable coverage, not an invented successful comparison.
+
+### 9.8 Manual axes
+
+Manual dispatch and execution remain revision zero with `Missing(not_applicable)`.
+
+The recorder owns observation. Human notes retain manual provenance. Fixture-origin transactions can establish commitment without inventing subject claims.
+
+### 9.9 Closure protocol
+
+At end/deadline:
+
+1. Stop workflow commands.
+2. Record cancel availability and any request separately.
+3. Record transport closure separately.
+4. Drain only within the commissioned bound.
+5. Request fixture-origin sealing.
+6. Close locally within the bound even if remote work continues.
+7. Freeze knowledge and pins.
+8. Accept authorized late evidence.
+9. Publish new owner/report revisions without reopening observation.
+
+Cancellation, connection closure, execution termination, application commitment, context release, and reporting remain independent.
+
+---
+
+## 10. DiagnosticDocument transformation
+
+### 10.1 Deterministic analysis
+
+Analysis uses only immutable manifest, named prefix, registered referenced evidence, and pinned classifier/registries.
+
+The prefix ends at `analysis_requested`, which fixes diagnostic ID, revision, classifier, requirement registry, and optional fix registry.
+
+No current time, mutable row, network lookup, unjournaled native response, or operator recollection is evidence.
+
+Stages are:
+
+1. Validate configuration and fixture invariants.
+2. Establish completeness and scoped validity.
+3. Join actions, requests, validations, transitions, claims, exposures, timings.
+4. Evaluate authoritative postconditions.
+5. Identify first unmet contract and downstream reachability.
+6. Produce typed findings.
+7. Render JSON and readable output from the same object.
+
+### 10.2 Root field mapping
+
+| DiagnosticDocument field | Source |
+|---|---|
+| Record/version | EK diagnostic |
+| Diagnostic ID/revision | Analysis request |
+| Run/manifest | Primary admission |
+| `input_prefix` | Exact request-ending prefix |
+| `analysis_request_ref` | Actual request event |
+| Classifier/requirement/fix registry | Complete pins or permitted Missing |
+| Attempt | Same practice context |
+| Execution | Admitted and journal-supported realized execution/assistance |
+| Delivered/native hashes | Actual retained bytes or reasoned missingness |
+| Validity | Scoped checks, completeness, incidents, limitations |
+| Capability descriptors | Registered artifact slots |
+| Requirement assessments | Independent capability/opportunity/result records |
+| Observed actions | Source-faithful projections |
+| Feature exposures | Per-instance receipts |
+| Steps | Contract-based step diagnostics |
+| Measurements | Supported complete measurements |
+| Claims | Original claims and semantic comparisons |
+| Findings | Evidence-backed typed findings |
+| Observation | Lifecycle reference summary |
+| Application | Authoritative summary at cutoff |
+| Behavioral/fingerprint profiles | Evidence-backed section or disabled Missing |
+| Artifacts | Named retained/missing slots |
+
+No overall attempt status or qualification field is added.
+
+### 10.3 Legacy root mapping
+
+| Legacy | Destination |
+|---|---|
+| Session ID | Session registration/artifact association |
+| Experiment group | Admitted configuration |
+| Task semantic hash | Manifest/task identity |
+| Build/frontend/feature digests | Build/configuration pins |
+| Version strings | `VersionPin` |
+| Journal cutoff/hash | `JournalPrefix` |
+| Imported evidence | Local import events |
+| Configuration object | Immutable task/configuration artifacts |
+| `validity.fixture` | Scoped fixture-validity check |
+| Native capabilities | Descriptor artifacts and references |
+| Lifecycle | LIFE publications and observation summary |
+| Application goal | `application.goal` |
+| State cutoff | Pinned application state/revision evidence |
+| Expectation met | Expected-outcome predicate |
+| Subject goal/state | Original claims, not synthesized scalar truth |
+| Detection flags | Supported behavioral profile/findings |
+| Eligibility | Versioned journaled eligibility decisions |
+| Reproduction bundle/hash | Separate export/replay artifacts |
+| Exact replay field | Independent ReplayReceipt |
+| Minimal reproducer | Artifact slot |
+| No-fix reason | Suggested-fix Missing reason/detail |
+
+### 10.4 Capability descriptor
+
+Fields are record/version, descriptor ID/revision, declaring principal, exact subject, catalog, evidence prefix, supersedes, and complete capabilities.
+
+Each capability has ID, requirement references, availability, claim origin, evidence basis/reference pairs, and limitations.
+
+Availability is present, absent, unknown, or inapplicable.
+
+Claim origin is native, composed subject, or harness.
+
+A new subject version starts unknown. Documentation may support a declaration but not a behavioral pass.
+
+### 10.5 RequirementAssessment
+
+Every assessment contains requirement ID, facet, contract version, scope, capability references, opportunity, result, support, contrary evidence, findings, and rationale.
+
+Opportunity contains state, support, and rationale. States are exposed, unexposed, or blocked.
+
+Results are satisfied, violated, native absence, indeterminate, or not exercised.
+
+| Legacy state | Transformation |
+|---|---|
+| Blocked result | Blocked opportunity plus not exercised or indeterminate |
+| Inapplicable result | Not exercised with applicability rationale |
+| Inapplicable opportunity | Evidence-based unexposed/blocked plus rationale |
+| Missing capability object | Explicit unknown catalog entry |
+
+Satisfied/violated requires valid exposed opportunity and applicable controls. Native absence requires exact-scope evidence of a required absent native capability.
+
+### 10.6 R1–R10 facet map
+
+| Requirement | Separate facets and evidence | Forbidden conclusion |
+|---|---|---|
+| R1 | Rendering, readiness, reachability, action effects, correctness, structural boundaries | Missing field interaction proves a private locator defect |
+| R2 | Cookies, local storage, IndexedDB, profiles, restart persistence, browser isolation, learning state; valid write controls | Failed write control proves non-isolation |
+| R3 | Primitive/task claims, errors, native timing, independent timing, postconditions | Native completed means application completed |
+| R4 | Native cancel availability; request/ack/effect timing; behavior after close; native/connector close reports; cleanup; final application state | Disconnect/kill/seal means native cancellation or rollback |
+| R5 | Local access, gates, recovery, transaction result | Local fixture success proves real-origin acceptance |
+| R6 | Capture validity, TLS/HTTP2, browser declarations, matched references | Missing capture is zero; inability to impersonate is automatically failure |
+| R7 | Input semantics, readiness, targeting, retries, modality, enabled policies | Fast typing/no mouse motion alone is failure |
+| R8 | Native DOM access, extraction fidelity, frame/root coverage, unsupported access | Visual completion proves native DOM access |
+| R9 | Deployment, endpoints, available operator egress evidence | Fixture-visible traffic proves no external calls |
+| R10 | Identity/configuration, interfaces, artifacts, patch ownership, longitudinal evidence | One session proves maintainability |
+
+For manual fixture validation, every R1–R10 result is `not_exercised` with rationale `manual_fixture_validation`.
+
+### 10.7 Findings
+
+Every finding contains ID, kind, requirement references, symptom, scope, causal role, trigger features, defect locus, attribution, support, contrary evidence, limitations, and suggested fix.
+
+Kinds are:
+
+- Native capability absent.
+- Requirement violation.
+- Claim contradiction.
+- Measurement discrepancy.
+- Observation.
+- Indeterminate.
+- Fixture error.
+- Harness error.
+
+Defect locus remains subject, external planner, connector, fixture, environment, policy, unknown, or inapplicable.
+
+Attribution remains confirmed, supported, suspected, or unknown.
+
+M1 fixes normally use `Missing(not_enabled)`. Insufficient support uses `Missing(not_observed)` with detail.
+
+A real fix reference contains registry pin, rule-instance ID, supporting evidence, and verification-plan artifact. It is not a claim that the fix was applied.
+
+### 10.8 Steps, attempts, and predicates
+
+A step contains ID, contract ID, status, attempts, authoritative postconditions, measurement references, and finding references.
+
+Statuses:
+
+| Status | Meaning |
+|---|---|
+| Passed | Contract satisfied |
+| Recovered | Earlier rejected attempt followed by accepted satisfaction |
+| Failed | Validly observed unmet contract |
+| Blocked | Earlier prerequisite made it unreachable |
+| Skipped | Explicit skip; not pass |
+| Unobserved | Insufficient observation or cutoff before exercise |
+
+Each attempt retains ordinal, disposition, support, postconditions, and measurement references.
+
+Each predicate retains ID, scope, truth, authority domain, and evidence. Truth is satisfied, unsatisfied, or unknown.
+
+Known truth requires actual owning-authority evidence. An incomplete trace cannot establish absence.
+
+### 10.9 Actions, exposures, and profiles
+
+Observed actions retain ID, kind, target/frame aliases, render generation, support, observed effect, provenance, and limitations.
+
+Feature exposures retain instance ID, configured, rendered/armed, exposed, activated, recovery observed, and support.
+
+Activated implies exposed. Exposed implies rendered/armed and configured. Unexposed features receive no behavioral credit.
+
+Analysis sections contain data and evidence references. Disabled behavioral/fingerprint analysis uses `Missing(not_enabled)`, not zero scores.
+
+### 10.10 Claims
+
+EK claims retain claim ID, source, semantic scope, proposition, made/received times, original evidence, claimant-available evidence, knowledge limitations, comparison, and comparison support.
+
+Rules:
+
+- `/run completed` initially maps to execution lifecycle.
+- Outcome unknown is not contradicted by later commitment.
+- Entire-attempt no-commit may be contradicted by verified commitment.
+- Stopped alone does not assert no commit.
+- Late receipt time alone does not establish late occurrence.
+- Adapter overclaim is a connector/harness defect.
+- Conflicts do not overwrite original bytes.
+
+### 10.11 Summaries and diagnostic domain
+
+`ApplicationSummary` contains goal, as-of journal sequence, predicates, commitment references, and confirmation references.
+
+Goal is completed, not completed, unknown, or inapplicable. The as-of sequence is not the reducer state revision.
+
+`ObservationSummary` contains opened/closed references, closure reason, lifecycle references, containment references, and late evidence.
+
+`SessionDiagnosticValue` contains diagnostic ID, analysis revision, diagnostic artifact, input prefix, application/observation input pins, classifier pin, and replay receipts.
+
+A new replay receipt may advance the diagnostic domain without modifying the selected diagnostic.
+
+Readers compare input pins with current source pins and display staleness.
+
+---
+
+## 11. Replay, export, archival, and retention
+
+### 11.1 Exact replay
+
+Exact fixture replay:
+
+1. Verifies manifest, chain, artifact, and source-import identities.
+2. Loads the exact pinned reducer and classifier.
+3. Consumes recorded external inputs and applicable lifecycle observations.
+4. Does not feed recorded derived outputs back as authoritative inputs.
+5. Unwraps imported source inputs without executing an import and its source twice.
+6. Recomputes semantic outputs and state.
+7. Re-derives the diagnostic using the original analysis request.
+8. Compares required hashes.
+9. Publishes a separate immutable receipt.
+
+Recorded timing remains input. Replay never sleeps or invokes a browser, subject, or external mutation.
+
+Live reproduction is a new attempt. Equal seed does not guarantee equal browser behavior.
+
+### 11.2 ReplayReceipt
+
+Every receipt contains record/version, replay ID, mode, run ID, manifest hash, source prefix, source diagnostic, input bundle, classifier, reducer, replay engine, comparisons, result, limitations, and three false invocation/write flags.
+
+Exact fixture mode requires semantic-event, final-state, and diagnostic comparisons.
+
+Diagnostic re-derivation requires only diagnostic comparison and inapplicable reducer.
+
+Each comparison has output, expected digest, actual digest or Missing, and matched/mismatched/unavailable result.
+
+Aggregate result is mismatched if any required comparison mismatches; otherwise unavailable if any is unavailable; otherwise matched.
+
+Missing inputs can never yield matched.
+
+### 11.3 Hash reconciliation
+
+EK journal prefix uses the last event hash, not the legacy hash of a canonical event array.
+
+Semantic event/state projections remain separately versioned fixture profiles. Runtime alias substitution is permitted only in those explicit semantic projections, never silently in EK record hashing.
+
+The full diagnostic is hashable without self-reference because replay status and bundle identity are separate records.
+
+### 11.4 Export bundle
+
+The M1 bundle retains the original human-readable layout:
+
+- `manifest.json`
+- `task.json`
+- `build-receipt.json`
+- `journal.jsonl`
+- `authoritative-state.json`
+- `timing-measurements.json`
+- `manual-observations.json`
+- `diagnostic.json`
+- `diagnostic.md`
+- `replay-receipt.json`
+- `acceptance-checks.json`
+- `artifacts/synthetic-document`
+
+It additionally includes all transitive contract-required dependencies: owner manifests/prefixes, configuration, commission, registrations, owner publications, classifier/reducer/registry artifacts, import verification evidence, and artifact inventory.
+
+Friendly filenames are bundle entries, not artifact identity. The bundle manifest binds names to exact digests and access classifications.
+
+### 11.5 Archive representation
+
+A retained complete session archive uses OWD’s:
+
+- `ArchiveStorageManifest`: encoding, version, entity, registration artifact, all domain slots, seal.
+- `ArchiveRecord`: record/version, root artifact, storage manifest, complete expanded `LogicalRow`.
+
+The root hashes the storage manifest, not the expanded wrapper.
+
+Expansion loads immutable local extents and reproduces the complete row, including Missing values and exact domain revisions. It does not query mutable peers.
+
+Job fetch-key replacement is not a Hellscape operation. If imported job archives are retained as fixture inputs, their original completeness and retention semantics remain intact.
+
+### 11.6 Retention
+
+Retained manifests, prefixes, diagnostics, replay bundles, rows, and archives protect all transitive dependencies.
+
+GC requires journaled proof that no retained root reaches the object and fencing against concurrent pin creation.
+
+TTL expiry or a newer publication alone does not release dependencies.
+
+Artifact loss records observation loss and preserves known identity. It is not successful GC.
+
+Credentials remain outside ordinary evidence payloads. Restricted native bodies and sensitive receipts remain access-controlled. Redaction creates a new artifact and cannot silently preserve an exact-replay claim requiring removed bytes.
+
+---
+
+## 12. Hostile-feature and composition mapping
+
+### 12.1 M1 cooperative profile
+
+M1 admits zero hostile features:
+
+- Visible ordinary labels and native controls.
+- Stable layout and semantic identities.
+- Light DOM controls.
+- No frame/root challenge.
+- No class churn, decoys, delayed hydration, or idle trap.
+- No injected transport failure.
+- No production challenge service.
+- No artificial timing race.
+- Normal validation, upload, identity, state transition, and submission guards.
+
+Readiness occurs after relevant controls render and enable. Network silence is not readiness.
+
+Autosave is not required. Later autosave/WebSocket behavior cannot displace reducer authority.
+
+### 12.2 Feature-pack contract
+
+Each later feature pack must pin:
+
+- Typed parameter domains.
+- Dependencies and exclusions.
+- Registered primitive recipes.
+- Human-completion or degradation contract.
+- Exposure/activation event kinds.
+- Expected failure signatures.
+- Regression cases.
+- Asset and schema digests.
+
+Manifests contain parameters and registered recipes, not executable JavaScript.
+
+No runtime eval, downloaded executable feature code, or native plugin loading is admitted.
+
+### 12.3 Complete catalog seam
+
+| Family | Exact mechanisms | Required evidence and limitations |
+|---|---|---|
+| Shadow structure | `shadow_dom`, `nested_shadow_dom`, `closed_shadow_root` | Root coverage and bounded depth; visible human path; closed-root instrumentation inside the owning component |
+| Frames | `same_origin_iframe`, `cross_origin_iframe` | Frame aliases, declared origins, frame/root observation coverage |
+| DOM/render identity | `dynamic_classes`, `node_replacement`, `async_routes`, `hydration_skeleton`, `content_visibility`, `virtualized_lists`, `asset_revision_skew` | Render generations and readiness; applicability to actually consumed channels |
+| Semantics/layout | `inconsistent_labels`, `icon_buttons`, `rtl_section`, `semantic_decoys`, `moving_fields`, `inert_sections`, `conditional_fields`, `repeater_reindex` | Targeting/layout/visibility evidence; inaccessible variants explicitly labeled |
+| Native interaction | `dnd_upload`, `upload_hidden_fallback`, `custom_controls`, `input_masks`, `interaction_overlays`, `before_unload_guard` | Transfer/input/widget/overlay/navigation evidence; hidden fallback is an affordance parameter, not automatically more hostile |
+| Validation/state races | `async_validation`, `validation_races`, `session_token_gate`, `reload_recovery`, `session_expiry`, `idp_verification` | Generation-bound validation, epoch/gate exposure, recovery evidence |
+| Application network | `network_idle_trap`, `network_faults`, `slow_endpoints`, `redirect_on_submit`, `websocket_state`, `submit_ambiguity` | Bounded faults/recovery; commitment never duplicated for realism |
+| Transport disruption | `connection_faults`, `websocket_faults` | Matched, scheduled, fired, and observed are separate; application-message reorder is not TCP-byte reorder |
+| Extraction/relevance | `extraction_ambiguity`, `instruction_decoys` | Hidden stale facts, visible ambiguity, and untrusted instructions remain distinct; destinations stay local |
+| Interaction policy | `honeypots`, `dom_fingerprint`, `behavioral_detection` | Evidence, not automatic maliciousness or general bot detection |
+| Fingerprint policy | `fingerprint_consistency`, `fingerprint_policy_simulation` | Real capture and synthetic detector input never share evidentiary labels |
+| Challenge lifecycle | `challenge.modes.*=simulated`, `challenge_orchestration`, local validators | Interruption, expiry, rejection, resumption; local verification only |
+| Simulated kinds | hCaptcha-shaped mocks, simulated `px` signature | No fabricated vendor verifier; no reCAPTCHA v3 without separate contract |
+| External widgets | `real_challenge_widgets` | Optional, unscored, outside deterministic adaptive sessions |
+
+Deprecated `simulated_challenge` is an import alias, not another mechanism.
+
+### 12.4 Exposure state progression
+
+The lifecycle is:
+
+Configured → rendered/armed → exposed → activated → recovered or unresolved.
+
+Each state change has per-instance supporting evidence.
+
+Configured-only features are not exercised. A scheduled fault is not a fired fault. A fired fault is not necessarily an observed subject effect.
+
+Mode applicability is explicit. Class churn does not test a coordinate-only path unless another consumed channel depends on classes. Vision-based execution still uses a network connection.
+
+### 12.5 Compiler rejection rules
+
+Completion tasks are rejected if they:
+
+1. Hide required controls without a human path.
+2. Require an observational mock to satisfy verification.
+3. Permanently reject every required verifier.
+4. Exceed budget by construction.
+5. Remove all recovery while requiring recovery.
+6. Require unavailable fixture browser capability.
+
+Permanent rejection may be valid for explicitly commissioned graceful degradation.
+
+Undeclared fixture failure invalidates the affected opportunity. It is a fixture bug, not extra hostility.
+
+Fast-campaign artificial delays are generally bounded to at most 5000 ms. Longer waits require a separately declared soak profile.
+
+### 12.6 Curriculum and recommendations
+
+Curriculum consumes versioned finalized evidence and journaled operator decisions.
+
+It creates new manifests only.
+
+Per-subject lineages remain parallel and non-alternating. Subject version, assistance, context policy, and feature exposure remain attribution boundaries.
+
+Inner variant proposals and outer reviewed fix proposals are separate features. A proposed fix requires reviewed rule-class authority and supporting evidence. No automatic subject patching is introduced.
+
+---
+
+## 13. Qualification evidence migration
+
+### 13.1 Preserved discipline
+
+| Qualification axiom | Shared enforcement |
+|---|---|
+| None is not success | Missing/claim normalization |
+| Protocol acknowledgement is not semantic success | EXT control evidence and LIFE origin separation |
+| Harness timeout is not native timeout | Separate clocks, ownership, lifecycle reasons |
+| HTTP 200 is not authentication | SourceChecks and channel authentication |
+| Skipped required step is not pass | Step status and assessment rules |
+| Missing dependency is not driver failure | Prerequisite/environment finding |
+| Forced termination is not cancellation | Explicit containment |
+| Human assistance is not unattended completion | Assistance and manual-mode descriptors |
+| Loopback fixtures are not real portals | Practice/held-in partitioning |
+
+### 13.2 Retired surfaces
+
+The standalone qualification package, campaign runner, CLI gate, exit-code qualification system, display-allocation scheme, and driver-selection wrapper are not Hellscape runtime dependencies.
+
+Specific migration:
+
+| Legacy surface | Disposition |
+|---|---|
+| `events.jsonl`, manifests, reports | Import with checksums and historical scope |
+| Stack/environment/API matrices | Scoped documentary capability evidence |
+| T3 actions | Relevant fixture/connector conformance cases |
+| T4 supervision/offline | Lifecycle, closure, interruption corpus |
+| T5 persistence | R2 controls and durable-state tests |
+| T6 fingerprint | Later capture-validity corpus |
+| T1 live journeys | Not imported as Hellscape production execution |
+| `doctor`, `plan`, `run`, `compare`, `manual prepare` | Retired CLI surfaces; no shared protocol requirement |
+| Exit codes 0/1/2/3/4/130 | Historical process outcomes, not attempt-axis values |
+| Qualification statuses | Exact historical scope only, not current subject certification |
+| Xvfb/noVNC and reserved displays | Optional operator tooling, not contract identities |
+| Private profiles/journeys/data | Remain private; no automatic import |
+| Worker-only SDK import discipline | Retained for isolated tests and non-executing preparation |
+| Operator-provided browser binaries | Provenance declaration; no fabricated provisioning evidence |
+
+Historical nodriver, patchright, camoufox, and blocked pydoll records retain their actual versions and prerequisite conditions. They do not populate a new descriptor by inheritance.
+
+The old physical final-submission rule does not prohibit automated submission to a synthetic Hellscape fixture. It also does not authorize production automation.
+
+### 13.3 Historical observations
+
+| Historical finding | Permitted carried-forward conclusion |
+|---|---|
+| `/run` consumes explicit steps | Planning ownership must be separate |
+| Repaired page-lifetime defect and successful short check | Legitimate tested execution binding, not full SPA certification |
+| Cancel routes returned 404 | Historical scoped native absence evidence |
+| Disconnect followed by side effect/callback | Close, execution, commitment, and reporting are independent |
+| `_elapsed()` returned zero | Preserve reported zero; measure independently |
+| Cross-session marker with invalid write control | Signal retained; non-isolation not established |
+| Five eligible samples per hold level, concurrency three without pressure | Bounded microtask observation, not maximum capacity |
+| Blanket 429 diagnosis | Admission/configuration defects are not browser capacity |
+| Callback trace mismatch | Authentication and correlation remain separate |
+| MCP redirect/inconclusive initialization | Inconclusive, not unsupported or successful |
+| No native revision/artifact contract | Operator-attested identity and explicit artifact missingness |
+
+The named raw historical files were not supplied with the source set. Their descriptions are documentary evidence until originals are imported. This does not block M1 or manual production work elsewhere in the portfolio.
+
+---
+
+## 14. Failure, restart, and late-evidence behavior
+
+### 14.1 Failure matrix
+
+| Failure | Durable outcome |
+|---|---|
+| Invalid admission | Refusal; no fabricated admitted session |
+| Application initialization failure after admission | Interrupted/incomplete diagnostic |
+| Translation failure | Dispatch rejection where non-delivery is established; no subject failure claim |
+| Crash before native dispatch intent | No delivery assertion |
+| Crash around delivery | Dispatch uncertain; no automatic resend |
+| Native response lost | Execution/application unknown unless separate evidence exists |
+| Telemetry overflow | Application facts preserved; observation loss explicit |
+| Application commit succeeds, publication fails | Source remains committed; read view remains older |
+| Observation store fails | Stop trusting completeness; application owner remains independent |
+| Diagnostic store fails | No fabricated diagnostic; retained source evidence supports later recovery |
+| Upload bytes installed, transaction fails | Orphan eligible for safe GC |
+| Transaction acknowledged, engine restarts | Operation remains durable; no duplicate action |
+| Late callback | Append and reanalyze; original close snapshot unchanged |
+| Lost artifact bytes | Preserve identity, record loss, replay unavailable where required |
+| Context release unsupported | Typed unsupported control; no silent kill |
+| Containment succeeds | Harness effect only; no rollback claim |
+
+### 14.2 Restart rules
+
+On restart:
+
+1. Register a new boot clock.
+2. Restore application state from owner-local committed state/evidence.
+3. Fence unfinished local observation epochs.
+4. Mark unfinished sessions infrastructure-interrupted.
+5. Recover ambiguous dispatch as uncertain.
+6. Do not replay side-effecting native requests.
+7. Apply admitted fixture authority policy through the application owner.
+8. Record producer-tail uncertainty.
+9. Generate interrupted analysis when storage is available.
+
+No cross-boot monotonic subtraction or UTC-derived downtime is used.
+
+If worker leases are introduced, use EK lease fencing, owner epochs, input/entity revisions, bounded authority-clock expiry, and at-most-once retry charging. Lease expiry never proves external work stopped or permits blind resubmission.
+
+### 14.3 Storage backpressure
+
+Persistence failure stops new admission where durability cannot be trusted.
+
+Existing source owners remain independently accountable for their own acknowledgements.
+
+An unpersisted tail is never called complete. Error reporting must not fabricate event references when the store cannot append.
+
+Bounded queues reserve progress for close/control handling. Accepted queued work consumes its active observation budget; no workflow delivery begins after that boundary.
+
+### 14.4 Late-evidence truth cases
+
+| Close-time evidence | Later evidence | Required interpretation |
+|---|---|---|
+| Outcome unknown | Commitment | Compatible uncertainty |
+| Entire-attempt no-commit claim | Verified commitment | Contradiction |
+| Stopped claim only | Commitment | No automatic no-commit contradiction |
+| No side effect observed | No termination evidence | Indeterminate execution |
+| Authenticated callback, unknown correlation | Terminal-looking body | Receipt evidence, not accepted attempt claim |
+| Trace mismatch, strong alternate correlation | Verified matching run/attempt evidence | Accepted claim with trace defect retained |
+| Fixture sealed after no commit | Later telemetry says submitted | Telemetry cannot manufacture commitment |
+| Commitment before close, rendering tail lost | No render receipt | Committed application; rendering unknown |
+
+---
+
+## 15. Product-obligation traceability
+
+| Obligation | Seam implementation |
+|---|---|
+| H1 Adaptive selection | Future manifests from finalized versioned evidence and operator decisions |
+| H2 Sustained testing | Bounded repeated/concurrent admission; published workload/hardware; separate attempted, eligible finalized, completed, early-failure, and unexposed counts |
+| H3 Bounded escalation | Typed features, solvability checks, exposure receipts, degradation objectives |
+| H4 Diagnostic per admitted session | Durable admission ledger, failure finalization, interrupted recovery, explicit storage limitations |
+| H5 Evidence-backed recommendations | FixReference or reasoned Missing; reviewed rules |
+| H6 Reproducibility | Pinned inputs, ordered journal, deterministic reducer/classifier, separate live reproduction |
+| H7 Ordinary browser interface | Standard SPA controls/protocols; no subject plugin |
+| H8 Human usability | Cooperative path or declared degradation objective |
+| H9 Single deployable engine | Go laboratory services and embedded SPA; browsers/connectors remain external authorities |
+| H10 Framework agnosticism | Shared nine-verb connector; native bindings remain independent |
+
+The target remains at least 100 eligible finalized sessions per hour under a published workload/hardware profile. It is not a measured M1 result.
+
+Immediate launch-failure loops do not satisfy it.
+
+All performance counts and measured rates are typed measurements with declared scope and origin. Historical concurrency three is not a target capacity certificate.
+
+---
+
+## 16. Conformance specification
+
+### 16.1 Structural and semantic gates
+
+Every suite validates JSON Schema 2020-12 with format assertions and all applicable EK, LIFE, EXT, and OWD rules.
+
+Reject:
+
+- Duplicate YAML/JSON mapping keys.
+- Non-JSON values.
+- Non-finite numbers.
+- Unknown record versions.
+- Unknown closed-object fields.
+- Bare normalized nulls.
+- Missing required fields.
+- Invalid digest/reference/size arithmetic.
+- Unauthorized writer or producer.
+- Cyclic self-registration.
+- Regressing current publication pointers.
+- Evidence beyond the diagnostic prefix.
+
+A schema pass alone is not conformance.
+
+### 16.2 Evidence and timing corpus
+
+| Test | Required result |
+|---|---|
+| Missing duration | Unavailable with reason |
+| Explicit native zero | Exact subject-reported zero preserved |
+| Cross-clock endpoints | Rejected as exact measurement |
+| Cross-boot endpoints | Rejected as exact measurement |
+| Missing native endpoints | Opaque report clock; no invented coordinates |
+| Comparable endpoint difference | Arithmetic matches serialization resolution |
+| Bounded interval | At least one bound; ordered if both |
+| UTC clock adjustment | No effect on elapsed arithmetic |
+| Aggregate runtime | No invented per-step split |
+| Manual pause | Appears in workflow interval, not native primitive |
+| Lost producer tail | Incomplete/unknown, not complete |
+| Conflicting producer sequence | Integrity incident |
+| Client-authored server fields | Rejected |
+| Telemetry submission/identity success | Rejected as unauthorized event |
+| Historical import | Historical-unscored |
+| Synthetic backend | Synthetic evidence |
+| New subject version | Complete unknown catalog until supported |
+
+### 16.3 Storage and publication corpus
+
+| Test | Required result |
+|---|---|
+| Observation writer held busy | Application operations do not wait on its database lock |
+| Diagnostic computation/serialization saturated | Application/observation owner writes remain independently admitted |
+| Application writer busy | Telemetry ingestion remains independent |
+| Large source publication transfer | Source acknowledgement does not await transfer |
+| Partial transfer | Previous complete view remains visible |
+| Corrupt publication bytes | No pointer advance |
+| Reordered publication | No rollback |
+| Same revision/different bytes | Integrity conflict |
+| Same revision/same bytes | Idempotent receipt |
+| Seal race | One exact complete vector, never mixed partial bodies |
+| Crash before artifact installation | No acknowledged reference |
+| Crash after installation before commit | Orphan only |
+| Crash after operation commit before response | Idempotent response recovery |
+| Crash after owner commit before publication | Source durable, view stale |
+| GC concurrent with pin creation | Fenced protection; no retained-byte deletion |
+| Archive expansion | Exact complete logical row, no mutable-peer lookup |
+| Lost published bytes | Observation loss, not revision zero |
+| Cross-database write attempt | Rejected by architecture/tests |
+| Analyzer attempts source mutation | Authorization failure |
+
+### 16.4 Connector synthetic corpus
+
+M1 must cover:
+
+1. Terminal success.
+2. Terminal failure.
+3. Nullable native fields.
+4. Malformed results.
+5. Native capability absence.
+6. Connection close followed by later callback.
+7. Conflicting response/callback claims.
+8. Unavailable native step timing.
+9. Explicit zero reported timing.
+10. Unsupported context release.
+11. Bounded local finalization while remote work continues.
+
+Additional boundary tests cover:
+
+- Prepare performs no browsing/planning/reset.
+- Start returns before native completion.
+- Handle and intent precede native delivery.
+- Same logical Start returns the same handle.
+- Changed request under a command key conflicts.
+- Changed subject/configuration rejects stale preparation.
+- Required unsupported state policy rejects preparation.
+- Missing cancellation is not a universal admission blocker.
+- Uncorrelated authenticated callback produces no accepted claim.
+- Alternate correlation preserves trace mismatch.
+- Observe pagination scans non-observation positions correctly.
+- Fixed cutoff is stable while late evidence arrives.
+- Oversized observation is not silently dropped.
+- Artifact chunks obey progress/digest/EOF rules.
+- Release does not silently contain.
+- Containment target and authority are verified.
+- Read-only extraction cannot mutate the application.
+- No resume after draining/closure.
+- No speculative native endpoint is invoked.
+
+### 16.5 Lifecycle and diagnostic corpus
+
+Required cases include:
+
+- Local accepted Start without native acceptance.
+- Delivery uncertainty after crash.
+- Native completion without application commitment.
+- Application commitment without confirmation rendering.
+- Close-time unknown followed by commitment.
+- Entire-attempt no-commit contradicted by commitment.
+- Stopped claim without no-commit assertion.
+- Invalid isolation write control.
+- Missing dependency classified as prerequisite/environment.
+- Adapter overclaim classified at connector/harness locus.
+- Unexposed feature receives no pass/fail credit.
+- Fixture defect invalidates only affected opportunity.
+- Contradictory native messages remain cumulative.
+- Manual dispatch/execution remain unpublished/inapplicable.
+- Report input pins become visibly stale after new facts.
+- Late evidence creates a new diagnostic revision.
+- Old diagnostic bytes remain unchanged.
+- Replay mismatch and unavailable remain distinct.
+- Replay invokes no external effect.
+
+### 16.6 Fourteen-step manual acceptance
+
+| Step | Operator action | Required evidence and interpretation |
+|---|---|---|
+| 1 | Open ordinary entry URL | LISTING readiness observation |
+| 2 | Select specified job | Selection transaction; DETAIL |
+| 3 | Enter/save valid contact | Current accepted contact; CONTACT |
+| 4 | Continue to history | Contact-currency check; HISTORY |
+| 5 | Submit end date before start date | Rejected history attempt |
+| 6 | Observe visible error | UI error observation; state remains HISTORY |
+| 7 | Correct and save | Accepted history; UPLOAD; recovered step |
+| 8 | Upload supplied document | Durable exact bytes/digest; IDENTITY |
+| 9 | Activate local identity control | Server-origin attempt/epoch verification; REVIEW |
+| 10 | Inspect/validate review | Current prerequisite references |
+| 11 | Pause at recorded checkpoint | Authenticated markers and independent monotonic reference |
+| 12 | Submit once | Exactly one authoritative commitment; CONFIRMATION |
+| 13 | Read confirmation | Rendering evidence separate from commitment |
+| 14 | End observation and bounded flush | Closed observation, completeness assessment, fixture seal, diagnostic |
+
+The resulting assertions are:
+
+1. Intended final workflow postconditions are satisfied.
+2. Application goal is completed.
+3. Expected-outcome predicate is satisfied.
+4. Invalid history attempt remains in attempts.
+5. History status is recovered.
+6. Ordinary validation rejection is not attributed to a subject.
+7. Timed pause appears in the appropriate workflow interval.
+8. Manual reference agreement uses declared marker uncertainty only.
+9. Exactly one application committed.
+10. Accepted values and document digest match the synthetic task.
+11. Identity verification has application-origin authority.
+12. Rendering and commitment are independently cited.
+13. No subject or native duration is fabricated.
+14. R1–R10 remain not exercised.
+15. Exact fixture replay returns matched.
+16. Every diagnostic reference resolves within its prefix and retained dependency graph.
+
+### 16.7 Companion manual cases
+
+| Case | Required characterization |
+|---|---|
+| Stop before submit | Authoritative not-completed at cutoff; no receipt; downstream blocked/unobserved appropriately |
+| Repeat submit | One commitment; identical operation returns original receipt |
+| End with incomplete field | Honest partial state, no fabricated field failure |
+| Close browser before flush | Server facts retained; client tail incomplete |
+| Restart after acknowledged operation | Durable operation; interrupted observation; no duplicate action |
+| Replay first walkthrough | Identical semantic outputs, state, and deterministic diagnostic |
+
+### 16.8 Silo acceptance
+
+Before peer integration:
+
+- Hellscape passes EK, LIFE, EXT-consumer/reference-corpus, and OWD session tests using synthetic peers.
+- The connector implementation passes its own EXT suite.
+- No live circus-tent or Ringmaster deployment is needed for M1 acceptance.
+- No crawler, orchestrator, dashboard, Firebase service, or production origin is required.
+- A failure of assembly after silo conformance is treated as a contract or conformance-gap investigation, not hidden ad hoc plumbing.
+
+---
+
+## 17. Completion criteria and required implementation artifacts
+
+Track 2.4 is complete only when the implementation and tests provide all of the following:
+
+1. Three independent SQLite WAL databases named `application.db`, `observation.db`, and `diagnostic.db`.
+2. Owner-local atomic writes and asynchronous publication without cross-database transactions.
+3. Complete immutable session application, observation, and diagnostic domain revisions.
+4. Exact version-vector `LogicalRow` compositions and publication receipts.
+5. Practice/laboratory/held-in enforcement at every relevant seam.
+6. Complete EK manifests, journals, diagnostics, capability descriptors, and replay receipts.
+7. LIFE commissioning and five-axis publications without a composite attempt status.
+8. EXT integration through exactly nine verbs.
+9. Explicit native mapping limitations, including the initial circus-tent unsupported surfaces.
+10. Complete reasoned missingness and registered-clock measurement handling.
+11. Application idempotency, generation fencing, upload durability, identity binding, and single-commit protection.
+12. Observation provenance enforcement, sequence deduplication, gap/loss visibility, and bounded drain.
+13. Immutable close-time knowledge and append-only late evidence.
+14. Manual R1–R10 not-exercised assessments.
+15. Separate commitment and confirmation-render evidence.
+16. Deterministic diagnostic reduction over an analysis-request-ending prefix.
+17. Offline exact replay with no browser, subject, or external writes.
+18. Complete retained export dependencies and concurrency-safe GC protection.
+19. Passing manual walkthrough, companion cases, synthetic connector corpus, and owner-isolation tests.
+20. Published evidence of what was tested, what remains disabled, what remains unknown, and which contract versions were used.
+
+The required code and schema responsibilities are:
+
+| Area | Responsibility |
+|---|---|
+| `internal/manifest` | Validation, canonicalization, configuration/task compilation |
+| `internal/application` | Reducer, guards, state snapshots, origin facts |
+| `internal/session` | Admission saga, local bounds, interruption/finalization |
+| `internal/journal` | Owner-local append, hash chains, reference resolution |
+| `internal/artifacts` | Durable content addressing, authorization, retention |
+| `internal/observation` | Ingress, provenance, completeness, imports |
+| `internal/diagnostic` | Deterministic assessment and readable rendering |
+| `internal/connector/contract` | EXT validation and typed consumer boundary |
+| `internal/connector/lifecycle` | Reference lifecycle implementation and synthetic tests |
+| `internal/connector/circustent` | Versioned native translation without invented operations |
+| `internal/replay` | Offline reducer/classifier re-derivation |
+| `internal/control` | Authenticated commands and read surfaces |
+| `web/src/application-client` | Ordinary API use and structured response handling |
+| `web/src/telemetry` | Bounded sequenced fixture observations |
+| `schemas` | Pinned application/event payload schemas and contract bindings |
+| `migrations` | Three-database schema and lossless legacy transformations |
+| `testdata` | Tasks, synthetic documents, native-response vectors, diagnostic goldens |
+
+No acceptance check may substitute a default success, a missing-value zero, a connector declaration, a historical qualification, or a practice receipt for the evidence the corresponding boundary requires.

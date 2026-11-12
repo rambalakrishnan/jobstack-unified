@@ -1,0 +1,71 @@
+# Verification — conformance/00-evidence-kernel.md (turn 2)
+
+## Overall assessment
+
+The file is a complete, well-structured conformance suite for the accepted
+`contracts/00-evidence-kernel.yaml` contract. It covers structure,
+missingness, journal/durability, provenance, timing, capability/assessment,
+diagnostic/claims, replay, lease, artifacts, manual M1 acceptance, a full
+rule-to-case coverage index, and a test-run verdict gate. Epistemic
+discipline is strong throughout: substantive claims carry tags, invented
+corpus values (timing vectors, lease coordinates, CLI shape, exit codes,
+verdict names) are marked `[proposed]`, and spot-checked extractions
+(wire version, revision bound, canonicalization profile, null reasons,
+manual rationale, eight-state workflow, orthogonality enums, EK rule IDs)
+trace to the cited contract or sources. The tree file is byte-identical to
+the raw deliverable's inner content. The file is acceptable as-is.
+
+## Protocol compliance
+
+- Raw deliverable opens with ```` ```markdown:conformance/00-evidence-kernel.md ````
+  and closes with ```` ``` ````, with no content outside the fence.
+- The developer prompt extract available here truncates mid-protocol
+  (`<content>` with no closing-fence or marker specification visible), so no
+  turn-end marker requirement is observable; nothing in the raw violates what
+  is specified.
+- Tree file holds the 400-line inner content only, matching the raw exactly
+  (verified by diff).
+
+## Completeness
+
+Ends at a coherent boundary (§15 final gate, portfolio-purpose close). Not
+truncated.
+
+## Structure
+
+Matches the manifest item: organized `EK00-*` case families (S, N, J, P, T,
+C, D, R, L, A, M) with class/layer, exercise, and required result; fixture
+families; verification layers S/I/B/D/R; orthogonality matrix; record and
+semantic-rule coverage index (§14 maps all six record types plus ingress and
+all 18 contract `EK-*` rules to case families); evidence-package and verdict
+gate.
+
+## Epistemic discipline and fabrication spot-checks
+
+- ~218 epistemic tags; every substantive claim observed carries one.
+- Verified against contract/sources: `evidence-kernel/0.1.0` (contract
+  `const`), `kernel-jcs-sha256/1` (contract `x-canonicalization`),
+  `9007199254740991` (contract numeric bounds), six null reasons plus
+  `manual_fixture_validation`-as-rationale (contract reconciliation),
+  eight-state workflow (Hellscape blueprint), capability/opportunity/result
+  enums (handoff), `EK-MANUAL` / `EK-LEASE-RESTART` rule IDs (contract).
+- No fabricated citation found. New test vocabulary (verdicts, exit codes,
+  fixture names, vectors) is consistently proposed, not passed off as
+  extracted.
+
+## Scope and cross-file consistency
+
+- Stays on the evidence-kernel item; owner-separated fetch-key/seal-point
+  detail correctly deferred to its own suite (§11 note).
+- Naming and references (`EK00-` prefix, layers, `x-validation` /
+  `x-semantic-rules` / `x-canonicalization`, `EventSubmission` vs durable
+  roots) are consistent with the accepted contract. No silent handoff
+  amendment.
+
+## Concerns
+
+None. No blocking, concerning, or cosmetic issues warranting changes.
+
+## Recommendation
+
+Accept as-is.

@@ -1,0 +1,48 @@
+# Review: contracts/03-internal-browser-binding.yaml (turn 7)
+
+## Overall assessment
+
+The file delivers exactly what the manifest item calls for: two independent, per-browser synchronous primitive schemas (BrowserOxide and Camoufox) in one multi-document YAML file, each with its own primitive set, capability catalog, invariants with derivations, reconciliation notes, and shared-evidence shapes copied from the accepted kernel and connector. Epistemic discipline is strong throughout — every substantive node carries `x-status`/`x-source`, all operation names are explicitly fenced as contract proposals rather than claims about existing methods, and spot-checked extraction citations verified against the sources. The file is acceptable with only cosmetic notes.
+
+## Protocol compliance
+
+Verified clean. Raw deliverable `runs/turn8-20/deliverables/turn7.md` opens with ```` ```yaml:contracts/03-internal-browser-binding.yaml ````, closes the fence at line 2871, and ends with `<!-- TURN_END:7 -->` with the correct item number; nothing sits outside the fence except the marker. The tree file is byte-identical to the raw inner content (diffed, IDENTICAL). The file ends at a coherent boundary (the `CFPrimitiveTranscript` description and `x-source` at lines 2859–2869), not mid-thought.
+
+## Structure
+
+Matches the design-conversation intent ("One schema per browser (BrowserOxide, Camoufox), not one shared schema. Each is synchronous and primitive-shaped. Each declares its own primitive set and capability descriptor."). Document 1 (lines 1–1394, `$id` `...:browseroxide:0.1.0`) and Document 2 (lines 1396–2869, `$id` `...:camoufox:0.1.0`) each carry `x-contract`, `x-boundary`, `x-representation`, `x-source-reconciliation`, `x-native-catalog` (with `flip_condition`), `x-rules` (11 BO + 10 CF invariants, all with `derivation`), `x-open-evidence`, entrypoint `oneOf`, and `$defs`. Both declare conformance suite `conformance/03-internal-browser-binding.md` with distinct `suite_instance` values, matching the "runs once per browser" direction.
+
+## Verification performed
+
+- **Anchor/reference integrity:** both documents resolve all YAML anchors (no dangling aliases) and all `#/$defs/...` references (57/57 in doc 1, 62/62 in doc 2). Each document is self-contained with no cross-document references, honoring the "no shared `ElementHandle`, no cross-browser abstraction" invariant.
+- **Cardinality:** `BOPrimitive` has 14 entries and `BOBindingDescriptor.primitive_mappings` requires exactly 14; `CFPrimitive` has 13 entries and `CFMapping` requires exactly 13. No raw `null` outside `Missing.value` (grep for bare nulls returned nothing).
+- **Extraction spot-checks (all confirmed in sources):** `Page::from_html` / `Page::challenge_verdict` / `reset_for_reuse` / `navigate_with_init(client)` / `HttpClient::shared(profile)` / ordinary `HttpClient::clone` (blueprint §§3, 9–10); six-value render verdict `Pass/ThinShell/RenderIncomplete/EdgeBlock/SensorFail/ChallengeIncomplete` (blueprint §3); "`Page` is not an operational superset of `HttpClient`" quoted nearly verbatim (blueprint §3.2); `SharedSession`/Set-Cookie serialization (blueprint §3.6); owning-OS-thread confinement (blueprint §9); write-action stub and Oregon self-referral counterexample (blueprint §13-context OR-B walk); Stagehand-on-Juggler failure, `_elapsed()` defect, no-inheritance rule, and per-binding direct-DOM test (handoff Parts III, V, VI, VIII); fingerprint immutability, flush sequence, PID-reaped exit wait (circus-tent-arch §§5.2–5.3, 6); open-shadow uncloaking and frame flattening (arch §5.4); `set_input_files`/DataTransfer upload paths (arch §5.6); network-idle/DOM-quiet heuristics vs. Hellscape's `network_idle_trap` and "Network silence is not its readiness contract" (Hellscape §§6.3, 9.2); perceptual-hash coordinate cache (arch §§5.6–5.7); qualification evidence discipline (None/ack/timeout non-evidence).
+- **Precedence:** the one genuine conflict (arch's async Playwright implementation vs. the handoff's synchronous primitive boundary) is resolved in favor of the handoff with an explicit reconciliation entry (lines 1486–1492), not a silent override. Both documents state "No handoff amendment is introduced," which is accurate — nothing here displaces a handoff decision.
+- **Cross-file consistency:** `Missing` (six reasons), `EvidenceRef` (five fields), `Measurement` (all 15 required fields), scope enum (including `native_primitive`), `DurationLimit`, `ComponentIdentity`, `SubjectIdentity`, and `CapabilityDescriptor` shapes match the accepted kernel/connector exactly; version pins `evidence-kernel/0.1.0` and `external-connector/0.1.0` match the actual prior `x-contract` versions. Ringmaster packaging is kept explicitly open (lines 52–56), per the governing task. No scope drift into PRD, crawler, or Hellscape territory.
+- **Fabrication screen:** all `bo.*`/`fx.*` operation names, failure-code enums, and capability IDs are `proposed` under the `*w` wire anchor, whose text explicitly disclaims them as "contract proposals, not assertions that these exact Rust methods already exist." No invented URLs, endpoints, signatures, or timeouts found.
+
+## Concerns
+
+### 1. Imprecise source anchor on the JSON-validation clause
+- **Location:** `x-rules` → `BO-OFFLINE` consequence, lines 204–209 ("Structured JSON must be validated and normalized before an HTML-only render classifier receives it"), `x-status: extracted`, `x-source: *a` (§§3, 7–8, 13).
+- **Why:** the substance exists in the blueprint (§11 logical typing: "`json`: structurally validated JSON"; §7's normalized extraction envelope), but the cited anchor `*a` does not include §11, and I could not locate a "render classifier" receiving JSON specifically in §§7–8. The claim is true-to-source but the citation is incomplete.
+- **Severity:** cosmetic.
+
+### 2. Inference phrased inside an extracted rule
+- **Location:** `x-rules` → `BO-REUSE` consequence, lines 268–272 ("no pool reset proves browser-state isolation"), `x-status: extracted`, §§9.6/10.
+- **Why:** the reset/quarantine/cold-bootstrap mechanics are directly extracted from the §10.1 lifecycle table and §9.6, but the "proves isolation" negation is a no-inheritance-flavored inference, not a blueprint sentence. Harmless and directionally correct, but strictly it belongs under an inferred marker.
+- **Severity:** cosmetic.
+
+### 3. Unused YAML anchors in `x-source-index`
+- **Location:** lines 17 (`diagnostic: &d`) and 21 (`task: &t`) in the BrowserOxide document; line 1412 (`diagnostic: &d`) in the Camoufox document.
+- **Why:** these anchors are defined but never aliased within their document. Valid YAML and zero behavioral effect, but dead weight in a versioned contract.
+- **Severity:** cosmetic.
+
+### 4. Wording variance between the two validation paragraphs
+- **Location:** `x-representation.validation`, lines 73–78 (BrowserOxide: "undeclared fields", "Raw null") vs. lines 1477–1481 (Camoufox: "unknown fields", "bare normalized nulls").
+- **Why:** the two documents describe the same validation posture (which itself matches kernel/connector precedent: reject duplicate mapping keys, non-finite numbers) in slightly different words. No semantic conflict found, but a future revision could harmonize the phrasing.
+- **Severity:** cosmetic.
+
+## Recommendation
+
+**Accept with notes.** The four notes above are cosmetic and require no rework; none affects the contract's semantics, its source fidelity, or its usability by the downstream conformance suite. If a future revision touches this file anyway, fix the `BO-OFFLINE` citation anchor (concern 1) first, as extraction-citation precision is the highest-value discipline to maintain.

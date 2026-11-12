@@ -1,0 +1,10 @@
+{
+  "subsystem": "circus-tent",
+  "dag_file": "/home/whipsthellamasass/workspace/unification/tree/subsystems/circus-tent/module-graph-0.1.0.dag",
+  "node_count": 31,
+  "passed": true,
+  "coverage_mode": "id_based",
+  "conformance_row_count": 0,
+  "error_count": 0,
+  "errors": []
+}

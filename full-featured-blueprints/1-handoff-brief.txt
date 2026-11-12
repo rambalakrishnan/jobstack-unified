@@ -1,0 +1,241 @@
+# Handoff Brief: A Contract-Surface Project for a Four-Component Portfolio
+
+You are being asked to help, or to take over, a piece of work whose immediate deliverable is a set of versioned contracts and their conformance suites. The work exists because four components were built, or specified, in isolation, and the owner now needs to make them cohere without merging them. The blueprints for the four components are available separately and contain the detail. This document is the map. It is also, deliberately, a two-tier document: **genuine invariants** are marked as such, with a short derivation; **provisional decisions** are marked as such, because the owner's current best guesses are open to your better judgment. The distinction is not about confidence. It is about *what evidence would change the decision*. Invariants have a counterexample from a paid-for lesson or a short derivation from one. Provisional decisions are judgment calls on tradeoffs, with no such counterexample, and should be improved if you can see better.
+
+---
+
+## Part I — The position
+
+There are four components in scope and a fifth outside the directories.
+
+**The crawler (Stage1 with Rust direction is specified in `2-state-bank-crawler-blueprint.md`.).** Crawls state job bank sites, extracts, classifies, emits a job feed. Originally intended to use Camoufox for stealth on commercial boards; later discovery is that a large subset of the same jobs is available through state sites that scale much better on simpler automation. Current direction is Rust + BrowserOxide, with an Illinois-only first slice. The full spec contains four `INCOMPLETE` markers and nine `ASSUMED` markers; these are backlog, not milestones.
+
+**circus-tent (two bindings. Specified in `4-circus-tent-arch.md`.).** A browser-use framework that fills forms and submits applications. Python bound to Camoufox via Juggler via Playwright Async API. Concepts came from Stagehand (which is TypeScript bound to Chromium via CDP). The owner attempted a Stagehand-to-Camoufox port via Playwright/Juggler and it failed; that failure is now a governing architectural constraint (Part III).
+
+**ringmaster (an isomorphic synthesis of Stagehand into native Rust/BrowserOxide) Like circus-tent, it shall inherit Stagehand's cognitive vocabulary and core primitives observe (Native tree reduction and action candidate identification), act (Hierarchical selector execution, self-healing via LLM, and coordinate fallback), extract (Schema-guided extraction without arbitrary DOM dumps). Like circus-tent, it deviates from Stagehand in two major ways: Instead of operating as an open-ended natural language agent, it takes an explicit, commissioned TaskEnvelope, executes bounded steps under finite budgets, and exposes the 9 standard connector verbs (Describe, Prepare, Start, Observe, etc.). Stagehand has zero awareness of the hostile, idiosyncratic patterns of enterprise job portals; Circus Tent has solved specific ATS problems (Multi-Page Wizard Checkpoints, Dual Upload Engine, Sharding & Session Concurrency, and dHash Localized Container Crops.
+
+**Hellscape (Go direction. Specified in `3-hellscape-blueprint.md`.).** A hostile SPA fixture that presents increasingly difficult form-filling tasks to a browser-use framework and produces a diagnostic document. It is a form-fidelity laboratory, not an applicant-tracking system and not a fake employer. Its purpose is to hammer the framework and produce improvement feedback.
+
+**job-hunter (language TBD, Python and Firebase implementation specified in `6-get-a-job.xml.txt`.).** Consumes the crawler's feed, scores jobs against the capability profile and the eight playbooks in `capability_profile.txt` / `job_search_queries.txt`, commissions applications via circus-tent, tracks attempts. Storage and language are open questions.
+
+**m0-qualification (Python; retired as standalone. Specified in `5-browser-qualification.md`.).** A harness that qualified browser/driver/binary stacks against an evidence discipline: `None` is not success, an acknowledgement is not a semantic success, a harness timeout is not a native timeout, an HTTP 200 is not authentication. m0 dissolves; its discipline becomes enforced conformance suites (Part VII).
+
+The components are each independently shippable. The failure mode to prevent is integration hell arising from contracts that are *derived from* implementations rather than *specified before* them.
+
+---
+
+## Part II — What you are actually looking at
+
+Read the blueprints before engaging. The summary above is orientation, not substitution.
+
+Two structural observations will help you read them:
+
+**The blueprints were written under different assumptions than the current position.** Stage1 assumes Camoufox, commercial boards, and a full multi-state surface. Hellscape assumes it might be a fake ATS. job-hunter assumes TypeScript, Firebase, and Stagehand. Every one of these has been revised or is now open. The blueprints are evidence of what was thought, not commitments about what will be. Where a blueprint and this document disagree, this document carries the current position and the blueprint is documentation of a previous one.
+
+**Each blueprint contains genuine insights that survive the revisions, and those insights are what the contracts are built from.** Stage1's Decision 8 (owner-separated write domains), its per-partition coverage algebra, and its fetch-key replacement discipline are all valid and are generalized into the shared contracts. m0's evidence discipline and cancellation corpus are valid and become the attempt-lifecycle contract. Hellscape's diagnostic shape, its three-way distinction, and its capability record are valid and become the diagnostic contract. The Firestore schema's job-record fields are valid and become the job contract. The work of Part VII is reconciliation — deciding which draft wins each field — not re-derivation.
+
+---
+
+## Part III — Three lessons that paid for their tuition
+
+These are invariants. Each has a counterexample.
+
+**The Stagehand-on-Juggler failure → internal browser bindings cannot be unified.** Stagehand was designed against Chromium's CDP; its usefulness depends on CDP-specific features. The attempt to port it to Camoufox through Playwright/Juggler failed because Playwright's unified abstraction over browsers removes the protocol-specific features that make any individual binding useful. The generalized constraint: **a browser-use framework must be bound at full strength to its browser's native protocol, with no shared abstraction over multiple browsers.** Any layer that abstracts over browsers removes the strengths that make any individual binding good. This constrains the internal browser-binding contract (each binding is native, no shared `ElementHandle`), but not the external connector contract (which is shared and browser-agnostic). Any design that puts a shared primitive shape over both BrowserOxide and Juggler repeats the failure.
+
+**Hellscape drifts toward being an ATS → Hellscape is a form-fidelity laboratory and practice success is not production evidence.** Earlier drafts of Hellscape trended toward being a mock ATS and toward the idea that Hellscape applications would trigger job-hunter to apply at a real origin. Both are discarded. Hellscape tests the *framework*, not the job pipeline. Real job *content* from the crawler is a legitimate input (it makes fixture descriptions realistic); Hellscape's *forms* are not origin-representative. The diagnostic must carry held-in / held-out explicitly: Hellscape is held-in (you can tune the framework against it), any real employer is held-out (you cannot). Overfitting circus-tent to Hellscape and declaring it qualified for Workday is the failure mode this distinction exists to prevent. `kind: practice | production` on the application attempt, with `rehearsal_of` / `performance_of` linkage, and a same-kind rule on `derived_from`, is the structural enforcement.
+
+**BrowserOxide is a bet, not a certainty → Camoufox stays.** BrowserOxide offers direct DOM and JS access without CDP indirection, which is a genuine step change for stealth and observation. But it is not the only browser; different sites match different browsers, and Camoufox has strengths BrowserOxide does not (Firefox fingerprint space, NSS TLS behavior, Gecko quirks). The plan retains both. The BrowserOxide circus-tent is a de novo rewrite (not a port) with the same external interface and the same Stagehand-derived concepts, BrowserOxide-native at full strength. The Camoufox circus-tent stays, Python, maintained in parallel. Neither is deprecated.
+
+---
+
+## Part IV — The real problem, and the resolution of an earlier confusion
+
+The owner's "behemoth" concern is worth examining precisely, because the naive version of it is wrong and the corrected version is the actual motivation.
+
+The naive version — "merging four components into one repo would be a behemoth" — conflates three levels that are distinct:
+
+**Semantic decomposition.** The distinct capabilities, each with a different execution profile, a different test corpus, and a different failure mode. This is real and does not move.
+
+**Process boundaries.** Which things run as separate processes, so one crashing cannot take down another. This is real and does not move; it is also independent of repo topology.
+
+**Repo topology.** How the code is stored and versioned. This is packaging. It has no semantic content. Every topology can express the same semantic and process structure.
+
+The earlier framing treated the third as if it followed from the first two. It doesn't. The behemoth is a fourth thing — *the failure to sequence* — and it is orthogonal to topology. It can occur in four repos that each wait for the others; it can be avoided in a single monorepo by shipping each workspace member against its own conformance suite as soon as the suite exists.
+
+The correct response is to name the discipline that prevents the failure, and then choose the topology on tooling grounds.
+
+**The discipline is invariant.** Ship each component against its own conformance suite as soon as the suite exists. Never treat "the whole system works together" as a precondition for shipping any part. Keep the contracts as inputs rather than outputs.
+
+**The topology is provisional.** The owner's current call is a monorepo, on the argument that during the contract-reconciliation and reformulation work — which is the actual near-term activity — atomic cross-consumer changes are cheapest. A polyrepo becomes better once contracts stabilize and independent release cadences matter (e.g., publishing the scraper as a crate while Hellscape iterates). The condition under which the current call flips is: contracts stable + release independence valuable. Neither is true now. **You should improve this call if you see better; the discipline is what must survive, not the packaging.**
+
+The owner's actual fear — and the honest version of "overwhelming" — is not repo management. It is the cost of designing contracts that work across four bodies of code and then reformulating each to conform, which may involve digging up deeply embedded plumbing. That cost is incurred in any topology. The portfolio is in the position of having *most of* the contract work already drafted across four documents and needing to *reconcile* those drafts, which is cheaper than designing from scratch and more expensive than either the mono-repo or poly-repo decision affects. The reconciliation is the hurdle.
+
+---
+
+## Part V — The cohesion principle
+
+This is an invariant; the specific cuts that follow from it are provisional.
+
+The current project boundaries (Stage1 / circus-tent / Hellscape / job-hunter / m0) are all *application* boundaries. None of them is derived from what shares what. The strongest sharing relationship in the whole portfolio is BrowserOxide-based scraping and BrowserOxide-based form-filling: both need the BrowserOxide binding, browser lifecycle, navigation, page observation (DOM, frames, shadow roots, composed events), extraction primitives, input primitives, screenshot/capture, and session/thread confinement. That's not a small shared surface; it is the majority of the code that makes either product work. If the crawler and the BrowserOxide circus-tent live in separate repos, they either duplicate that surface or share it via a dependency — and if they share it via a dependency, they're effectively in one workspace anyway, with coordination overhead.
+
+**The cohesion principle (invariant): draw boundaries around the shared surface, not around the applications.** The current packaging draws them around applications; the cohesion principle draws them around sharing. Where two applications share most of their implementation, the shared surface is the boundary, and the applications become siblings inside it.
+
+**The specific cut that follows (provisional):** browseroxide-core (shared library) + crawler (binary) + circus-tent-bo (binary), inside one boundary. A single binary with `crawl` and `apply` subcommands is a plausible alternative; the shared library is what matters, and whether the binaries are one executable or two is a delivery decision that does not move the semantic boundary. **If you see a better cut, take it.** The invariant is "draw around the shared surface"; the specific cut is a hypothesis.
+
+The same principle, applied elsewhere, produces six shifts relative to the current packaging:
+
+**The two circus-tents are independent products, not one framework.** They share the external connector contract and the Stagehand design lineage. They share no implementation, no primitives, no language. Forcing them to share would reintroduce the abstraction layer that failed.
+
+**m0 dissolves.** It was never a product boundary; it was a discipline. Its rules become kernel invariants, its cancellation suite becomes the attempt-lifecycle conformance corpus, its stack matrix becomes capability records, its loopback fixture becomes Hellscape's cooperative fixture. Dissolving it is not a loss; it is the discipline becoming *enforced* rather than *documented*.
+
+**The dashboard is its own component.** It talks to an HTTP API, and it has no business being coupled to the orchestrator's language or deployment. A dashboard that survives an orchestrator rewrite is worth more than a dashboard welded to it.
+
+**The contracts are a first-class boundary.** Language-agnostic schemas, conformance suites, per-language bindings. Consumed by all other components. This boundary does not exist today and is the one that must be created first.
+
+**The two protocols remain distinct.** External connector (async, task-shaped, browser-agnostic, shared) and internal browser binding (synchronous, primitive-shaped, per-browser, not shared). Any collapse of these into one is the Playwright mistake we must not make.
+
+**There are seven semantic boundaries:** contracts; Rust browser cluster (browseroxide-core + crawler + circus-tent-bo); Python circus-tent (camoufox-core + circus-tent-cf); Hellscape; orchestrator; dashboard; tools (Hermes→OMP, schema codegen, fixture generators — development-time, not runtime).
+
+Notice what is not a boundary: "the browser-use framework" (two separate clusters), "the job pipeline" (crawler and orchestrator are separate), "the test harness" (Hellscape is one component, not a layer).
+
+---
+
+## Part VI — The genuine invariants
+
+These are load-bearing. Violating them reproduces a failure already paid for, or breaks a property the discipline depends on. They should survive any reorganization.
+
+### The evidence kernel
+
+**Journal is the source of truth; diagnostics are derived; anything not journaled cannot be cited as evidence.** Application state is a materialized view; the diagnostic is `f(manifest, journal prefix, classifier version)`; replay is re-derivation. Anything that must survive must be journaled. *Derivation:* the evidence discipline cannot be enforced if the evidence can be added retroactively.
+
+**The three-way structural distinction (capability / opportunity+result) cannot collapse into one enum.** Capability is `{present | absent | unknown | not_applicable}` with scope and evidence; opportunity is `{exposed | unexposed | blocked}`; result is `{satisfied | violated | native_absence | indeterminate | not_exercised}`. A capability can be absent while the result is not_exercised (opportunity never arose) or native_absence (required and not present), and these are different findings. *Derivation:* m0's evidence discipline and Hellscape's three distinctions both require this orthogonality to be encoded; collapsing it makes the discipline unenforceable at the schema level.
+
+**Timing.** Every measurement carries `clock_id` and `origin`. Exactly one of: exact / bounded / unavailable-with-reason. Censored flag. No cross-`clock_id` subtraction. Monotonic offsets persisted per boot identity; no cross-restart subtraction. UTC is annotation only. Zero is never a substitute for missing. *Derivation:* the `_elapsed()`-returns-zero defect in circus-tent is the paid-for counterexample.
+
+**Null with reason.** Six enumerated reasons: `not_enabled`, `not_applicable`, `not_observed`, `observation_lost`, `unsupported_by_subject`, `manual_override`. `null` without one of these is a schema violation. *Derivation:* ambiguity at the schema becomes a bug at integration; the six reasons are the cheapest complete enumeration the drafts converged on.
+
+**Provenance is server-assigned.** Clients cannot claim `provenance: server`. *Derivation:* "an HTTP 200 is not authentication," at the schema level.
+
+**No single status field collapses multi-owner axes.** *Derivation:* the same m0 lesson as above, generalized.
+
+### The application attempt lifecycle
+
+**Orthogonal axes, not a linear state.** `dispatch` (connector), `observation` (connector), `execution` (subject *claim*), `application` (origin *fact*), `report` (reconciler). Each axis exactly one writer. The reconciler compares claims to facts and produces `reconciled` or `contradicted`; it never overwrites either. *Derivation:* m0's cancellation suite proves that a close-time `execution=unknown` and a later `application=committed` are not contradictory, and that a close-time claim of definite cancellation is contradicted by later commitment. A single enum must collapse these and therefore must be wrong.
+
+**`kind: practice | production`, set at commissioning, with `rehearsal_of` / `performance_of` linkage, and no practice fact cites as production evidence.** *Derivation:* Part III; the failure mode is overfitting to Hellscape and calling it origin qualification.
+
+### The external connector
+
+**Shared, async, task-shaped, browser-agnostic.** Verbs: `Describe`, `Prepare`, `Start`, `Observe`, `RequestNativeCancel`, `CloseObservationConnection`, `CollectArtifacts`, `ReleaseNativeContext`, `Contain`. *Derivation:* this is the surface that lets components compose; without it, integration is per-pair.
+
+**Capability descriptors are per-subject-per-version with no inheritance.** A new subject version starts `unknown` on every capability until its own evidence is collected. *Derivation:* m0's isolation-failure trap — "observed marker but invalid write control ⇒ non-isolation *not established*" — is the same pattern; without the no-inheritance rule, a v1 finding becomes a v2 assumption.
+
+**The connector declares; Hellscape assesses.** Judgment is not in the judged component. *Derivation:* the alternative puts the framework in a position of deciding whether its own behavior was correct, which is exactly what evidence discipline exists to prevent.
+
+### The internal browser binding
+
+**Synchronous, primitive-shaped, deliberately not unified.** Each binding declares its own primitive set and its own capability descriptor. No shared `ElementHandle`. *Derivation:* Part III.
+
+### Owner-separated write domains
+
+**A domain is a set of fields owned by exactly one writer; a logical record composes domains; publication is async and versioned; a seal point names a state and implicitly pins each owner's revision at that time; readers see old-or-new, never partial; a fetch-key replacement archives the complete prior logical row at a named version vector, content-addressed, immutable, GC-protected while the replacement lives.** *Derivation:* Stage1 Decision 8, which is the only place in the drafts where the pattern is worked out at the level of detail this portfolio requires. The pattern generalizes; the specific instances (job record, attempt record, Hellscape observation) are applications of it.
+
+---
+
+## Part VII — Provisional decisions
+
+These are the owner's current best guesses, with the reasoning that produced them and what would change them. **You should improve them if you can see better.**
+
+**Monorepo packaging.** Reason: during the contract-reconciliation and reformulation work — the actual near-term activity — atomic cross-consumer changes are cheapest. What would change it: contracts stabilize and independent release cadences become valuable. **The discipline (Part IV) is what must survive; the packaging is a tooling choice.** If you have a stronger argument for polyrepo with a shared contracts repo, take it.
+
+**The Rust browser cluster cut (browseroxide-core + crawler + ringmaster, one binary or two).** Reason: cohesion principle; the crawler and ringmaster share the majority of their implementation. What would change it: if the shared surface turns out to be small (e.g., the crawler needs only simple extraction and circus-tent needs only precise action sequencing with validation observation, and these turn out not to overlap), then the cut is wrong. **The invariant is cohesion; the specific cut is a hypothesis.**
+
+**Rust for both crawler and Ringmaster.** Reason: BrowserOxide is Rust and both bind it at full strength. This is nearly forced *given* BrowserOxide and *given* full-strength binding; if either of those premises changes, the language changes. It's provisional-within-provisional.
+
+**Camoufox circus-tent stays Python.** Reason: Camoufox's best binding is Python. Same structure: provisional within the BrowserOxide bet.
+
+**Hellscape in Go.** Reason: TLS/HTTP2 capture and JA3/JA4 ecosystem; small correct long-lived binary; evidence-correctness over throughput. If the evidence kernel and the fingerprint laboratory can be cleanly separated, Hellscape's language options becomes much more open. **The invariant is that the kernel can be implemented correctly and that transport capture is honest; the language follows.**
+
+**Orchestrator language undecided (Go / Rust / TS candidates).** Reason: the TS choice was downstream of Stagehand, which is gone. The dominant workload is LLM (reranking against the eight playbooks, cover-letter generation, capability-profile matching), which is worth noting but not decisive. The operator is reluctant to use Python because of long term development costs (bugs can't be easily identified at compile/LSP time) **This decision should be made at the correct juncture with the best available information, not now.** It is named here only so it is not assumed.
+
+**Six shared artifacts (kernel, attempt lifecycle, external connector, internal binding, owner-separation, fix registry).** Reason: these are the drafts that already exist and that every component needs. What would change it: if you see a seventh or a merge. **The invariant is "contracts as inputs"; the specific set is provisional.**
+
+**Fix registry schema fixed at Step 0, implementation deferred.** Reason: diagnostics should be able to cite rule instances from day one. If this turns out to be overreach, drop it to M3 with the rest.
+
+**Sequencing: Hellscape M1 first.** Reason: it is the reference implementation of the kernel, it is small, it has no subject, and it forces the schemas to be actually implementable. What would change it: if the kernel can be implemented more cheaply in a different component first, or if the IL crawler would exercise the kernel more thoroughly. **The invariant is "kernel is the reference implementation and its tests are the schema's tests"; the choice of reference component is provisional.**
+
+**Curriculum as per-subject lineages, parallel, non-alternating.** Reason: sharing a lineage confounds attribution. What would change it: a schedule where alternation is provably harmless.
+
+**Firebase as dashboard-only or dropped.** Reason: it is not the orchestrator's store and not the cross-component exchange. If the dashboard's dev experience is materially better with it, keep it there.
+
+---
+
+## Part VIII — The Step 0 deliverable
+
+This is the near-term work. It is not a probe phase and it is not a milestone under any other name. It is a commitment: a few days of focused work.
+
+**Six artifacts as versioned schemas**, each with a conformance suite:
+
+1. Evidence kernel (Part VI). Hellscape M1 is the reference implementation; its tests are the schema's tests.
+2. Application attempt lifecycle. m0's cancellation suite is the test corpus.
+3. External connector. Hellscape M1's synthetic-backend suite is the test corpus.
+4. Internal browser binding, per binding. Run once per browser, with per-binding exemptions documented. The BrowserOxide binding's suite proves direct-DOM access actually works — this is the test that confirms the bet was correct.
+5. Owner-separation pattern. Stage1 §11 plus two-writer and archive tests.
+6. Fix registry (schema only). Implementation deferred to M3.
+
+Plus four cross-cutting decisions made once, in the kernel, and enforced by the suites: null semantics, timing rules, provenance, state orthogonality.
+
+**The work is reconciliation, not invention.** Four drafts already exist and contain roughly eighty percent of the content: Stage1 §11 (owner-separation, archive semantics, lease primitive), m0's `events.jsonl` / `manifest.json` / `report.md` (event envelope, provenance discipline, cancellation corpus), Hellscape's diagnostic YAML (diagnostic shape, three-way distinction, capability record), the Firestore schema (job record fields, lease usage as instance). Decide which draft wins each field; resolve conflicts in favor of the more disciplined side each time.
+
+**Order of authorship:** kernel → attempt lifecycle → external connector → job record → owner-separation pattern → fix registry schema. Each depends on the previous.
+
+**The acceptance gate is the silo test.** Each component passes its conformance suite before it ever talks to a peer. The crawler passes the job-record suite with no orchestrator present. Hellscape passes the kernel suite with no circus-tent present. Circus-tent passes the external connector suite against a synthetic backend. Each binding passes its own browser's suite. If every component passes its own suite, integration is assembly. If it isn't, the contract was wrong, not the plumbing.
+
+**The deliverable is:** six shared artifacts as versioned schemas, five conformance suites (one per shared contract plus one per browser binding), per-component blueprints (crawler Illinois slice; Hellscape M1 scope; Ringmaster external interface only; Camoufox circus-tent external interface only; orchestrator with language TBD; dashboard), and a sequencing plan with the silo test as gate.
+
+Blueprints can be sliced through Large Language Models; the decomposition method does not change the contracts. The contracts are the shared language; the blueprints are the components that speak it.
+
+---
+
+## Part IX — The roadmap after Step 0
+
+**Step 1 — Hellscape M1 (Go).** Manual walkthrough, diagnostic kernel, exact replay, connector lifecycle with synthetic backends. Acceptance: diagnostic correctness on a manual walkthrough of the cooperative SPA, including an intentionally invalid history interval that is then corrected, a recorded pause that appears in the measured timeline, exactly one authoritative application commitment, and a matching exact-replay receipt. No subject participates.
+
+**Parallel — Crawler (starting with Illinois, seemingly the smallest surface) and Ringmaster (complete) de novo drafting.** Both consume the external connector and the job schema. Neither talks to the other. Both test against their own conformance suites.
+
+**Integration — orchestrator.** Consumes crawler jobs, scores against capability profile and playbooks, commissions circus-tent against Hellscape's cooperative fixture (first subject, not qualification gate), eventually against origins. Practice-versus-production distinction prevents Hellscape success from leaking into origin claims.
+
+**Loop — Hellscape curriculum.** Per-subject lineages, parallel, non-alternating. Two LLM layers, separate features: inner loop (autonomous) proposes fixture variants; outer loop (reviewed) proposes fix-registry instances with human approval of rule *class*.
+
+**Minimum Viable Product.** IL crawler emits jobs with coverage status; orchestrator reranker scores them; owner manually applies to top five this week, tracked in the kernel journal rather than Firestore. Steps require nothing from Hellscape or circus-tent. They produce the thing the system exists for — a real application with evidence — while deeper infrastructure is being completed.
+
+---
+
+## Part X — What must not happen
+
+1. (redacted)
+2. Letting Hellscape claim origin representation. Held-in / held-out explicit in the schema; practice success never a production credential.
+3. Unifying internal browser bindings. Reintroduces the Stagehand-on-Juggler failure.
+4. Sharing transactions across owners. Publication async and versioned; readers see old-or-new, never partial.
+5. Zero-means-missing. Every duration exact, bounded, or unavailable-with-reason.
+6. Claim-as-fact. Execution is subject claim; application is origin fact; reconciler compares.
+7. Practice-as-production.
+8. Curriculum-as-one-chain. Per-subject, parallel, non-alternating.
+9. A browser-abstraction layer under any binding.
+10. Merging the runtimes. Shared surface is contracts. Components ship alone or they don't ship.
+
+And the positive commitment: **every component passes its conformance suite before talking to a peer.** This is what keeps silos independent and integration clean simultaneously.
+
+---
+
+## Part XI — The epistemic status of this document
+
+The invariant/provisional distinction is the document's main content. It is not a hedge. It is the answer to the question "what should a smarter reader preserve, and what should a smarter reader improve?"
+
+**Preserve the invariants.** They are the residue of paid-for lessons. Violating them reproduces a failure the portfolio has already seen or can derive in a few lines. The Stagehand failure, the `_elapsed()` defect, the m0 cancellation probe, and the practice/production leakage mode are all load-bearing counterexamples; the design choices built on them are not open to revision without a better counterexample to displace them.
+
+**Improve the provisional decisions.** They are judgment calls on tradeoffs, with no counterexample. The owner's reasoning is given so you can see *why* each call was made and *what would change it*. The calls where you have better information are exactly the calls you should change. The packaging, the specific cuts, the language choices, the sequencing, the set of artifacts, and the thin slice are all in this category. If your better judgment says something is wrong, the correct action is to change it, not to preserve it out of deference.
+
+The owner's "I'm not a visionary" admission is real and is not an instruction to defer. It is an invitation. The owner built four components in isolation because that's how the pieces presented themselves; the 10,000-foot view was not available at the time and is being constructed now, with your help. You have better information than the owner did when these calls were first made, and you have better information than the owner does now about many of them.
+
+The invariant is the discipline of shipping each piece against its own conformance suite before it talks to a peer. The provisional is everything else. The owner is asking for the second, not to defer it, but to co-author it with someone who can see what the owner has been missing.

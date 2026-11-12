@@ -1,0 +1,97 @@
+# Verification: prd/01-hellscape.md (turn 15)
+
+Reviewed against the raw deliverable `runs/turn8-20/deliverables/turn15.md`
+(350 lines; fence ````markdown:prd/01-hellscape.md` + `<!-- TURN_END:15 -->`),
+the tree file `tree/prd/01-hellscape.md` (byte-identical to the raw inner
+content — verified by direct diff), the developer prompt
+(`runs/turn8-20/extract/developer_prompt.md`), the five prior accepted files
+in this turn's dependency set (kernel, lifecycle, and external-connector
+contracts; `decisions/invariants-and-provisionals.md`; `prd/00-integration.md`),
+and citation spot-checks against `runs/turn8-20/sources/*`. Turn 15 has no
+downstream dependents (`review_deps.json`: deps `[1, 3, 5, 13, 14]`,
+downstream `[]`).
+
+## Overall assessment
+
+Acceptable as-is. This is a high-fidelity synthesis: ten sections covering
+product boundary, M1 scope, cooperative-application requirements, authority
+architecture, an explicit storage resolution, evidence/diagnostic rules,
+connector/closure semantics, replay/acceptance, milestones, and open inputs —
+with 100% epistemic-tag coverage (a scan of all non-table, non-list prose
+found zero untagged substantive paragraphs) and no fabricated citations
+across ~20 spot-checks. Most notably, §5 directly answers the turn-13
+review's forwarded instruction that turn 15 "must explicitly resolve
+SQLite/WAL single-writer against Decision 8 write-path separation": it does
+so as a provisional choice with contention tests and flip conditions rather
+than by weakening the invariant. The two notes below are cosmetic.
+
+## What works
+
+- **Protocol compliance is clean.** Correct `markdown:prd/01-hellscape.md`
+  fence, no content outside it except `<!-- TURN_END:15 -->` with the correct
+  manifest item number, coherent ending (§10 change conditions plus closing
+  synthesis sentence).
+- **The §5 storage resolution is exemplary provisional reasoning.** It names
+  the Decision 8 tension explicitly, chooses owner-local SQLite/WAL per
+  independently writable domain (application / observation / diagnostic,
+  matching the session layout in the decisions file §4 and the owner-separated
+  contract), states what separate files/WAL/goroutines do *not* establish
+  (independently reserved I/O service), refuses to import Stage1's assumed
+  5 ms commit latency as a Hellscape SLA, gives five falsifiable qualification
+  tests (including the reverse-dependency stall test), and names measurable
+  flip triggers — all while correctly claiming no new handoff amendment, since
+  P-06 explicitly left this evaluation open.
+- **Contract citations check out.** Every invoked rule ID was verified to
+  exist: EK-ATOMICITY, EK-PROVENANCE, EK-NULL, EK-TIME, EK-DIAGNOSTIC,
+  EK-REPLAY, EK-ARTIFACTS, EK-MANUAL, EK-TIMING-INTERPRETATION, EK-CAPABILITY;
+  LIFE-AXES, LIFE-RECONCILE, LIFE-CLOSE, LIFE-LATE-EVIDENCE, LIFE-LINEAGE,
+  LIFE-SOURCE-CHECKS; EXT-DECLARE-NOT-ASSESS, EXT-DESCRIBE, EXT-PREPARE,
+  EXT-START, EXT-OBSERVE, EXT-NORMALIZE, EXT-CONTROLS, EXT-CLOSE,
+  EXT-ARTIFACTS, EXT-BOUNDS, EXT-IDEMPOTENCY; plus `DiagnosticDocument` and
+  `ReplayReceipt`. The capability/opportunity/result enums on line 209 match
+  the handoff Part VI verbatim, as does the six-reason null enumeration.
+- **Blueprint extractions are faithful.** Verified: the eight-state flow
+  against §9.1; the Go / Vite-strict-TypeScript / vanilla-Web-Components /
+  light-DOM / SQLite-WAL / content-addressed-artifact stack against §§3/8/11
+  (including the light-DOM clarification); the cooperative definition and all
+  four Outside-product non-goals; the nine connector verbs; the R1–R10
+  non-credit rule for manual validation; the 100-eligible-sessions/hour target
+  correctly attributed to H2 sustained testing and scoped to later capacity
+  work, not M1. Decision references (INV-07–INV-24, P-06, P-10–P-12, HA-03)
+  all exist with matching substance.
+- **Cross-file consistency holds.** Session-domain decomposition, five-axis
+  authority, nine-verb surface, five-reason timing/missingness discipline, and
+  the HA-03 day-one-lane independence statement all agree with the prior
+  accepted files. Open inputs in §10 honestly mark what is `[uncertain]`
+  versus `[inferred]`, including the current-native-interface and raw-history
+  gaps.
+
+## Concerns
+
+- **§3.1 workflow table simplifies the blueprint's DETAIL/CONTACT mapping.**
+  The blueprint's §9.1 table places contact entry on the DETAIL view
+  ("Enter and validate contact information") with CONTACT as the
+  accepted-contact milestone ("The contact form remains on the detail view.
+  CONTACT is the accepted-contact milestone, not an unnecessary separate
+  page"), while the PRD's table assigns "Enter contact data and explicitly
+  save/continue" to the CONTACT row and reduces LISTING / DETAIL to
+  "Read a synthetic posting and choose to continue." The normative substance
+  (section-bound validation, explicit save/continue, no autosave) is preserved
+  and the citation (`§9`) is genuine, but an implementer could misread which
+  view hosts the form. Severity: **cosmetic** — no invariant is affected and
+  the authoritative-check column is correct.
+- **Line 6 asserts `0.1.0` for owner-separated write domains and the
+  suggested-fix registry, but its in-tag citations name only contracts
+  00–02 plus the handoff.** Both versions were verified to exist (all six
+  contracts carry `version: 0.1.0`), and the claim is transitively grounded
+  via the cited decision baseline and `prd/00-integration.md` §5 ("the six
+  `0.1.0` drafts"), which this turn legitimately had access to — so this is a
+  citation-completeness nit, not a fabrication. Severity: **cosmetic**.
+
+## Recommendation
+
+**Accept as-is.** No revision needed; there are no downstream dependents, so
+no re-evaluation is triggered. The two cosmetic notes above may be carried as
+advisory guidance (a future edit could restore the DETAIL-view form-hosting
+nuance in §3.1 and add the 04/05 contract files to the line-6 citation), but
+neither warrants holding this turn.

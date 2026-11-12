@@ -1,0 +1,47 @@
+# Review: contracts/00-evidence-kernel.yaml (turn 1)
+
+## Overall assessment
+
+This is a strong foundation file: a complete, parseable JSON Schema 2020-12 contract with 18 semantic rules, full epistemic annotation (475 paired x-status/x-source tags), and genuine synthesis across all six sources rather than paraphrase. Spot-checked extractions verify against the cited sources, null discipline is airtight (Missing.value is the only serialized null), and boundary discipline is excellent (lifecycle axes, practice/production, and blueprint-vs-handoff conflicts are all handled explicitly). One semantic rule contains a sentence fragment that leaves a clause of an invariant unstated; it is fixable in a patch contract revision and does not undermine the file's fitness as a foundation.
+
+## Protocol and completeness
+
+The raw deliverable (`runs/turn8-20/extract/turn1_deliverable.md`) is a single fenced block annotated ` ```yaml:contracts/00-evidence-kernel.yaml`, matching manifest item 1 exactly, with no content outside the fence. The tree file is byte-identical to the fenced inner content (verified by diff). There is no `<!-- TURN_END:1 -->` marker, but none was requested: the operative base prompt's protocol section is truncated mid-sentence and specifies no marker, the turn-1 prompt in `turn_prompts.json` carries no marker instruction, and all six extract-era deliverables (turns 1–6) uniformly lack markers while the explicit marker instruction appears only from the turn 7/8 inputs onward. Judged against what was actually asked, protocol is compliant. The file ends at a coherent boundary (the completed `LeaseRecord` definition, line 2453), parses as a single YAML document, and has zero dangling `$ref`s.
+
+## Structure and scope
+
+The file matches its manifest item: type definitions, constraints, epistemic annotations, and invariants for the shared evidence kernel, with six durable record types in the top-level `oneOf` (Manifest, JournalEnvelope, DiagnosticDocument, ReplayReceipt, LeaseRecord, CapabilityDescriptor) matching the description's claim. Scope is correct: `AttemptContext` carries kind/linkage without defining lifecycle axes ("No lifecycle axis is defined by this context," line 1122), and `ObservationSummary` explicitly "neither defines nor collapses the five application-attempt lifecycle axes" (lines 2102–2105).
+
+## Epistemic and fabrication spot-checks (all pass)
+
+- `NullReason` six values (lines 544–550) match the handoff Part VI enumeration exactly.
+- Capability/opportunity/result enums match the handoff; the reconciliation decision dropping Hellscape's extra `blocked`/`not_applicable` result values (lines 126–133) is verified against Hellscape §4.4, which contains exactly those extra values.
+- Hellscape extractions verified verbatim: `MeasurementOrigin` enum, `censoring` enum, `role` enum, Claim source/scope/comparison enums, Finding kind/locus/role/attribution enums, step status enum, capability basis/availability/origin enums, and the journal envelope fields.
+- Lease primitive fields verified against crawler §11.15 (atomic claim, completion fencing, retry accounting, `retry_exhausted` default).
+- New wire details (canonicalization profile `kernel-jcs-sha256/1`, digest pattern, 2^53 numeric bounds, Scope/ProducerRole/assertion-kind enums) are all marked `proposed`, with the `*w` anchor carrying an explicit disclaimer that identifiers and encodings are proposals, not claims about existing implementations.
+- Amendment discipline holds: the "no handoff amendment" claim (line 171) is accurate — the A5 skew-bound replacement concerns a blueprint ASSUMED backlog value, is documented with rationale plus flip condition in EK-LEASE-RESTART, and correctly leaves the decisions-file amendment record to turn 13.
+
+## Concerns
+
+### 1. Sentence fragment in EK-OBSERVATION leaves an invariant clause unstated
+- **Location:** `x-semantic-rules`, `EK-OBSERVATION` rule, lines 250–251: "Journal gaps, overflow, loss, flush receipts, and producer closure."
+- **Why it's a problem:** This is a noun phrase with no predicate inside a `classification: invariant` rule, so the operative requirement (presumably that these are journaled as first-class events, per Hellscape §§3.3 and 10.3) is never stated. The surrounding sentences (dedupe, integrity incident, terminal sequence, no silent repair) are intact and the intent is recoverable, so the rule is usable but one of its clauses is untestable as written. A conformance suite cannot test a requirement that lacks a verb.
+- **Severity:** concerning
+
+### 2. Unused source anchors `*n` and `*j`
+- **Location:** `x-source-index`, lines 20–21 (`native`, `product`).
+- **Why it's a problem:** Neither anchor is cited anywhere in the file (the product sources are instead cited via literal strings on lines 46, 157, and 481; the circus-tent blueprint is never cited). Dead anchors are harmless YAML but invite future mis-citation and suggest coverage that the alias trail doesn't show.
+- **Severity:** cosmetic
+
+### 3. Garbled derivation phrasing in EK-TIMING-INTERPRETATION
+- **Location:** `x-semantic-rules`, `EK-TIMING-INTERPRETATION` derivation, line 303: "A harness timeout is not a native timeout; unlike intervals cannot establish a timing lie."
+- **Why it's a problem:** The second clause dangles ("unlike intervals" has no clear subject). The intended meaning is recoverable from the rule and consequence (incomparable intervals cannot establish a timing violation), but a derivation should state its counterexample cleanly.
+- **Severity:** cosmetic
+
+## Recommendation
+
+**Accept with notes.** The file is fit as the foundation its fourteen downstream dependents build on. Fold these notes into the next contract revision (0.1.1 or 0.2.0):
+
+1. EK-OBSERVATION (lines 250–251): supply the missing predicate, e.g. "Journal gaps, overflow, loss, flush receipts, and producer closure are journaled as first-class lifecycle events."
+2. `x-source-index` (lines 20–21): either cite `*n`/`*j` where the native binding and product sources ground a field, or remove the unused anchors.
+3. EK-TIMING-INTERPRETATION derivation (line 303): rephrase to a clean counterexample, e.g. "A harness timeout is not a native timeout; intervals with incomparable boundaries cannot establish a timing violation."

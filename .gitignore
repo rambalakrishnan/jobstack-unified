@@ -1,0 +1,17 @@
+# Rust build output (spot-check modules compile in-tree)
+target/
+# Python bytecode
+__pycache__/
+*.py[cod]
+# Go build cache artifacts (keep go.mod/go.sum)
+*.test
+*.out
+# Editors / OS
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+# Local run scaffolding (ledger/tracking dotfiles)
+subsystems/.phase3-*.json
+subsystems/*/.phase3-*.json

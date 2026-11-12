@@ -1,0 +1,451 @@
+NODE: contract_codec | modules/contract_codec | lang: python | tier: 0 | deps: []
+  READS: [seam-mappings/circus-tent-seam-mapping.md#31-scalar-and-structural-validation, seam-mappings/circus-tent-seam-mapping.md#32-missingness, seam-mappings/circus-tent-seam-mapping.md#35-references-and-artifacts]
+  EXPOSES: [def validate_record(value: object, schema_id: Identifier) -> None, def canonical_bytes(value: object) -> bytes, def digest_bytes(content: bytes) -> Digest]
+  CONSUMES: []
+  TEST_ASSERTIONS: [T01, T02]
+  INVARIANTS: [EK-NULL, EK-HASHES, EXT-TIME-NULL]
+  FORBIDDEN:
+    - MUST NOT accept duplicate mapping keys, unknown versions, undeclared closed-object fields, non-finite numbers, or bare normalized nulls.
+    - MUST NOT insert success, false, zero, empty collections, or missing required fields as defaults.
+    - MUST NOT merge the independent BrowserOxide and Camoufox schema documents into a common primitive schema.
+  VERIFICATION: pytest tests/test_conformance.py -k "T01 or T02"
+
+NODE: clock_discipline | modules/clock_discipline | lang: python | tier: 1 | deps: [contract_codec]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#33-clocks-and-time-points, seam-mappings/circus-tent-seam-mapping.md#34-measurements]
+  EXPOSES: [def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None]
+  TEST_ASSERTIONS: [T03, T04, T05]
+  INVARIANTS: [EK-TIME, EK-TIMING-INTERPRETATION, LIFE-TIME, EXT-TIME-NULL, CF-TIME, OWD-TIME-PROVENANCE]
+  FORBIDDEN:
+    - MUST NOT subtract across clock IDs, boot identities, or measurement origins.
+    - MUST NOT turn UTC annotations into elapsed time or fabricate native endpoints for opaque reports.
+    - MUST NOT replace reported zero with another clock's measurement or divide aggregate runtime into step timings.
+    - MUST NOT compare durations solely because their comparability_group strings match.
+  VERIFICATION: pytest tests/test_conformance.py -k "T03 or T04 or T05"
+
+NODE: access_policy | modules/access_policy | lang: python | tier: 1 | deps: [contract_codec]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#54-task-envelope, seam-mappings/circus-tent-seam-mapping.md#55-assistance-and-runtime-access, seam-mappings/circus-tent-seam-mapping.md#161-configuration, seam-mappings/circus-tent-seam-mapping.md#162-sensitive-data-reconciliation, seam-mappings/circus-tent-seam-mapping.md#184-eight-binding-inventory-benchmarks]
+  EXPOSES: [def authenticate(credential: bytes, connector_id: Identifier) -> Identifier, def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, def authorize_artifact(principal_id: Identifier, artifact: ArtifactReference) -> None, def validate_disclosure(content: bytes, access: Literal["public", "restricted"], policy: VersionPin) -> None, def resolve_runtime_access(access: RuntimeAccess, principal_id: Identifier, scope: WorkScope) -> bytes, def load_configuration(source: bytes, environment: Mapping[str, str]) -> dict[str, object]]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None]
+  TEST_ASSERTIONS: [T58]
+  INVARIANTS: [EK-PROVENANCE, EK-ARTIFACTS, EXT-AUTHORITY, EXT-TASK, EXT-READ-ONLY, CF-EVIDENCE, LIFE-SOURCE-CHECKS]
+  FORBIDDEN:
+    - MUST NOT accept caller-supplied principal, provenance, role, trace, account, or session labels as authentication.
+    - MUST NOT grant application mutation authority to extraction through scripts, redirects, query POSTs, plans, or HTTP-method heuristics.
+    - MUST NOT expose resolved credentials in ordinary configuration artifacts, logs, caches, or journals.
+    - MUST NOT certify the absolute secret-leakage benchmark using unreviewed exclusions for profiles, dotenv files, or session storage.
+    - MUST NOT treat a digest or runtime-access reference as a bearer credential.
+  VERIFICATION: pytest tests/test_conformance.py -k "T58"
+
+NODE: evidence_artifacts | modules/evidence_artifacts | lang: python | tier: 2 | deps: [contract_codec, access_policy]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#35-references-and-artifacts, seam-mappings/circus-tent-seam-mapping.md#103-upload-custody, seam-mappings/circus-tent-seam-mapping.md#153-artifact-transfer, seam-mappings/circus-tent-seam-mapping.md#162-sensitive-data-reconciliation]
+  EXPOSES: [def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, def collect_artifacts(request: CollectArtifactsRequest, principal_id: Identifier, slots: tuple[ArtifactSlot, ...], prefix: JournalPrefix) -> Union[ArtifactInventory, ArtifactChunk, ConnectorError]]
+  CONSUMES: [contract_codec: def digest_bytes(content: bytes) -> Digest, contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, access_policy: def authorize_artifact(principal_id: Identifier, artifact: ArtifactReference) -> None, access_policy: def validate_disclosure(content: bytes, access: Literal["public", "restricted"], policy: VersionPin) -> None]
+  TEST_ASSERTIONS: [T10, T11, T37, T38]
+  INVARIANTS: [EK-ARTIFACTS, EK-HASHES, EK-NULL, EXT-ARTIFACTS, OWD-RETENTION]
+  FORBIDDEN:
+    - MUST NOT register content before its exact bytes are durable.
+    - MUST NOT replace lost content, discard its known digest, or return sanitized bytes under the original digest.
+    - MUST NOT fetch arbitrary caller paths or URLs through CollectArtifacts.
+    - MUST NOT rerun workflow actions or launch browsers to recreate missing evidence.
+    - MUST NOT reclaim bytes reachable from retained manifests, prefixes, publications, diagnostics, replay inputs, or archives.
+    - MUST NOT return non-progressing successful chunks before EOF or silently omit requested artifact names.
+  VERIFICATION: pytest tests/test_conformance.py -k "T10 or T11 or T37 or T38"
+
+NODE: evidence_journal | modules/evidence_journal | lang: python | tier: 3 | deps: [contract_codec, clock_discipline, access_policy, evidence_artifacts]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#121-manifest-and-producers, seam-mappings/circus-tent-seam-mapping.md#122-event-ingress-and-envelope, seam-mappings/circus-tent-seam-mapping.md#123-dependency-order]
+  EXPOSES: [def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object, def read_prefix(journal_id: Identifier, through: Union[JournalPrefix, Missing]) -> tuple[JournalEnvelope, ...], def commit_owner_effect(owner_domain: Identifier, expected_revision: Revision, command_key: Identifier, request_digest: Digest, effect: ArtifactReference, response: ArtifactReference, events: tuple[EventSubmission, ...]) -> tuple[JournalEnvelope, ...]]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, contract_codec: def canonical_bytes(value: object) -> bytes, contract_codec: def digest_bytes(content: bytes) -> Digest, clock_discipline: def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, access_policy: def authorize_artifact(principal_id: Identifier, artifact: ArtifactReference) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes]
+  TEST_ASSERTIONS: [T06, T07, T08, T09, T12]
+  INVARIANTS: [EK-JOURNAL, EK-ATOMICITY, EK-HASHES, EK-PROVENANCE, EK-OBSERVATION, EK-NULL, OWD-LOCAL-COMMIT]
+  FORBIDDEN:
+    - MUST NOT accept JournalEnvelope as an untrusted event-submission command.
+    - MUST NOT acknowledge before durable append or separate authoritative local effects from their idempotency and journal commit.
+    - MUST NOT edit, delete, resequence, backdate, or silently repair an acknowledged prefix.
+    - MUST NOT treat conflicting producer-sequence deliveries as last-write-wins updates.
+    - MUST NOT admit self-references to future registration events or resolve references outside the declared prefix.
+    - MUST NOT require a central cross-owner transaction; each owner-local gateway retains its own durability boundary.
+  VERIFICATION: pytest tests/test_conformance.py -k "T06 or T07 or T08 or T09 or T12"
+
+NODE: subject_catalog | modules/subject_catalog | lang: python | tier: 4 | deps: [contract_codec, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#41-noninterchangeable-identities, seam-mappings/circus-tent-seam-mapping.md#43-capability-records, seam-mappings/circus-tent-seam-mapping.md#44-required-catalogs, seam-mappings/circus-tent-seam-mapping.md#45-connector-descriptor, seam-mappings/circus-tent-seam-mapping.md#71-route-and-descriptor]
+  EXPOSES: [def describe(connector_id: Identifier) -> ConnectorDescriptor, def validate_binding(binding: CFBindingDescriptor) -> None]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object]
+  TEST_ASSERTIONS: [T41]
+  INVARIANTS: [EK-CAPABILITY, EXT-DESCRIBE, EXT-DECLARE-NOT-ASSESS, CF-CAPS, CF-ROUTE]
+  FORBIDDEN:
+    - MUST NOT inherit capability presence or absence across subject versions, builds, routes, or configurations.
+    - MUST NOT omit catalog capabilities or duplicate an operation mapping.
+    - MUST NOT turn mapped, documented, enabled, or unsupported into an exercised capability result.
+    - MUST NOT probe endpoints, launch a browser, or certify a subject during Describe.
+    - MUST NOT confuse the external binding version with the internal Camoufox binding identity.
+  VERIFICATION: pytest tests/test_conformance.py -k "T41"
+
+NODE: owner_publications | modules/owner_publications | lang: python | tier: 4 | deps: [contract_codec, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#21-lifecycle-ownership, seam-mappings/circus-tent-seam-mapping.md#142-axis-publication, seam-mappings/circus-tent-seam-mapping.md#146-reports-and-snapshots]
+  EXPOSES: [def publish_axis(revision: AxisRevision, expected_revision: Revision) -> LifecyclePublicationReference, def report_is_current(snapshot: AttemptSnapshot) -> bool]
+  CONSUMES: [contract_codec: def canonical_bytes(value: object) -> bytes, contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def commit_owner_effect(owner_domain: Identifier, expected_revision: Revision, command_key: Identifier, request_digest: Digest, effect: ArtifactReference, response: ArtifactReference, events: tuple[EventSubmission, ...]) -> tuple[JournalEnvelope, ...], evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object]
+  TEST_ASSERTIONS: [T33]
+  INVARIANTS: [LIFE-AXES, LIFE-PUBLICATION, LIFE-EVIDENCE, LIFE-LATE-EVIDENCE, OWD-OWNER, OWD-LOCAL-COMMIT, OWD-REVISION, OWD-PUBLISH, OWD-VIEW, OWD-SEAL, OWD-ATTEMPT]
+  FORBIDDEN:
+    - MUST NOT accept whole-attempt updates or grant the connector application/report write authority.
+    - MUST NOT publish partial bodies, reuse a revision with different bytes, or move an installed pointer backward.
+    - MUST NOT block an owner commit on a peer transaction, acknowledgement, or payload serialization.
+    - MUST NOT silently apply a report to source revisions newer than its input pins.
+    - MUST NOT replace an already published revision with revision zero to conceal loss.
+  VERIFICATION: pytest tests/test_conformance.py -k "T33"
+
+NODE: native_ledger | modules/native_ledger | lang: python | tier: 4 | deps: [contract_codec, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#63-idempotency-layers, seam-mappings/circus-tent-seam-mapping.md#65-crash-boundaries, seam-mappings/circus-tent-seam-mapping.md#66-checkpoint-mapping, seam-mappings/circus-tent-seam-mapping.md#174-leases]
+  EXPOSES: [def claim_step(handle: ConnectorHandle, step_id: Identifier, request_digest: Digest, side_effecting: bool) -> tuple[Literal["execute", "completed", "uncertain"], EvidenceRef], def record_step(handle: ConnectorHandle, step_id: Identifier, transcript: CFPrimitiveTranscript, postconditions: tuple[PredicateResult, ...]) -> EvidenceRef, def save_checkpoint(handle: ConnectorHandle, checkpoint: ArtifactReference) -> EvidenceRef, def validate_resume(authorization: ResumeAuthorization, handle: ConnectorHandle, observation: ObservationValue) -> None]
+  CONSUMES: [contract_codec: def canonical_bytes(value: object) -> bytes, contract_codec: def digest_bytes(content: bytes) -> Digest, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def commit_owner_effect(owner_domain: Identifier, expected_revision: Revision, command_key: Identifier, request_digest: Digest, effect: ArtifactReference, response: ArtifactReference, events: tuple[EventSubmission, ...]) -> tuple[JournalEnvelope, ...], evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object]
+  TEST_ASSERTIONS: [T20, T21]
+  INVARIANTS: [EK-ATOMICITY, EK-LEASE, LIFE-IDEMPOTENCY, EXT-IDEMPOTENCY, EXT-RESUME, CF-SYNC]
+  FORBIDDEN:
+    - MUST NOT infer safe resend from lease expiry, a missing response, a checkpoint filename, or local process death.
+    - MUST NOT resume without exact request/context identity, evidenced native recovery semantics, and explicit recovery authority.
+    - MUST NOT resume after draining, closure, or context replacement.
+    - MUST NOT fabricate checkpoint retrieval endpoints or accept checkpoint contents as proof of employer non-commitment.
+    - MUST NOT merge the connector command ledger with the subject's step ledger into cross-owner atomic writes.
+  VERIFICATION: pytest tests/test_conformance.py -k "T20 or T21"
+
+NODE: resource_registry | modules/resource_registry | lang: python | tier: 4 | deps: [clock_discipline, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#72-tokens, seam-mappings/circus-tent-seam-mapping.md#73-invalidation-transitions, seam-mappings/circus-tent-seam-mapping.md#114-instance-lifecycle, seam-mappings/circus-tent-seam-mapping.md#174-leases]
+  EXPOSES: [def resolve_native(reference: Union[CFProfileRef, CFTabRef, CFDocumentRef, CFTargetRef], binding_digest: Digest) -> object, def register_native(reference: Union[CFProfileRef, CFTabRef, CFDocumentRef, CFTargetRef], native: object, binding_digest: Digest) -> None, def invalidate_native(reference: Union[CFProfileRef, CFTabRef, CFDocumentRef, CFTargetRef], reason: Identifier) -> EvidenceRef, def fence_profile(request: CFProfileOpen, binding_digest: Digest) -> EvidenceRef, def record_profile_exit(result: CFProfileExited, binding_digest: Digest) -> EvidenceRef]
+  CONSUMES: [clock_discipline: def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def commit_owner_effect(owner_domain: Identifier, expected_revision: Revision, command_key: Identifier, request_digest: Digest, effect: ArtifactReference, response: ArtifactReference, events: tuple[EventSubmission, ...]) -> tuple[JournalEnvelope, ...], evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object]
+  TEST_ASSERTIONS: [T42, T56]
+  INVARIANTS: [EK-LEASE, EK-LEASE-RESTART, CF-PROFILE, CF-STATE, CF-ROUTE]
+  FORBIDDEN:
+    - MUST NOT deserialize a token into a usable native object or transferable browser handle.
+    - MUST NOT reuse tokens across binding routes, controller lifetimes, process generations, document epochs, or replaced nodes.
+    - MUST NOT silently resolve a stale target to a replacement element.
+    - MUST NOT reopen profile storage before verified old-process exit and required flush evidence.
+    - MUST NOT treat fencing or lease reclamation as proof that native or origin work stopped.
+  VERIFICATION: pytest tests/test_conformance.py -k "T42 or T56"
+
+NODE: admission_scheduler | modules/admission_scheduler | lang: python | tier: 4 | deps: [clock_discipline, access_policy, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#58-budgets-and-concerns, seam-mappings/circus-tent-seam-mapping.md#111-routing-and-concurrency, seam-mappings/circus-tent-seam-mapping.md#112-backpressure-and-target-backoff, seam-mappings/circus-tent-seam-mapping.md#184-eight-binding-inventory-benchmarks]
+  EXPOSES: [def stage_admission(handle: ConnectorHandle, account_id: Identifier, active_deadline: TimePoint) -> ArtifactReference, async def acquire_slot(handle: ConnectorHandle, account_id: Identifier, shard_id: Identifier, deadline: TimePoint) -> EvidenceRef, def release_slot(permit_ref: EvidenceRef) -> None, def fence_workflow(handle: ConnectorHandle) -> EvidenceRef]
+  CONSUMES: [clock_discipline: def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit, access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, evidence_journal: def commit_owner_effect(owner_domain: Identifier, expected_revision: Revision, command_key: Identifier, request_digest: Digest, effect: ArtifactReference, response: ArtifactReference, events: tuple[EventSubmission, ...]) -> tuple[JournalEnvelope, ...]]
+  TEST_ASSERTIONS: [T22]
+  INVARIANTS: [EK-LEASE, EK-LEASE-RESTART, EXT-BOUNDS, EXT-START, LIFE-DISPATCH, CF-SYNC]
+  FORBIDDEN:
+    - MUST NOT create quota buckets from caller-supplied session_id values.
+    - MUST NOT spawn unbounded tabs, silently drop queued work, or leak permits on any terminal path.
+    - MUST NOT start native delivery after the active boundary; accepted queue time consumes that budget.
+    - MUST NOT let task work exhaust the admission or execution capacity reserved for close/control handling.
+    - MUST NOT claim that local workflow fencing stops an already dispatched monolithic native run.
+    - MUST NOT relax the benchmark workload of 100 sessions by 20 tasks, shard cap 12, account cap 3, or maximum-wait bound.
+  VERIFICATION: pytest tests/test_conformance.py -k "T22"
+
+NODE: learning_store | modules/learning_store | lang: python | tier: 4 | deps: [access_policy, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#59-state-policy, seam-mappings/circus-tent-seam-mapping.md#93-tier-1, seam-mappings/circus-tent-seam-mapping.md#94-tier-2, seam-mappings/circus-tent-seam-mapping.md#96-tier-3-and-coordinate-gap]
+  EXPOSES: [def load_learning_entry(cache: Identifier, key: Identifier, policy: StatePolicy) -> Union[ArtifactReference, Missing], def publish_learning_entry(cache: Identifier, key: Identifier, value: ArtifactReference, policy: StatePolicy, support: tuple[EvidenceRef, ...]) -> EvidenceRef]
+  CONSUMES: [access_policy: def validate_disclosure(content: bytes, access: Literal["public", "restricted"], policy: VersionPin) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def commit_owner_effect(owner_domain: Identifier, expected_revision: Revision, command_key: Identifier, request_digest: Digest, effect: ArtifactReference, response: ArtifactReference, events: tuple[EventSubmission, ...]) -> tuple[JournalEnvelope, ...]]
+  TEST_ASSERTIONS: [T53]
+  INVARIANTS: [EXT-STATE-POLICY, CF-STATE, EK-ARTIFACTS, OWD-OWNER, OWD-REVISION]
+  FORBIDDEN:
+    - MUST NOT write selector, coordinate, confidence, hit-count, or revalidation changes under frozen learning policy.
+    - MUST NOT equate fresh browser state with fresh framework learning.
+    - MUST NOT silently alias cache version and schema_version or apply an unpinned migration.
+    - MUST NOT promote an unvalidated model proposal or failed action into a verified selector.
+    - MUST NOT treat cache confidence or image-hash equality as independent correctness evidence.
+  VERIFICATION: pytest tests/test_conformance.py -k "T53"
+
+NODE: model_conduit | modules/model_conduit | lang: python | tier: 4 | deps: [clock_discipline, access_policy, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#58-budgets-and-concerns, seam-mappings/circus-tent-seam-mapping.md#94-tier-2, seam-mappings/circus-tent-seam-mapping.md#97-budget-and-circuit-breaker, seam-mappings/circus-tent-seam-mapping.md#161-configuration]
+  EXPOSES: [async def request_model(role: Literal["text_healing", "vision_fallback"], prompt: ArtifactReference, scope: WorkScope, principal_id: Identifier) -> Union[ArtifactReference, Missing]]
+  CONSUMES: [clock_discipline: def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit, access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, access_policy: def load_configuration(source: bytes, environment: Mapping[str, str]) -> dict[str, object], evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope]
+  TEST_ASSERTIONS: [T54]
+  INVARIANTS: [EXT-BOUNDS, EXT-PREPARE, EXT-PREPARATION-PIN, EK-TIMING-INTERPRETATION, EK-ARTIFACTS]
+  FORBIDDEN:
+    - MUST NOT substitute daily per-session or per-shard limits for commissioned per-task token enforcement.
+    - MUST NOT invoke models during Prepare or when the applicable remaining token budget is zero.
+    - MUST NOT bypass LiteLLM, required request headers, configured provider order, or the pinned circuit-breaker policy.
+    - MUST NOT count provider failover as permission for another browser action.
+    - MUST NOT record unknown provider usage as zero or disclose unauthorized candidate data to a model.
+  VERIFICATION: pytest tests/test_conformance.py -k "T54"
+
+NODE: native_transport | modules/native_transport | lang: python | tier: 4 | deps: [clock_discipline, access_policy, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#51-carrier, seam-mappings/circus-tent-seam-mapping.md#56-native-field-transformation, seam-mappings/circus-tent-seam-mapping.md#65-crash-boundaries, seam-mappings/circus-tent-seam-mapping.md#151-separate-controls, seam-mappings/circus-tent-seam-mapping.md#163-callbacks]
+  EXPOSES: [async def deliver(preparation: PreparedTask, handle: ConnectorHandle, principal_id: Identifier) -> Union[ArtifactReference, Missing], async def invoke_native_control(handle: HandleReference, operation: Operation, request: ArtifactReference, mapping: VersionPin, wait_limit: DurationLimit) -> ControlObservation, def close_native_connection(handle: HandleReference, authorization_ref: EvidenceRef) -> ControlObservation]
+  CONSUMES: [clock_discipline: def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit, access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, access_policy: def resolve_runtime_access(access: RuntimeAccess, principal_id: Identifier, scope: WorkScope) -> bytes, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope]
+  TEST_ASSERTIONS: [T18]
+  INVARIANTS: [EK-ATOMICITY, LIFE-DISPATCH, LIFE-IDEMPOTENCY, EXT-START, EXT-IDEMPOTENCY, EXT-NORMALIZE, EXT-FAILURE]
+  FORBIDDEN:
+    - MUST NOT deliver before durable handle, request binding, authorization, and dispatch-intent evidence exist.
+    - MUST NOT retry ambiguous task delivery automatically or generate a fresh logical key.
+    - MUST NOT invent run polling, cancellation, release, revision, checkpoint, or artifact endpoints.
+    - MUST NOT infer native acceptance from local queueing or an undocumented HTTP status.
+    - MUST NOT change prepared semantics while materializing transport credentials.
+    - MUST NOT treat transport closure as cancellation, termination, or employer rollback.
+  VERIFICATION: pytest tests/test_conformance.py -k "T18"
+
+NODE: offline_replay | modules/offline_replay | lang: python | tier: 4 | deps: [contract_codec, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#171-consumer-assessment, seam-mappings/circus-tent-seam-mapping.md#172-diagnostic-mapping, seam-mappings/circus-tent-seam-mapping.md#173-replay]
+  EXPOSES: [def replay_diagnostic(manifest: Manifest, prefix: JournalPrefix, diagnostic: ArtifactReference, bundle: ArtifactReference, classifier: VersionPin) -> ReplayReceipt]
+  CONSUMES: [contract_codec: def canonical_bytes(value: object) -> bytes, contract_codec: def digest_bytes(content: bytes) -> Digest, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def read_prefix(journal_id: Identifier, through: Union[JournalPrefix, Missing]) -> tuple[JournalEnvelope, ...], evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object]
+  TEST_ASSERTIONS: [T59]
+  INVARIANTS: [EK-DIAGNOSTIC, EK-REPLAY, EK-ASSESSMENT, EK-ARTIFACTS, EXT-FAILURE]
+  FORBIDDEN:
+    - MUST NOT import or invoke browser bindings, Start, workflow execution, native controls, or employer mutations.
+    - MUST NOT consult current wall time, mutable owner rows, live network data, or an unpinned classifier.
+    - MUST NOT report matched when required inputs or comparisons are unavailable.
+    - MUST NOT present diagnostic rederivation as native-behavior reproduction or exact fixture replay.
+    - MUST NOT overwrite the compared diagnostic or mutate its original suggestion registry pin.
+  VERIFICATION: pytest tests/test_conformance.py -k "T59"
+
+NODE: attempt_lifecycle | modules/attempt_lifecycle | lang: python | tier: 5 | deps: [contract_codec, clock_discipline, evidence_journal, owner_publications]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#64-dispatch-transitions-and-fields, seam-mappings/circus-tent-seam-mapping.md#141-commission, seam-mappings/circus-tent-seam-mapping.md#143-observation-policy-and-states, seam-mappings/circus-tent-seam-mapping.md#144-close-snapshot, seam-mappings/circus-tent-seam-mapping.md#145-origin-facts, seam-mappings/circus-tent-seam-mapping.md#146-reports-and-snapshots]
+  EXPOSES: [def publish_dispatch(commission: AttemptCommission, value: DispatchValue, expected_revision: Revision) -> LifecyclePublicationReference, def publish_observation(commission: AttemptCommission, value: ObservationValue, expected_revision: Revision) -> LifecyclePublicationReference, def publish_execution(commission: AttemptCommission, value: ExecutionValue, expected_revision: Revision) -> LifecyclePublicationReference, def validate_snapshot(snapshot: AttemptSnapshot) -> None]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, clock_discipline: def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object, owner_publications: def publish_axis(revision: AxisRevision, expected_revision: Revision) -> LifecyclePublicationReference, owner_publications: def report_is_current(snapshot: AttemptSnapshot) -> bool]
+  TEST_ASSERTIONS: [T26, T27, T31, T32]
+  INVARIANTS: [EK-ATTEMPT-SCOPE, EK-MANUAL, EK-CLAIMS, EK-ASSESSMENT, LIFE-COMMISSION, LIFE-AXES, LIFE-PUBLICATION, LIFE-EVIDENCE, LIFE-DISPATCH, LIFE-CLOSE, LIFE-CLAIMS, LIFE-ORIGIN, LIFE-SOURCE-CHECKS, LIFE-RECONCILE, LIFE-REPORT-COVERAGE, LIFE-LATE-EVIDENCE, LIFE-LINEAGE, LIFE-MANUAL, LIFE-TIME]
+  FORBIDDEN:
+    - MUST NOT author application facts or report verdicts; imported source publications are validated read inputs only.
+    - MUST NOT convert practice evidence into production commitment or mutate commissioned kind, target, task, or subject version.
+    - MUST NOT fabricate manual dispatch, subject identity, native run ID, or execution publication.
+    - MUST NOT rewrite close-time knowledge after late evidence arrives.
+    - MUST NOT classify outcome_unknown as contradicted solely by later commitment.
+    - MUST NOT compare boundary-scoped assertions using receipt order alone or suppress a proved entire-attempt no-commit contradiction.
+  VERIFICATION: pytest tests/test_conformance.py -k "T26 or T27 or T31 or T32"
+
+NODE: task_preparation | modules/task_preparation | lang: python | tier: 5 | deps: [contract_codec, access_policy, evidence_artifacts, evidence_journal, subject_catalog]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#53-scope-and-configuration, seam-mappings/circus-tent-seam-mapping.md#54-task-envelope, seam-mappings/circus-tent-seam-mapping.md#55-assistance-and-runtime-access, seam-mappings/circus-tent-seam-mapping.md#56-native-field-transformation, seam-mappings/circus-tent-seam-mapping.md#57-prepare-restrictions-and-result, seam-mappings/circus-tent-seam-mapping.md#58-budgets-and-concerns, seam-mappings/circus-tent-seam-mapping.md#59-state-policy]
+  EXPOSES: [def prepare(request: PrepareRequest, principal_id: Identifier) -> Union[PrepareResult, ConnectorError], def validate_start_preparation(request: StartRequest, principal_id: Identifier) -> PreparedTask]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, contract_codec: def canonical_bytes(value: object) -> bytes, contract_codec: def digest_bytes(content: bytes) -> Digest, access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, subject_catalog: def describe(connector_id: Identifier) -> ConnectorDescriptor]
+  TEST_ASSERTIONS: [T13, T14]
+  INVARIANTS: [EXT-SURFACE, EXT-TASK, EXT-PREPARE, EXT-PREPARATION-PIN, EXT-STATE-POLICY, EXT-BOUNDS, EK-ATTEMPT-SCOPE, LIFE-COMMISSION]
+  FORBIDDEN:
+    - MUST NOT browse, preflight authentication, open/reset contexts, solve challenges, invoke models, or improve supplied plans.
+    - MUST NOT serialize speculative native fields or claim REST/MCP parity without separate pinned mappings.
+    - MUST NOT silently reprepare changed subject, mapping, task, permission, state-policy, or artifact inputs.
+    - MUST NOT accept a blocking mapping or required enforcement failure as a nonblocking concern.
+    - MUST NOT infer application authority from goal text or dispatch a manual commission.
+    - MUST NOT fabricate entry URLs for raw-HTML extraction or add shared selector/step fields to TaskEnvelope.
+  VERIFICATION: pytest tests/test_conformance.py -k "T13 or T14"
+
+NODE: camoufox_binding | modules/camoufox_binding | lang: python | tier: 5 | deps: [contract_codec, clock_discipline, access_policy, evidence_artifacts, evidence_journal, subject_catalog, resource_registry]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#71-route-and-descriptor, seam-mappings/circus-tent-seam-mapping.md#81-transcript-and-failures, seam-mappings/circus-tent-seam-mapping.md#82-primitive-matrix, seam-mappings/circus-tent-seam-mapping.md#83-nested-structures, seam-mappings/circus-tent-seam-mapping.md#Appendix A — Normative contract-identifier cross-reference]
+  EXPOSES: [def invoke_primitive(binding: CFBindingDescriptor, operation: CFPrimitive, request: dict[str, object], authorization_ref: EvidenceRef, wait_limit: DurationLimit) -> CFPrimitiveTranscript]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, clock_discipline: def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, access_policy: def authorize_artifact(principal_id: Identifier, artifact: ArtifactReference) -> None, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object, subject_catalog: def validate_binding(binding: CFBindingDescriptor) -> None, resource_registry: def resolve_native(reference: Union[CFProfileRef, CFTabRef, CFDocumentRef, CFTargetRef], binding_digest: Digest) -> object, resource_registry: def register_native(reference: Union[CFProfileRef, CFTabRef, CFDocumentRef, CFTargetRef], native: object, binding_digest: Digest) -> None, resource_registry: def invalidate_native(reference: Union[CFProfileRef, CFTabRef, CFDocumentRef, CFTargetRef], reason: Identifier) -> EvidenceRef, resource_registry: def fence_profile(request: CFProfileOpen, binding_digest: Digest) -> EvidenceRef, resource_registry: def record_profile_exit(result: CFProfileExited, binding_digest: Digest) -> EvidenceRef]
+  TEST_ASSERTIONS: [T39, T40, T48, T51]
+  INVARIANTS: [CF-ROUTE, CF-SYNC, CF-STATE, CF-INPUT, CF-TIME, CF-EVIDENCE, CF-CAPS, EK-PROVENANCE]
+  FORBIDDEN:
+    - MUST NOT expose a browser-neutral primitive dispatcher, BrowserOxide handle, or shared ElementHandle.
+    - MUST NOT accept request dictionaries except through the exact operation-selected closed CF schema.
+    - MUST NOT route extension_native page operations through Playwright/Juggler or silently fall back to compatibility.
+    - MUST NOT label synthetic property/events as native trusted input.
+    - MUST NOT return a workflow handle, perform healing/retries, or deadlock the transport's reply-serving event loop.
+    - MUST NOT report local waiting expiry as native termination or retry a possibly delivered side effect.
+    - MUST NOT invent extension transport, permissions, privileged APIs, or current implementation support.
+  VERIFICATION: pytest tests/test_conformance.py -k "T39 or T40 or T48 or T51"
+
+NODE: profile_supervisor | modules/profile_supervisor | lang: python | tier: 6 | deps: [access_policy, evidence_artifacts, evidence_journal, camoufox_binding]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#113-profile-identity-and-bootstrap, seam-mappings/circus-tent-seam-mapping.md#114-instance-lifecycle, seam-mappings/circus-tent-seam-mapping.md#115-shutdown, seam-mappings/circus-tent-seam-mapping.md#184-eight-binding-inventory-benchmarks]
+  EXPOSES: [def open_profile(request: CFProfileOpen, binding: CFBindingDescriptor, authorization_ref: EvidenceRef, limit: DurationLimit) -> Union[CFProfileOpened, CFFailure], def recycle_profile(profile: CFProfileRef, binding: CFBindingDescriptor, authorization_ref: EvidenceRef, limit: DurationLimit) -> Union[CFProfileOpened, CFFailure], def shutdown_profiles(binding: CFBindingDescriptor, authorization_ref: EvidenceRef, limit: DurationLimit) -> tuple[Union[CFProfileExited, CFFailure], ...]]
+  CONSUMES: [access_policy: def load_configuration(source: bytes, environment: Mapping[str, str]) -> dict[str, object], evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, camoufox_binding: def invoke_primitive(binding: CFBindingDescriptor, operation: CFPrimitive, request: dict[str, object], authorization_ref: EvidenceRef, wait_limit: DurationLimit) -> CFPrimitiveTranscript]
+  TEST_ASSERTIONS: [T57]
+  INVARIANTS: [CF-PROFILE, CF-STATE, CF-EVIDENCE, LIFE-CONTROLS, EXT-STATE-POLICY]
+  FORBIDDEN:
+    - MUST NOT rotate fingerprints, copy a live Firefox profile, or overlap browser writers against one profile directory.
+    - MUST NOT claim clean flush, exit, or drain after forced death or grace expiry without actual evidence.
+    - MUST NOT create a missing production fingerprint manifest opportunistically.
+    - MUST NOT silently change identity-affecting launch options or assume the bootstrap/virtual-display transition is exempt from policy.
+    - MUST NOT substitute manifest-hash equality for observed fingerprint-surface equality.
+    - MUST NOT replace the 100-launch fingerprint, 500-page recycle, or 20-session MFA targets with shorter passing claims.
+    - MUST NOT run live MFA or employer workflows in CI.
+  VERIFICATION: pytest tests/test_conformance.py -k "T57"
+
+NODE: page_observation | modules/page_observation | lang: python | tier: 6 | deps: [clock_discipline, evidence_artifacts, evidence_journal, camoufox_binding]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#83-nested-structures, seam-mappings/circus-tent-seam-mapping.md#101-stabilization-and-reduction]
+  EXPOSES: [def reduce_document(binding: CFBindingDescriptor, request: CFReduceDocument, scope: WorkScope) -> Union[CFReduction, CFFailure], def await_readiness(binding: CFBindingDescriptor, request: CFAwaitCondition, scope: WorkScope) -> Union[CFConditionReply, CFFailure]]
+  CONSUMES: [clock_discipline: def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, camoufox_binding: def invoke_primitive(binding: CFBindingDescriptor, operation: CFPrimitive, request: dict[str, object], authorization_ref: EvidenceRef, wait_limit: DurationLimit) -> CFPrimitiveTranscript]
+  TEST_ASSERTIONS: [T52]
+  INVARIANTS: [CF-STRUCTURE, CF-SYNC, CF-TIME, EK-OBSERVATION, EK-NULL]
+  FORBIDDEN:
+    - MUST NOT transfer an unrestricted raw SPA DOM before performing the declared browser-resident reduction.
+    - MUST NOT flatten away frame/root identities, document epochs, or inaccessible-boundary markers.
+    - MUST NOT assume clone/query operations traverse shadow roots or that closed roots are accessible.
+    - MUST NOT silently truncate a reduction or call unavailable contents an empty complete tree.
+    - MUST NOT treat network idle, DOM quiet, text hydration, or navigation return as universal readiness or application success.
+    - MUST NOT claim network completeness beyond the configured route's observed coverage.
+  VERIFICATION: pytest tests/test_conformance.py -k "T52"
+
+NODE: target_resolution | modules/target_resolution | lang: python | tier: 6 | deps: [evidence_artifacts, camoufox_binding]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#83-nested-structures, seam-mappings/circus-tent-seam-mapping.md#95-selector-strategy-gap]
+  EXPOSES: [def resolve_target(binding: CFBindingDescriptor, request: CFResolveTarget, authorization_ref: EvidenceRef, limit: DurationLimit) -> Union[CFMatches, CFFailure], def translate_selector(selector: ArtifactReference, document: CFDocumentRef, mapping: VersionPin) -> Union[CFResolveTarget, Missing]]
+  CONSUMES: [evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, camoufox_binding: def invoke_primitive(binding: CFBindingDescriptor, operation: CFPrimitive, request: dict[str, object], authorization_ref: EvidenceRef, wait_limit: DurationLimit) -> CFPrimitiveTranscript]
+  TEST_ASSERTIONS: [T43]
+  INVARIANTS: [CF-STATE, CF-INPUT, CF-SYNC, EXT-PREPARE]
+  FORBIDDEN:
+    - MUST NOT click the first of multiple matches or infer uniqueness from partial results.
+    - MUST NOT implement undisclosed selector tiers, model recovery, or alternate actions inside resolution.
+    - MUST NOT relabel XPath as a supported CF strategy or hide it behind evaluation.
+    - MUST NOT translate test-ID selectors without a pinned equivalence-preserving attribute and escaping rule.
+    - MUST NOT treat no match as absence of native DOM capability.
+  VERIFICATION: pytest tests/test_conformance.py -k "T43"
+
+NODE: file_upload | modules/file_upload | lang: python | tier: 6 | deps: [access_policy, evidence_artifacts, evidence_journal, camoufox_binding]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#83-nested-structures, seam-mappings/circus-tent-seam-mapping.md#103-upload-custody]
+  EXPOSES: [def upload_files(binding: CFBindingDescriptor, request: CFUpload, scope: WorkScope, principal_id: Identifier) -> CFPrimitiveTranscript]
+  CONSUMES: [access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, camoufox_binding: def invoke_primitive(binding: CFBindingDescriptor, operation: CFPrimitive, request: dict[str, object], authorization_ref: EvidenceRef, wait_limit: DurationLimit) -> CFPrimitiveTranscript]
+  TEST_ASSERTIONS: [T49, T50]
+  INVARIANTS: [CF-INPUT, CF-EVIDENCE, EXT-AUTHORITY, EK-ARTIFACTS, EK-CLAIMS]
+  FORBIDDEN:
+    - MUST NOT load unbounded file content before checking admitted byte limits and authorized sourcing.
+    - MUST NOT upload bytes whose digest, size, or MIME policy differs from admitted material identity.
+    - MUST NOT replace native-file-input with synthetic drag/drop without explicit authorization and mapping.
+    - MUST NOT alter the pinned dragenter, dragover, drop sequence or label it trusted input.
+    - MUST NOT equate file assignment with server acceptance or application commitment.
+    - MUST NOT create unnecessary persistent upload copies in Circus Tent.
+  VERIFICATION: pytest tests/test_conformance.py -k "T49 or T50"
+
+NODE: challenge_recovery | modules/challenge_recovery | lang: python | tier: 6 | deps: [clock_discipline, access_policy, evidence_artifacts, evidence_journal, camoufox_binding]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#104-challenges, seam-mappings/circus-tent-seam-mapping.md#191-required-immutable-implementation-artifacts, seam-mappings/circus-tent-seam-mapping.md#192-explicit-unresolved-cuts]
+  EXPOSES: [async def handle_challenge(binding: CFBindingDescriptor, document: CFDocumentRef, observation: ArtifactReference, scope: WorkScope, principal_id: Identifier) -> tuple[EvidenceRef, ...]]
+  CONSUMES: [clock_discipline: def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit, access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, access_policy: def load_configuration(source: bytes, environment: Mapping[str, str]) -> dict[str, object], evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, camoufox_binding: def invoke_primitive(binding: CFBindingDescriptor, operation: CFPrimitive, request: dict[str, object], authorization_ref: EvidenceRef, wait_limit: DurationLimit) -> CFPrimitiveTranscript]
+  TEST_ASSERTIONS: [T55]
+  INVARIANTS: [CF-ROUTE, CF-EVIDENCE, EXT-AUTHORITY, EXT-PREPARE, EXT-BOUNDS, EXT-DECLARE-NOT-ASSESS]
+  FORBIDDEN:
+    - MUST NOT solve challenges during Prepare or outside commissioned recovery and cost budgets.
+    - MUST NOT infer current provider support from an enabled challenge-family configuration.
+    - MUST NOT implement missing cookie or HttpOnly-cookie operations through hidden driver calls or guessed evaluation privileges.
+    - MUST NOT conceal Playwright/Juggler injection beneath extension_native.
+    - MUST NOT treat a provider token, challenge clearance, or page continuation as application success.
+  VERIFICATION: pytest tests/test_conformance.py -k "T55"
+
+NODE: native_report_ingestion | modules/native_report_ingestion | lang: python | tier: 6 | deps: [contract_codec, clock_discipline, access_policy, evidence_artifacts, evidence_journal, attempt_lifecycle]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#131-source-checks, seam-mappings/circus-tent-seam-mapping.md#132-execution-claim-fields, seam-mappings/circus-tent-seam-mapping.md#133-history-preservation, seam-mappings/circus-tent-seam-mapping.md#163-callbacks]
+  EXPOSES: [def normalize_report(handle: ConnectorHandle, raw: ArtifactReference, channel: Literal["terminal_response", "callback", "native_stream"], policy: VersionPin) -> NativeReportObservation]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, clock_discipline: def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, access_policy: def authorize_artifact(principal_id: Identifier, artifact: ArtifactReference) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object, attempt_lifecycle: def publish_execution(commission: AttemptCommission, value: ExecutionValue, expected_revision: Revision) -> LifecyclePublicationReference]
+  TEST_ASSERTIONS: [T28, T29, T30]
+  INVARIANTS: [EK-CLAIMS, EK-PROVENANCE, EK-OBSERVATION, LIFE-CLAIMS, LIFE-SOURCE-CHECKS, LIFE-LATE-EVIDENCE, EXT-NORMALIZE, EXT-EVIDENCE]
+  FORBIDDEN:
+    - MUST NOT trust serialized verified/matched labels, signatures without verification, or trace IDs as authentication.
+    - MUST NOT attach an uncorrelated callback claim to the supplied handle merely because the handle exists.
+    - MUST NOT discard trace mismatch when alternate correlation succeeds.
+    - MUST NOT replace conflicting authenticated reports with the latest value.
+    - MUST NOT promote completed, stopped, None, HTTP success, or transport acknowledgement into origin commitment.
+    - MUST NOT invent native identifiers, source timestamps, stream support, or corrected timing values.
+  VERIFICATION: pytest tests/test_conformance.py -k "T28 or T29 or T30"
+
+NODE: observation_reader | modules/observation_reader | lang: python | tier: 6 | deps: [contract_codec, access_policy, evidence_artifacts, evidence_journal]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#124-observe-records, seam-mappings/circus-tent-seam-mapping.md#153-artifact-transfer, seam-mappings/circus-tent-seam-mapping.md#164-telemetry]
+  EXPOSES: [async def observe(request: ObserveRequest, principal_id: Identifier) -> Union[ObservationPage, ConnectorError], def artifact_slots(handle: HandleReference, prefix: JournalPrefix) -> tuple[ArtifactSlot, ...]]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, access_policy: def authorize_artifact(principal_id: Identifier, artifact: ArtifactReference) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def read_prefix(journal_id: Identifier, through: Union[JournalPrefix, Missing]) -> tuple[JournalEnvelope, ...], evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object]
+  TEST_ASSERTIONS: [T35, T36]
+  INVARIANTS: [EK-JOURNAL, EK-OBSERVATION, EK-PROVENANCE, EXT-OBSERVE, EXT-EVIDENCE, EXT-ARTIFACTS, LIFE-LATE-EVIDENCE]
+  FORBIDDEN:
+    - MUST NOT move a continuation cutoff, skip unavailable history, or advance past an oversized unreturned observation.
+    - MUST NOT confuse last scanned sequence with last returned observation sequence.
+    - MUST NOT treat an empty page, closed HTTP connection, or has_more=false as producer completeness or execution termination.
+    - MUST NOT project unjournaled telemetry, forged provenance, or events belonging to another handle.
+    - MUST NOT fabricate additional ObservationPayload variants.
+  VERIFICATION: pytest tests/test_conformance.py -k "T35 or T36"
+
+NODE: local_controls | modules/local_controls | lang: python | tier: 6 | deps: [clock_discipline, access_policy, evidence_artifacts, evidence_journal, subject_catalog, admission_scheduler, native_transport, attempt_lifecycle]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#143-observation-policy-and-states, seam-mappings/circus-tent-seam-mapping.md#144-close-snapshot, seam-mappings/circus-tent-seam-mapping.md#151-separate-controls, seam-mappings/circus-tent-seam-mapping.md#152-control-observations]
+  EXPOSES: [async def control(request: ConnectorRequest, principal_id: Identifier) -> Union[ControlReceipt, ConnectorError], async def expire_observation(handle: ConnectorHandle, now: TimePoint) -> LifecyclePublicationReference]
+  CONSUMES: [clock_discipline: def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit, access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, evidence_journal: def resolve_evidence(reference: EvidenceRef, prefix: JournalPrefix) -> object, subject_catalog: def describe(connector_id: Identifier) -> ConnectorDescriptor, admission_scheduler: def fence_workflow(handle: ConnectorHandle) -> EvidenceRef, native_transport: async def invoke_native_control(handle: HandleReference, operation: Operation, request: ArtifactReference, mapping: VersionPin, wait_limit: DurationLimit) -> ControlObservation, native_transport: def close_native_connection(handle: HandleReference, authorization_ref: EvidenceRef) -> ControlObservation, attempt_lifecycle: def publish_observation(commission: AttemptCommission, value: ObservationValue, expected_revision: Revision) -> LifecyclePublicationReference]
+  TEST_ASSERTIONS: [T23, T24, T25]
+  INVARIANTS: [EK-CLAIMS, LIFE-CLOSE, LIFE-CONTROLS, LIFE-LATE-EVIDENCE, EXT-CLOSE, EXT-CONTROLS, EXT-BOUNDS, EXT-IDEMPOTENCY]
+  FORBIDDEN:
+    - MUST NOT couple connection closure, observation finalization, native cancellation, context release, and containment into one inferred effect.
+    - MUST NOT interpret end_observation=false as finalization or either flag value as an implicit cancel request.
+    - MUST NOT wait indefinitely for unsupported or uncertain native cancellation before closing local observation.
+    - MUST NOT invoke arbitrary shell commands, guess containment PIDs, or silently contain after release failure.
+    - MUST NOT seal employer mutation authority or classify forced termination as cooperative cancellation or rollback.
+    - MUST NOT reopen workflow delivery or rewrite the original close snapshot when late evidence arrives.
+  VERIFICATION: pytest tests/test_conformance.py -k "T23 or T24 or T25"
+
+NODE: text_healing | modules/text_healing | lang: python | tier: 7 | deps: [evidence_artifacts, evidence_journal, model_conduit, page_observation, target_resolution]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#92-local-execution-states, seam-mappings/circus-tent-seam-mapping.md#94-tier-2, seam-mappings/circus-tent-seam-mapping.md#95-selector-strategy-gap, seam-mappings/circus-tent-seam-mapping.md#184-eight-binding-inventory-benchmarks]
+  EXPOSES: [async def propose_selector(binding: CFBindingDescriptor, step: ArtifactReference, failed_call: CFPrimitiveTranscript, document: CFDocumentRef, scope: WorkScope, principal_id: Identifier) -> Union[CFResolveTarget, Missing]]
+  CONSUMES: [evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, model_conduit: async def request_model(role: Literal["text_healing", "vision_fallback"], prompt: ArtifactReference, scope: WorkScope, principal_id: Identifier) -> Union[ArtifactReference, Missing], page_observation: def reduce_document(binding: CFBindingDescriptor, request: CFReduceDocument, scope: WorkScope) -> Union[CFReduction, CFFailure], target_resolution: def translate_selector(selector: ArtifactReference, document: CFDocumentRef, mapping: VersionPin) -> Union[CFResolveTarget, Missing]]
+  TEST_ASSERTIONS: [T44]
+  INVARIANTS: [CF-SYNC, CF-STRUCTURE, EXT-PREPARE, EXT-BOUNDS, EK-ARTIFACTS, EK-ASSESSMENT]
+  FORBIDDEN:
+    - MUST NOT execute a browser action, authorize a side-effect retry, or update a verified selector merely by returning a proposal.
+    - MUST NOT overwrite the raw model response with repaired JSON.
+    - MUST NOT exceed the declared repair/recovery policy or hide additional assistance in the prompt.
+    - MUST NOT weaken the 20-percent DOM-mutation workload or greater-than-85-percent first-attempt target.
+    - MUST NOT present mocked-model benchmark performance as live-model recovery evidence.
+  VERIFICATION: pytest tests/test_conformance.py -k "T44"
+
+NODE: visual_recovery | modules/visual_recovery | lang: python | tier: 7 | deps: [contract_codec, clock_discipline, evidence_artifacts, evidence_journal, learning_store, model_conduit, camoufox_binding]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#83-nested-structures, seam-mappings/circus-tent-seam-mapping.md#96-tier-3-and-coordinate-gap]
+  EXPOSES: [async def localize_target(binding: CFBindingDescriptor, request: CFCaptureCrop, step: ArtifactReference, scope: WorkScope, principal_id: Identifier) -> Union[ArtifactReference, Missing]]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, clock_discipline: def validate_measurement(measurement: Measurement, clocks: tuple[ClockDescriptor, ...]) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, learning_store: def load_learning_entry(cache: Identifier, key: Identifier, policy: StatePolicy) -> Union[ArtifactReference, Missing], learning_store: def publish_learning_entry(cache: Identifier, key: Identifier, value: ArtifactReference, policy: StatePolicy, support: tuple[EvidenceRef, ...]) -> EvidenceRef, model_conduit: async def request_model(role: Literal["text_healing", "vision_fallback"], prompt: ArtifactReference, scope: WorkScope, principal_id: Identifier) -> Union[ArtifactReference, Missing], camoufox_binding: def invoke_primitive(binding: CFBindingDescriptor, operation: CFPrimitive, request: dict[str, object], authorization_ref: EvidenceRef, wait_limit: DurationLimit) -> CFPrimitiveTranscript]
+  TEST_ASSERTIONS: [T45, T46, T47]
+  INVARIANTS: [CF-IMAGE, CF-STATE, CF-INPUT, EXT-PREPARATION-PIN, EK-TIMING-INTERPRETATION]
+  FORBIDDEN:
+    - MUST NOT add coordinate fields to CFInput, hide mouse actions in evaluation, or fabricate CFTargetRef from a bounding box.
+    - MUST NOT claim direct-coordinate Tier 3 execution under Camoufox contract version 0.1.0.
+    - MUST NOT authorize coordinate use without current viewport, scale, crop origin, frame offsets, and layout evidence.
+    - MUST NOT accept dHash similarity alone as intended-control correspondence.
+    - MUST NOT silently expand localized crops into full-viewport captures or default missing geometry to zero or unit scale.
+  VERIFICATION: pytest tests/test_conformance.py -k "T45 or T46 or T47"
+
+NODE: deterministic_extraction | modules/deterministic_extraction | lang: python | tier: 7 | deps: [contract_codec, evidence_artifacts, evidence_journal, page_observation]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#101-stabilization-and-reduction, seam-mappings/circus-tent-seam-mapping.md#102-extraction, seam-mappings/circus-tent-seam-mapping.md#184-eight-binding-inventory-benchmarks]
+  EXPOSES: [def extract_html(html: ArtifactReference, query: Union[str, Missing], output_schema: VersionPin, principal_id: Identifier) -> Union[TaskOutput, ConnectorError], def extract_live(binding: CFBindingDescriptor, document: CFDocumentRef, scope: WorkScope, query: Union[str, Missing], output_schema: VersionPin, principal_id: Identifier) -> Union[TaskOutput, ConnectorError]]
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, page_observation: def reduce_document(binding: CFBindingDescriptor, request: CFReduceDocument, scope: WorkScope) -> Union[CFReduction, CFFailure], page_observation: def await_readiness(binding: CFBindingDescriptor, request: CFAwaitCondition, scope: WorkScope) -> Union[CFConditionReply, CFFailure]]
+  TEST_ASSERTIONS: [T34]
+  INVARIANTS: [EXT-READ-ONLY, EXT-BOUNDS, EXT-EVIDENCE, CF-STRUCTURE, EK-NULL]
+  FORBIDDEN:
+    - MUST NOT invoke an LLM for deterministic schema-guided extraction.
+    - MUST NOT silently activate AsyncWebCrawler or another browser-spawning fallback.
+    - MUST NOT fabricate missing required output fields or claim a partial object satisfies a strict complete-output schema.
+    - MUST NOT conflate schema_incomplete with stabilization_partial or global discovery coverage.
+    - MUST NOT block close/control progress with synchronous extraction work.
+    - MUST NOT weaken the 500-by-150-KB workload, p95-below-200-ms target, or peak-RSS-below-2-GB target.
+  VERIFICATION: pytest tests/test_conformance.py -k "T34"
+
+NODE: connector_execution | modules/connector_execution | lang: python | tier: 7 | deps: [contract_codec, access_policy, evidence_artifacts, evidence_journal, native_ledger, admission_scheduler, native_transport, attempt_lifecycle, task_preparation, native_report_ingestion]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#61-start-records, seam-mappings/circus-tent-seam-mapping.md#62-atomic-local-admission, seam-mappings/circus-tent-seam-mapping.md#63-idempotency-layers, seam-mappings/circus-tent-seam-mapping.md#64-dispatch-transitions-and-fields, seam-mappings/circus-tent-seam-mapping.md#66-checkpoint-mapping]
+  EXPOSES: [def start(request: ConnectorRequest, principal_id: Identifier) -> Union[StartResult, ConnectorError], async def dispatch(handle: ConnectorHandle, principal_id: Identifier) -> None]
+  CONSUMES: [contract_codec: def canonical_bytes(value: object) -> bytes, contract_codec: def digest_bytes(content: bytes) -> Digest, access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_journal: def commit_owner_effect(owner_domain: Identifier, expected_revision: Revision, command_key: Identifier, request_digest: Digest, effect: ArtifactReference, response: ArtifactReference, events: tuple[EventSubmission, ...]) -> tuple[JournalEnvelope, ...], native_ledger: def validate_resume(authorization: ResumeAuthorization, handle: ConnectorHandle, observation: ObservationValue) -> None, admission_scheduler: def stage_admission(handle: ConnectorHandle, account_id: Identifier, active_deadline: TimePoint) -> ArtifactReference, native_transport: async def deliver(preparation: PreparedTask, handle: ConnectorHandle, principal_id: Identifier) -> Union[ArtifactReference, Missing], attempt_lifecycle: def publish_dispatch(commission: AttemptCommission, value: DispatchValue, expected_revision: Revision) -> LifecyclePublicationReference, attempt_lifecycle: def publish_observation(commission: AttemptCommission, value: ObservationValue, expected_revision: Revision) -> LifecyclePublicationReference, task_preparation: def validate_start_preparation(request: StartRequest, principal_id: Identifier) -> PreparedTask, native_report_ingestion: def normalize_report(handle: ConnectorHandle, raw: ArtifactReference, channel: Literal["terminal_response", "callback", "native_stream"], policy: VersionPin) -> NativeReportObservation]
+  TEST_ASSERTIONS: [T15, T16, T17]
+  INVARIANTS: [EK-ATOMICITY, LIFE-COMMISSION, LIFE-DISPATCH, LIFE-IDEMPOTENCY, EXT-START, EXT-IDEMPOTENCY, EXT-RESUME, EXT-PREPARATION-PIN, EXT-BOUNDS]
+  FORBIDDEN:
+    - MUST NOT await native completion before returning an acknowledged local Start receipt.
+    - MUST NOT allocate a second logical execution for repeated Start, a new request ID, changed caller, or changed executor.
+    - MUST NOT accept changed canonical command content under an existing command identity.
+    - MUST NOT dispatch without all required concern acceptance and an unchanged preparation.
+    - MUST NOT split durable admission, queue mutation, handle binding, idempotency association, intent, and replayable response across independent acknowledgements.
+    - MUST NOT treat a locally accepted handle as a native run ID or native acceptance.
+  VERIFICATION: pytest tests/test_conformance.py -k "T15 or T16 or T17"
+
+NODE: workflow_engine | modules/workflow_engine | lang: python | tier: 8 | deps: [clock_discipline, access_policy, evidence_artifacts, evidence_journal, native_ledger, admission_scheduler, learning_store, camoufox_binding, profile_supervisor, page_observation, target_resolution, file_upload, challenge_recovery, text_healing, visual_recovery, deterministic_extraction]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#91-step-mapping, seam-mappings/circus-tent-seam-mapping.md#92-local-execution-states, seam-mappings/circus-tent-seam-mapping.md#93-tier-1, seam-mappings/circus-tent-seam-mapping.md#94-tier-2, seam-mappings/circus-tent-seam-mapping.md#96-tier-3-and-coordinate-gap, seam-mappings/circus-tent-seam-mapping.md#66-checkpoint-mapping]
+  EXPOSES: [async def execute_plan(preparation: PreparedTask, handle: ConnectorHandle, binding: CFBindingDescriptor, principal_id: Identifier) -> ArtifactReference]
+  CONSUMES: [clock_discipline: def remaining_limit(deadline: TimePoint, now: TimePoint) -> DurationLimit, access_policy: def authorize(principal_id: Identifier, operation: Identifier, scope: WorkScope, authorization_refs: tuple[EvidenceRef, ...]) -> None, evidence_artifacts: def read_artifact(reference: ArtifactReference, principal_id: Identifier) -> bytes, evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def append_submission(journal_id: Identifier, principal_id: Identifier, submission: EventSubmission) -> JournalEnvelope, native_ledger: def claim_step(handle: ConnectorHandle, step_id: Identifier, request_digest: Digest, side_effecting: bool) -> tuple[Literal["execute", "completed", "uncertain"], EvidenceRef], native_ledger: def record_step(handle: ConnectorHandle, step_id: Identifier, transcript: CFPrimitiveTranscript, postconditions: tuple[PredicateResult, ...]) -> EvidenceRef, native_ledger: def save_checkpoint(handle: ConnectorHandle, checkpoint: ArtifactReference) -> EvidenceRef, admission_scheduler: async def acquire_slot(handle: ConnectorHandle, account_id: Identifier, shard_id: Identifier, deadline: TimePoint) -> EvidenceRef, admission_scheduler: def release_slot(permit_ref: EvidenceRef) -> None, learning_store: def load_learning_entry(cache: Identifier, key: Identifier, policy: StatePolicy) -> Union[ArtifactReference, Missing], learning_store: def publish_learning_entry(cache: Identifier, key: Identifier, value: ArtifactReference, policy: StatePolicy, support: tuple[EvidenceRef, ...]) -> EvidenceRef, camoufox_binding: def invoke_primitive(binding: CFBindingDescriptor, operation: CFPrimitive, request: dict[str, object], authorization_ref: EvidenceRef, wait_limit: DurationLimit) -> CFPrimitiveTranscript, profile_supervisor: def open_profile(request: CFProfileOpen, binding: CFBindingDescriptor, authorization_ref: EvidenceRef, limit: DurationLimit) -> Union[CFProfileOpened, CFFailure], page_observation: def await_readiness(binding: CFBindingDescriptor, request: CFAwaitCondition, scope: WorkScope) -> Union[CFConditionReply, CFFailure], target_resolution: def resolve_target(binding: CFBindingDescriptor, request: CFResolveTarget, authorization_ref: EvidenceRef, limit: DurationLimit) -> Union[CFMatches, CFFailure], target_resolution: def translate_selector(selector: ArtifactReference, document: CFDocumentRef, mapping: VersionPin) -> Union[CFResolveTarget, Missing], file_upload: def upload_files(binding: CFBindingDescriptor, request: CFUpload, scope: WorkScope, principal_id: Identifier) -> CFPrimitiveTranscript, challenge_recovery: async def handle_challenge(binding: CFBindingDescriptor, document: CFDocumentRef, observation: ArtifactReference, scope: WorkScope, principal_id: Identifier) -> tuple[EvidenceRef, ...], text_healing: async def propose_selector(binding: CFBindingDescriptor, step: ArtifactReference, failed_call: CFPrimitiveTranscript, document: CFDocumentRef, scope: WorkScope, principal_id: Identifier) -> Union[CFResolveTarget, Missing], visual_recovery: async def localize_target(binding: CFBindingDescriptor, request: CFCaptureCrop, step: ArtifactReference, scope: WorkScope, principal_id: Identifier) -> Union[ArtifactReference, Missing], deterministic_extraction: def extract_html(html: ArtifactReference, query: Union[str, Missing], output_schema: VersionPin, principal_id: Identifier) -> Union[TaskOutput, ConnectorError], deterministic_extraction: def extract_live(binding: CFBindingDescriptor, document: CFDocumentRef, scope: WorkScope, query: Union[str, Missing], output_schema: VersionPin, principal_id: Identifier) -> Union[TaskOutput, ConnectorError]]
+  TEST_ASSERTIONS: [T19]
+  INVARIANTS: [EK-ATOMICITY, EK-CLAIMS, LIFE-IDEMPOTENCY, LIFE-CLOSE, EXT-RESUME, EXT-BOUNDS, EXT-STATE-POLICY, CF-SYNC, CF-INPUT, CF-EVIDENCE]
+  FORBIDDEN:
+    - MUST NOT execute a completed side-effecting step again or retry an uncertain side effect merely because a driver exception occurred.
+    - MUST NOT run session preflight before Start or equate its authenticated marker with an origin fact.
+    - MUST NOT add undeclared sleeps, retries, planners, selectors, browsers, or recovery behavior to the commissioned plan.
+    - MUST NOT treat primitive return, None, or model confidence as a step's semantic postcondition.
+    - MUST NOT use unavailable coordinate-click support through an evaluation escape hatch.
+    - MUST NOT update learning before supported validation or continue workflow commands after its local fence.
+    - MUST NOT publish authoritative application outcomes or self-issued qualification.
+  VERIFICATION: pytest tests/test_conformance.py -k "T19"
+
+NODE: circus_tent_service | modules/circus_tent_service | lang: python | tier: 9 | deps: [contract_codec, access_policy, evidence_artifacts, evidence_journal, subject_catalog, offline_replay, attempt_lifecycle, task_preparation, profile_supervisor, native_report_ingestion, observation_reader, local_controls, deterministic_extraction, connector_execution, workflow_engine]
+  READS: [seam-mappings/circus-tent-seam-mapping.md#14-architectural-cut, seam-mappings/circus-tent-seam-mapping.md#51-carrier, seam-mappings/circus-tent-seam-mapping.md#52-nine-verbs, seam-mappings/circus-tent-seam-mapping.md#115-shutdown, seam-mappings/circus-tent-seam-mapping.md#154-errors, seam-mappings/circus-tent-seam-mapping.md#163-callbacks, seam-mappings/circus-tent-seam-mapping.md#164-telemetry, seam-mappings/circus-tent-seam-mapping.md#193-completion-criteria]
+  EXPOSES: []
+  CONSUMES: [contract_codec: def validate_record(value: object, schema_id: Identifier) -> None, access_policy: def authenticate(credential: bytes, connector_id: Identifier) -> Identifier, access_policy: def load_configuration(source: bytes, environment: Mapping[str, str]) -> dict[str, object], evidence_artifacts: def collect_artifacts(request: CollectArtifactsRequest, principal_id: Identifier, slots: tuple[ArtifactSlot, ...], prefix: JournalPrefix) -> Union[ArtifactInventory, ArtifactChunk, ConnectorError], evidence_artifacts: def install_artifact(content: bytes, media_type: Identifier, owner_domain: Identifier, access: Literal["public", "restricted"], privacy_policy: VersionPin) -> ArtifactReference, evidence_journal: def read_prefix(journal_id: Identifier, through: Union[JournalPrefix, Missing]) -> tuple[JournalEnvelope, ...], subject_catalog: def describe(connector_id: Identifier) -> ConnectorDescriptor, offline_replay: def replay_diagnostic(manifest: Manifest, prefix: JournalPrefix, diagnostic: ArtifactReference, bundle: ArtifactReference, classifier: VersionPin) -> ReplayReceipt, attempt_lifecycle: def validate_snapshot(snapshot: AttemptSnapshot) -> None, task_preparation: def prepare(request: PrepareRequest, principal_id: Identifier) -> Union[PrepareResult, ConnectorError], profile_supervisor: def recycle_profile(profile: CFProfileRef, binding: CFBindingDescriptor, authorization_ref: EvidenceRef, limit: DurationLimit) -> Union[CFProfileOpened, CFFailure], profile_supervisor: def shutdown_profiles(binding: CFBindingDescriptor, authorization_ref: EvidenceRef, limit: DurationLimit) -> tuple[Union[CFProfileExited, CFFailure], ...], native_report_ingestion: def normalize_report(handle: ConnectorHandle, raw: ArtifactReference, channel: Literal["terminal_response", "callback", "native_stream"], policy: VersionPin) -> NativeReportObservation, observation_reader: async def observe(request: ObserveRequest, principal_id: Identifier) -> Union[ObservationPage, ConnectorError], observation_reader: def artifact_slots(handle: HandleReference, prefix: JournalPrefix) -> tuple[ArtifactSlot, ...], local_controls: async def control(request: ConnectorRequest, principal_id: Identifier) -> Union[ControlReceipt, ConnectorError], local_controls: async def expire_observation(handle: ConnectorHandle, now: TimePoint) -> LifecyclePublicationReference, deterministic_extraction: def extract_html(html: ArtifactReference, query: Union[str, Missing], output_schema: VersionPin, principal_id: Identifier) -> Union[TaskOutput, ConnectorError], deterministic_extraction: def extract_live(binding: CFBindingDescriptor, document: CFDocumentRef, scope: WorkScope, query: Union[str, Missing], output_schema: VersionPin, principal_id: Identifier) -> Union[TaskOutput, ConnectorError], connector_execution: def start(request: ConnectorRequest, principal_id: Identifier) -> Union[StartResult, ConnectorError], connector_execution: async def dispatch(handle: ConnectorHandle, principal_id: Identifier) -> None, workflow_engine: async def execute_plan(preparation: PreparedTask, handle: ConnectorHandle, binding: CFBindingDescriptor, principal_id: Identifier) -> ArtifactReference]
+  TEST_ASSERTIONS: [T60]
+  INVARIANTS: [EK-MANUAL, EXT-SURFACE, EXT-AUTHORITY, EXT-BOUNDS, EXT-FAILURE, EXT-DECLARE-NOT-ASSESS, LIFE-AXES, LIFE-CONTROLS, CF-SYNC, OWD-LOCAL-COMMIT]
+  FORBIDDEN:
+    - MUST NOT expose a tenth connector verb, synchronous shared browser primitives, or a composite application-success flag.
+    - MUST NOT conflate the deployment-configured connector address with the documented native REST/MCP address.
+    - MUST NOT let task, extraction, callback, or model load starve deadline enforcement, controls, or bounded shutdown.
+    - MUST NOT run blocking primitive calls on the event loop responsible for their replies.
+    - MUST NOT turn health, metrics, supervisor exit status, or callback delivery acknowledgements into application facts.
+    - MUST NOT require Ringmaster, the crawler, Hellscape, job-hunter, or a live employer for silo conformance.
+    - MUST NOT place Firefox-extension implementation code or another product runtime into this Python module DAG.
+    - MUST NOT make manual production recording depend on this service, browser qualification, extension completion, or replay tooling.
+  VERIFICATION: pytest tests/test_conformance.py -k "T60"
