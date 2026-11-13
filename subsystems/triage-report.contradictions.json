@@ -1,0 +1,1266 @@
+[
+  {
+    "check": 5,
+    "final_class": "A",
+    "module": "admission_scheduler",
+    "name_suffix_signals": {
+      "A": [
+        "scheduler"
+      ],
+      "B": [],
+      "H": [],
+      "I": [
+        "admission"
+      ],
+      "S": []
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 5,
+    "final_class": "A",
+    "module": "connector_execution",
+    "name_suffix_signals": {
+      "A": [
+        "execution"
+      ],
+      "B": [],
+      "H": [],
+      "I": [
+        "connector"
+      ],
+      "S": []
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 5,
+    "final_class": "B",
+    "module": "owner_publications",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [
+        "publications"
+      ],
+      "H": [],
+      "I": [],
+      "S": [
+        "owner"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 5,
+    "final_class": "A",
+    "module": "task_preparation",
+    "name_suffix_signals": {
+      "A": [
+        "preparation"
+      ],
+      "B": [],
+      "H": [],
+      "I": [],
+      "S": [
+        "task"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 5,
+    "final_class": "B",
+    "module": "crawler_archives",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [],
+      "H": [],
+      "I": [],
+      "S": [
+        "archives"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 5,
+    "final_class": "A",
+    "module": "fixture_reducer",
+    "name_suffix_signals": {
+      "A": [
+        "reducer"
+      ],
+      "B": [],
+      "H": [
+        "fixture"
+      ],
+      "I": [],
+      "S": []
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 5,
+    "final_class": "I",
+    "module": "reference_connector",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [],
+      "H": [],
+      "I": [
+        "connector"
+      ],
+      "S": [
+        "reference"
+      ]
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 5,
+    "final_class": "B",
+    "module": "archive_retention",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [],
+      "H": [],
+      "I": [],
+      "S": [
+        "archive",
+        "retention"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 5,
+    "final_class": "I",
+    "module": "connector_artifacts",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [],
+      "H": [],
+      "I": [
+        "connector"
+      ],
+      "S": [
+        "artifacts"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 5,
+    "final_class": "B",
+    "module": "connector_controls",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [
+        "controls"
+      ],
+      "H": [],
+      "I": [
+        "connector"
+      ],
+      "S": []
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 5,
+    "final_class": "I",
+    "module": "connector_observation",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [],
+      "H": [],
+      "I": [
+        "connector"
+      ],
+      "S": [
+        "observation"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 5,
+    "final_class": "B",
+    "module": "lease_authority",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [
+        "lease"
+      ],
+      "H": [],
+      "I": [],
+      "S": [
+        "authority"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 5,
+    "final_class": "I",
+    "module": "model_gateway",
+    "name_suffix_signals": {
+      "A": [],
+      "B": [],
+      "H": [],
+      "I": [
+        "gateway"
+      ],
+      "S": [
+        "model"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B",
+      "I"
+    ],
+    "module": "admission_scheduler",
+    "signals": {
+      "A": [
+        "name_suffix:scheduler",
+        "section:algorithmic:backpressure"
+      ],
+      "B": [
+        "invariant:EK-LEASE",
+        "section:concurren"
+      ],
+      "I": [
+        "name_suffix:admission"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "B",
+      "I"
+    ],
+    "module": "camoufox_binding",
+    "signals": {
+      "B": [
+        "forbidden:expiry"
+      ],
+      "I": [
+        "name_suffix:binding",
+        "section:integration:route"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B",
+      "I"
+    ],
+    "module": "connector_execution",
+    "signals": {
+      "A": [
+        "name_suffix:execution"
+      ],
+      "B": [
+        "section:atomic"
+      ],
+      "I": [
+        "name_suffix:connector"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "S"
+    ],
+    "module": "learning_store",
+    "signals": {
+      "A": [
+        "section:algorithmic:tier"
+      ],
+      "S": [
+        "name_suffix:store"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "S"
+    ],
+    "module": "model_conduit",
+    "signals": {
+      "A": [
+        "section:algorithmic:tier"
+      ],
+      "S": [
+        "name_suffix:model"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "B",
+      "S"
+    ],
+    "module": "native_ledger",
+    "signals": {
+      "B": [
+        "forbidden:atomic",
+        "forbidden:expiry"
+      ],
+      "S": [
+        "name_suffix:ledger"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "B",
+      "S"
+    ],
+    "module": "page_observation",
+    "signals": {
+      "A": [
+        "section:algorithmic:reduction"
+      ],
+      "B": [
+        "forbidden:epoch"
+      ],
+      "S": [
+        "name_suffix:observation"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B",
+      "I"
+    ],
+    "module": "profile_supervisor",
+    "signals": {
+      "A": [
+        "name_suffix:supervisor"
+      ],
+      "B": [
+        "forbidden:expiry"
+      ],
+      "I": [
+        "section:integration:profile"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "B",
+      "S"
+    ],
+    "module": "resource_registry",
+    "signals": {
+      "B": [
+        "forbidden:epoch",
+        "invariant:EK-LEASE"
+      ],
+      "S": [
+        "name_suffix:registry"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "I",
+      "S"
+    ],
+    "module": "subject_catalog",
+    "signals": {
+      "I": [
+        "section:integration:connector",
+        "section:integration:route"
+      ],
+      "S": [
+        "name_suffix:catalog"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "workflow_engine",
+    "signals": {
+      "A": [
+        "name_suffix:engine",
+        "section:algorithmic:tier"
+      ],
+      "B": [
+        "forbidden:fence"
+      ]
+    },
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "I"
+    ],
+    "module": "crawler_acquisition",
+    "signals": {
+      "A": [
+        "name_suffix:acquisition"
+      ],
+      "I": [
+        "section:integration:transport"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "B",
+    "fired_classes": [
+      "B",
+      "I",
+      "S"
+    ],
+    "module": "crawler_archives",
+    "signals": {
+      "B": [
+        "b_signal_count=3",
+        "forbidden:atomic",
+        "invariant:OWD-REPLACE",
+        "section:atomic"
+      ],
+      "I": [
+        "section:integration:protocol"
+      ],
+      "S": [
+        "name_suffix:archives"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "B",
+      "S"
+    ],
+    "module": "crawler_artifacts",
+    "signals": {
+      "B": [
+        "forbidden:concurren",
+        "forbidden:fence"
+      ],
+      "S": [
+        "name_suffix:artifacts"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "B",
+      "I"
+    ],
+    "module": "crawler_browser",
+    "signals": {
+      "B": [
+        "forbidden:thread"
+      ],
+      "I": [
+        "section:integration:transport"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "crawler_classifier",
+    "signals": {
+      "A": [
+        "name_suffix:classifier",
+        "section:algorithmic:classif"
+      ],
+      "B": [
+        "invariant:EK-LEASE"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "B",
+    "fired_classes": [
+      "B",
+      "I"
+    ],
+    "module": "crawler_controls",
+    "signals": {
+      "B": [
+        "b_signal_count=0",
+        "name_suffix:controls"
+      ],
+      "I": [
+        "section:integration:wire"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "B",
+      "I"
+    ],
+    "module": "crawler_dispatch",
+    "signals": {
+      "B": [
+        "forbidden:expiry"
+      ],
+      "I": [
+        "name_suffix:dispatch"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "I"
+    ],
+    "module": "crawler_inference_host",
+    "signals": {
+      "A": [
+        "name_suffix:inference_host"
+      ],
+      "I": [
+        "section:integration:session",
+        "section:integration:transport"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B",
+      "I"
+    ],
+    "module": "crawler_pipeline",
+    "signals": {
+      "A": [
+        "name_suffix:pipeline"
+      ],
+      "B": [
+        "section:atomic"
+      ],
+      "I": [
+        "section:integration:protocol"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B",
+      "I"
+    ],
+    "module": "crawler_recovery",
+    "signals": {
+      "A": [
+        "name_suffix:recovery"
+      ],
+      "B": [
+        "section:atomic"
+      ],
+      "I": [
+        "section:integration:protocol"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "B",
+      "S"
+    ],
+    "module": "crawler_retention",
+    "signals": {
+      "B": [
+        "forbidden:fence",
+        "invariant:OWD-RETENTION"
+      ],
+      "S": [
+        "name_suffix:retention"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "B",
+      "S"
+    ],
+    "module": "crawler_seen_ids",
+    "signals": {
+      "B": [
+        "forbidden:fence"
+      ],
+      "S": [
+        "name_suffix:seen_ids"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "B",
+      "I",
+      "S"
+    ],
+    "module": "crawler_sessions",
+    "signals": {
+      "B": [
+        "forbidden:concurren",
+        "invariant:EK-LEASE"
+      ],
+      "I": [
+        "section:integration:wire"
+      ],
+      "S": [
+        "name_suffix:sessions"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "B",
+      "S"
+    ],
+    "module": "crawler_store",
+    "signals": {
+      "B": [
+        "section:atomic"
+      ],
+      "S": [
+        "name_suffix:store"
+      ]
+    },
+    "subsystem": "crawler"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "S"
+    ],
+    "module": "analysis_owner",
+    "signals": {
+      "A": [
+        "section:algorithmic:diagnostic"
+      ],
+      "S": [
+        "name_suffix:owner"
+      ]
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "I",
+      "S"
+    ],
+    "module": "application_owner",
+    "signals": {
+      "I": [
+        "section:integration:application"
+      ],
+      "S": [
+        "name_suffix:owner"
+      ]
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "H"
+    ],
+    "module": "fixture_reducer",
+    "signals": {
+      "A": [
+        "name_suffix:reducer"
+      ],
+      "H": [
+        "name_suffix:fixture"
+      ]
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "I",
+      "S"
+    ],
+    "module": "journal_rules",
+    "signals": {
+      "A": [
+        "section:algorithmic:composition"
+      ],
+      "I": [
+        "section:integration:authority"
+      ],
+      "S": [
+        "name_suffix:journal",
+        "name_suffix:rules"
+      ]
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "I",
+      "S"
+    ],
+    "module": "lifecycle_rules",
+    "signals": {
+      "A": [
+        "section:algorithmic:diagnostic"
+      ],
+      "I": [
+        "section:integration:application"
+      ],
+      "S": [
+        "name_suffix:rules"
+      ]
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "B",
+      "S"
+    ],
+    "module": "owner_store",
+    "signals": {
+      "B": [
+        "forbidden:expiry"
+      ],
+      "S": [
+        "name_suffix:owner",
+        "name_suffix:store"
+      ]
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "session_runtime",
+    "signals": {
+      "A": [
+        "name_suffix:runtime"
+      ],
+      "B": [
+        "invariant:EK-LEASE-RESTART"
+      ]
+    },
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 6,
+    "final_class": "B",
+    "fired_classes": [
+      "B",
+      "S"
+    ],
+    "module": "archive_retention",
+    "signals": {
+      "B": [
+        "b_signal_count=3",
+        "forbidden:concurren",
+        "invariant:OWD-REPLACE",
+        "section:concurren"
+      ],
+      "S": [
+        "name_suffix:archive",
+        "name_suffix:retention"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 6,
+    "final_class": "B",
+    "fired_classes": [
+      "B",
+      "I"
+    ],
+    "module": "connector_controls",
+    "signals": {
+      "B": [
+        "b_signal_count=0",
+        "name_suffix:controls"
+      ],
+      "I": [
+        "name_suffix:connector"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "B",
+      "I"
+    ],
+    "module": "connector_dispatch",
+    "signals": {
+      "B": [
+        "forbidden:fence"
+      ],
+      "I": [
+        "name_suffix:connector",
+        "name_suffix:dispatch"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "A",
+      "I"
+    ],
+    "module": "crawler_intake",
+    "signals": {
+      "A": [
+        "section:algorithmic:evaluation"
+      ],
+      "I": [
+        "name_suffix:intake"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "S"
+    ],
+    "module": "origin_receipts",
+    "signals": {
+      "A": [
+        "section:algorithmic:reconcil"
+      ],
+      "S": [
+        "name_suffix:receipts"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "B",
+      "S"
+    ],
+    "module": "owner_revisions",
+    "signals": {
+      "A": [
+        "section:algorithmic:publication"
+      ],
+      "B": [
+        "forbidden:fence"
+      ],
+      "S": [
+        "name_suffix:owner"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 6,
+    "final_class": "B",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "read_publications",
+    "signals": {
+      "A": [
+        "section:algorithmic:publication"
+      ],
+      "B": [
+        "b_signal_count=1",
+        "invariant:OWD-PUBLISH",
+        "name_suffix:publications"
+      ]
+    },
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "I",
+      "S"
+    ],
+    "module": "rm_authority",
+    "signals": {
+      "I": [
+        "section:integration:browser"
+      ],
+      "S": [
+        "name_suffix:authority"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "B",
+      "I"
+    ],
+    "module": "rm_browseroxide",
+    "signals": {
+      "B": [
+        "forbidden:concurren",
+        "forbidden:isolate",
+        "forbidden:thread",
+        "section:thread"
+      ],
+      "I": [
+        "name_suffix:browseroxide",
+        "section:integration:primitive"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "I",
+      "S"
+    ],
+    "module": "rm_catalog",
+    "signals": {
+      "I": [
+        "section:integration:binding",
+        "section:integration:browser"
+      ],
+      "S": [
+        "name_suffix:catalog"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "B",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "rm_controls",
+    "signals": {
+      "A": [
+        "section:algorithmic:recovery"
+      ],
+      "B": [
+        "b_signal_count=2",
+        "forbidden:thread",
+        "invariant:LIFE-CLOSE",
+        "name_suffix:controls"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "A",
+      "I"
+    ],
+    "module": "rm_delivery",
+    "signals": {
+      "A": [
+        "section:algorithmic:recovery"
+      ],
+      "I": [
+        "name_suffix:delivery"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "rm_evidence",
+    "signals": {
+      "A": [
+        "section:algorithmic:recovery"
+      ],
+      "B": [
+        "forbidden:atomic"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "rm_execution",
+    "signals": {
+      "A": [
+        "name_suffix:execution",
+        "section:algorithmic:tier"
+      ],
+      "B": [
+        "forbidden:expiry",
+        "forbidden:thread",
+        "invariant:BO-THREAD"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "B",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "rm_leases",
+    "signals": {
+      "A": [
+        "section:algorithmic:recovery"
+      ],
+      "B": [
+        "b_signal_count=2",
+        "forbidden:expiry",
+        "invariant:EK-LEASE",
+        "name_suffix:leases"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "S",
+    "fired_classes": [
+      "A",
+      "S"
+    ],
+    "module": "rm_models",
+    "signals": {
+      "A": [
+        "section:algorithmic:breaker",
+        "section:algorithmic:tier"
+      ],
+      "S": [
+        "name_suffix:models"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "I"
+    ],
+    "module": "rm_normalization",
+    "signals": {
+      "A": [
+        "name_suffix:normalization"
+      ],
+      "I": [
+        "section:integration:connector"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "A",
+      "I"
+    ],
+    "module": "rm_observe",
+    "signals": {
+      "A": [
+        "section:algorithmic:observe"
+      ],
+      "I": [
+        "name_suffix:observe"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B",
+      "I"
+    ],
+    "module": "rm_reduction",
+    "signals": {
+      "A": [
+        "name_suffix:reduction",
+        "section:algorithmic:reduction"
+      ],
+      "B": [
+        "forbidden:thread"
+      ],
+      "I": [
+        "section:integration:profile"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "A",
+    "fired_classes": [
+      "A",
+      "B"
+    ],
+    "module": "rm_supervisor",
+    "signals": {
+      "A": [
+        "name_suffix:supervisor",
+        "section:algorithmic:recovery"
+      ],
+      "B": [
+        "forbidden:thread",
+        "invariant:BO-THREAD"
+      ]
+    },
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 6,
+    "final_class": "I",
+    "fired_classes": [
+      "A",
+      "I"
+    ],
+    "module": "rm_targets",
+    "signals": {
+      "A": [
+        "section:algorithmic:tier"
+      ],
+      "I": [
+        "name_suffix:targets"
+      ]
+    },
+    "subsystem": "ringmaster"
+  }
+]

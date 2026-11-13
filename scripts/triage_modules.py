@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """
-Pre-Phase-4 module complexity triage.
+Pre-Phase-4 module complexity triage (name-first classifier).
 Extracts signals from 150 .omp-spec.md files + 5 DAGs and classifies each
 module into S, H, I, A, B, or U per pre-phase4-triage.md.
+
+Name-first ladder: a module's name suffix is the primary responsibility
+signal; extracted signals apply only when the name is generic. Class B
+requires a B name suffix or 2+ agreeing boundary signals.
 
 Usage: python3 scripts/triage_modules.py
 Outputs (all under subsystems/):
   triage-report.json, triage-report.md, triage-report.warnings.json,
   triage-report.contradictions.json, triage-report.uncertain.json
+On degenerate distribution: writes triage-report.DEGENERATE.json instead
+and exits non-zero (§8 failure conditions).
 """
 import json
 import re
@@ -19,66 +25,122 @@ from pathlib import Path
 WORKSPACE = Path(__file__).resolve().parent.parent
 SUBSYSTEMS_DIR = WORKSPACE / "subsystems"
 
-NAME_SUFFIX_TOKENS = {
-    "S": {"schema", "schemas", "types", "type", "def", "defs", "definition",
-          "definitions", "constant", "constants", "enum", "enums", "registry",
-          "catalog", "atom", "clock", "identity", "digest", "struct", "record",
-          "model", "models", "payload", "error", "errors"},
-    "H": {"test", "tests", "harness", "fixture", "fixtures", "golden", "goldens",
-          "runner", "benchmark", "mock", "stub"},
-    "I": {"codec", "protocol", "adapter", "serial", "deserial", "wire", "client",
-          "transport", "request", "response", "callback", "handshake",
-          "translation", "mapping", "registration", "state", "transition",
-          "dispatch", "router", "routing", "binding", "compat", "normalizer",
-          "connector", "service"},
-    "A": {"runtime", "engine", "handler", "pipeline", "transpiler", "reducer",
-          "evaluator", "detector", "classifier", "minimizer", "resolver",
-          "scheduler", "matcher", "ranker", "scorer", "healer"},
-    "B": {"lease", "lock", "fence", "atomic", "shard", "ownership",
-          "publication", "replacement", "archive"},
-}
-NAME_SUFFIX_MULTIWORD = {
-    "A": {"state_machine"},
-    "B": {"session_epoch"},
+NAME_SUFFIXES = {
+    'S': {
+        # data shapes
+        'schema', 'schemas', 'types', 'type', 'def', 'defs',
+        'definition', 'definitions', 'constant', 'constants',
+        'enum', 'enums', 'struct', 'record', 'model', 'models',
+        'payload', 'error', 'errors',
+        # record carriers and registries
+        'registry', 'catalog', 'atom', 'clock', 'identity', 'digest',
+        'ledger', 'manifest', 'envelope', 'document', 'state_record',
+        'rules', 'store', 'stores', 'artifacts', 'journal', 'journals',
+        'authority', 'capabilities', 'time', 'cursors', 'sessions',
+        'retention', 'observation', 'archive', 'archives',
+        'seen_ids', 'feed', 'owner', 'owners', 'reference', 'references',
+        'matrix', 'handoff', 'receipt', 'receipts', 'task', 'tasks',
+        'keys', 'hashes', 'declaration',
+    },
+    'H': {
+        'test', 'tests', 'harness', 'fixture', 'fixtures',
+        'golden', 'goldens', 'runner', 'benchmark', 'mock', 'stub',
+    },
+    'I': {
+        'codec', 'protocol', 'adapter', 'serial', 'deserial', 'wire',
+        'client', 'transport', 'request', 'response', 'callback',
+        'handshake', 'translation', 'mapping', 'registration', 'state',
+        'transition', 'dispatch', 'router', 'routing', 'binding',
+        'compat', 'normalizer', 'connector', 'service', 'bridge',
+        'intake', 'gateway', 'delivery', 'targets', 'browseroxide',
+        'observe', 'observer', 'prepare', 'readonly', 'admission',
+        'surface', 'dispatcher', 'translator',
+    },
+    'A': {
+        'runtime', 'engine', 'handler', 'pipeline', 'state_machine',
+        'transpiler', 'reducer', 'evaluator', 'detector', 'detectors',
+        'classifier', 'minimizer', 'resolver', 'scheduler', 'matcher',
+        'ranker', 'scorer', 'healer', 'coverage', 'replay',
+        'normalization', 'preparation', 'recovery', 'reduction',
+        'resolution', 'acquisition', 'hashing', 'inference_host',
+        'supervisor', 'execution', 'diagnostics', 'scoring',
+        'evaluation', 'transformation', 'synthesis', 'reconciler',
+        'arbitration', 'ranking', 'selection', 'cursor_walk',
+    },
+    'B': {
+        'lease', 'leases', 'lock', 'locks', 'fence', 'fences',
+        'atomic', 'session_epoch', 'epoch', 'epochs', 'shard', 'shards',
+        'replacement', 'replacements', 'publication', 'publications',
+        'controls', 'containment', 'coordinator', 'sweeper',
+        'synchronizer', 'mutex', 'owner_enforcer', 'thread_guard',
+        'isolate_guard',
+    },
 }
 
-ALGO_TERMS = {
-    "crawler": ["coverage", "proof", "detector", "drift", "cursor",
-                "semantic state", "pipeline", "lease", "classif",
-                "acquisition"],
-    "circus-tent": ["tier", "resolution", "heal", "extraction", "reduction",
-                    "scheduler"],
-    "ringmaster": ["tier", "resolution", "reduction", "breaker", "extraction",
-                   "observe", "lifecycle", "recovery"],
-    "hellscape": ["assessment", "three-way", "diagnostic", "replay",
-                  "composition", "reducer", "pipeline"],
-    "job-hunter": ["evaluation", "candidate policy", "pipeline", "lifecycle",
-                   "publication", "transformation", "scoring"],
-}
-INTEG_TERMS = {
-    "crawler": ["transport", "connector", "session", "adapter", "declaration",
-                "acquisition contract"],
-    "circus-tent": ["transport", "connector", "session", "profile", "browser",
-                    "route"],
-    "ringmaster": ["transport", "connector", "session", "profile", "browser",
-                   "binding", "primitive"],
-    "hellscape": ["application", "connector", "external", "boundary",
-                  "surface", "authority"],
-    "job-hunter": ["connector", "protocol", "boundary", "topography",
-                   "subsystem", "interface"],
-}
-
-B_INVARIANT_RES = [
-    re.compile(r"^OWD-(REPLACE|ARCHIVE|RETENTION|LOCAL-COMMIT|PUBLISH)$"),
-    re.compile(r"^BO-THREAD$"),
-    re.compile(r"^EK-(LEASE|LEASE-RESTART|ATOMICITY|JOURNAL)$"),
-    re.compile(r"^LIFE-(DISPATCH|IDEMPOTENCY)$"),
+CLASS_B_INVARIANT_REGEXES = [
+    re.compile(r'^BO-THREAD$'),
+    re.compile(r'^OWD-(REPLACE|ARCHIVE|RETENTION|LOCAL-COMMIT|PUBLISH)$'),
+    re.compile(r'^EK-(LEASE|LEASE-RESTART)$'),
+    re.compile(r'^LIFE-(DISPATCH|IDEMPOTENCY|CLOSE)$'),
+    re.compile(r'.*(FENCE|THREAD|EPOCH).*'),
 ]
-B_INVARIANT_SUBSTR = ("THREAD", "LEASE", "FENCE", "ATOMIC", "EPOCH",
-                      "OWNERSHIP", "CONCURREN", "TRANSACTION")
-B_TEXT_TERMS = ("atomic", "concurren", "fence", "epoch", "lease", "thread",
-                "isolate", "barrier", "transaction", "contention", "mutex",
-                "lock", "sweep", "expiry", "ownership", "shard")
+
+CLASS_B_TERMS = {
+    'atomic', 'concurren', 'fence', 'epoch', 'thread', 'isolate',
+    'barrier', 'contention', 'mutex', 'sweep', 'expiry',
+}
+
+ALGORITHMIC_SECTION_TERMS = {
+    'crawler': {
+        'coverage', 'proof', 'algebra', 'equation', 'detector', 'drift',
+        'cursor', 'semantic state', 'pipeline', 'classif', 'acquisition',
+        'normalization', 'replay', 'diagnostics', 'attribut',
+        'reconciliation', 'minimiz', 'counterfactual', 'hashing',
+        'deduplic', 'dispatcher', 'matcher', 'ranking', 'selection',
+        'scoring', 'evaluation',
+    },
+    'circus-tent': {
+        'tier', 'resolution', 'heal', 'extraction', 'reduction',
+        'scheduler', 'backpressure', 'adaptive',
+    },
+    'ringmaster': {
+        'tier', 'resolution', 'reduction', 'breaker', 'extraction',
+        'observe', 'lifecycle', 'recovery', 'minimiz', 'matching',
+    },
+    'hellscape': {
+        'assessment', 'three-way', 'diagnostic', 'replay', 'composition',
+        'reducer', 'pipeline', 'attribution', 'counterfactual', 'minimiz',
+    },
+    'job-hunter': {
+        'evaluation', 'candidate policy', 'pipeline', 'lifecycle',
+        'publication', 'transformation', 'scoring', 'ranking',
+        'selection', 'reconcil',
+    },
+}
+
+INTEGRATION_SECTION_TERMS = {
+    'crawler': {
+        'transport', 'connector', 'session', 'adapter', 'declaration',
+        'acquisition contract', 'intake', 'adaptation', 'bridge',
+        'protocol', 'dispatch', 'routing', 'endpoint', 'wire',
+    },
+    'circus-tent': {
+        'transport', 'connector', 'session', 'profile', 'browser',
+        'route', 'adapter', 'endpoint',
+    },
+    'ringmaster': {
+        'transport', 'connector', 'session', 'profile', 'browser',
+        'binding', 'primitive', 'endpoint', 'wire',
+    },
+    'hellscape': {
+        'application', 'connector', 'external', 'boundary', 'surface',
+        'authority', 'plane', 'ingest',
+    },
+    'job-hunter': {
+        'connector', 'protocol', 'boundary', 'topography',
+        'subsystem', 'interface', 'exchange', 'transport',
+    },
+}
 
 H_HEADING_TERMS = ("conformance", "test corpus", "fixture", "golden")
 
@@ -94,22 +156,16 @@ LINE_ITEM_PREFIXES = ("fn ", "pub fn ", "def ", "async def ", "func ",
 
 RESPONSIBILITY_BOILERPLATE = re.compile(
     r"^Module implementing \S+ at tier -?\d+$")
-RESPONSIBILITY_ALGO_TERMS = ("proof", "algebra", "detector", "coverage",
-                             "reducer", "transpiler")
 
 INVARIANT_ID_RE = re.compile(r"^- \*\*\[([A-Z0-9_\-]+)\]\*\*")
 ASSERTION_BULLET_RE = re.compile(r"^- \*\*\[[^\]]+\]\*\*")
 
 ORDER = ["S", "H", "I", "A", "B"]
+PRIORITY_ORDER = ['B', 'A', 'I', 'H', 'S']
 
 
 def section_text(text, heading, stop_level=None):
-    """Body of a `#..###### <heading>` section, fence-aware.
-
-    Runs to the next heading of level <= the matched heading's own level
-    (or <= stop_level when given). `#`-looking lines inside fenced code
-    blocks never terminate the section.
-    """
+    """Body of a `#..###### <heading>` section, fence-aware."""
     lines = text.splitlines()
     start, level = None, 0
     for i, line in enumerate(lines):
@@ -136,7 +192,6 @@ def section_text(text, heading, stop_level=None):
 
 
 def subsection_text(parent_body, subheading):
-    """Body of a `### <subheading>` within an already-extracted parent."""
     lines = parent_body.splitlines()
     start = None
     for i, line in enumerate(lines):
@@ -180,10 +235,8 @@ def count_interface_items(block):
     qual = [ln for ln in lines
             if ln.startswith(LINE_ITEM_PREFIXES)
             or re.match(r"^[A-Za-z_][\w]*\s*:", ln)]
-    # Line-oriented only if EVERY non-blank line qualifies (§3.2: "each").
     if lines and len(qual) == len(lines):
         return len(qual), False
-    # Comma-separated path: strip one wrapping [...] then split at depth 0.
     inner = text.strip()
     if inner.startswith("[") and inner.endswith("]"):
         inner = inner[1:-1]
@@ -227,7 +280,8 @@ def extract_forbidden(forbidden_body):
         s = line.strip()
         if s.startswith("- "):
             items.append(s[2:].strip())
-    return [i for i in items if i not in FORBIDDEN_TEMPLATE_LINES]
+    specific = [i for i in items if i not in FORBIDDEN_TEMPLATE_LINES]
+    return specific
 
 
 def extract_references(schemas_body):
@@ -254,23 +308,26 @@ def extract_references(schemas_body):
             if hm:
                 heading = hm.group(1).strip()
                 break
-            # First non-blank line is not a heading: heading absent,
-            # anchor fallback (§4.5) applies.
             break
         refs.append({"fragment": frag, "heading": heading})
         i = j if j > i else i + 1
     return refs
 
 
-def name_suffix_signals(module):
-    tokens = set(module.split("_"))
-    found = {c: sorted(tokens & toks)
-             for c, toks in NAME_SUFFIX_TOKENS.items()}
-    for cls, multis in NAME_SUFFIX_MULTIWORD.items():
-        for mw in multis:
-            if mw in module:
-                found[cls] = sorted(set(found[cls]) | {mw})
-    return found
+def name_suffix_signals(name: str) -> dict:
+    tokens = name.split('_')
+    signals = {'S': [], 'H': [], 'I': [], 'A': [], 'B': []}
+    for tok in tokens:
+        for cls, suffixes in NAME_SUFFIXES.items():
+            if tok in suffixes and tok not in signals[cls]:
+                signals[cls].append(tok)
+    for n in (2, 3):
+        if len(tokens) >= n:
+            compound = '_'.join(tokens[-n:])
+            for cls, suffixes in NAME_SUFFIXES.items():
+                if compound in suffixes and compound not in signals[cls]:
+                    signals[cls].append(compound)
+    return signals
 
 
 def parse_dag(dag_path):
@@ -307,12 +364,6 @@ def match_terms(text, terms):
     return sorted({t for t in terms if t.lower() in low})
 
 
-def is_b_invariant(inv_id):
-    if any(rx.match(inv_id) for rx in B_INVARIANT_RES):
-        return True
-    return any(s in inv_id for s in B_INVARIANT_SUBSTR)
-
-
 def advance(cls):
     return ORDER[min(ORDER.index(cls) + 1, len(ORDER) - 1)]
 
@@ -322,6 +373,114 @@ def build_seam_toc(seam_path):
             for line in seam_path.read_text(encoding="utf-8").splitlines()
             for m in [re.match(r"^(#{1,6})\s+(.*)$", line.strip())]
             if m]
+
+
+def classify(module):
+    """Name-first classification. module holds extracted signals.
+
+    Returns (class, signals_matched, promotions_input_flags).
+    signals_matched maps class -> sorted signal list for §5 output.
+    """
+    name_sig = module['name_suffix_signals']
+
+    # --- Step 1: name-first classification ---
+    name_classes_present = [cls for cls in PRIORITY_ORDER if name_sig[cls]]
+    name_first = name_classes_present[0] if name_classes_present else None
+
+    # --- Step 2: collect B-signals (needed for confidence and fallback) ---
+    b_invariant_ids = set()
+    for inv_id in module['invariant_ids']:
+        for rx in CLASS_B_INVARIANT_REGEXES:
+            if rx.match(inv_id):
+                b_invariant_ids.add(inv_id)
+                break
+
+    b_forbidden_hits = set()
+    for item in module['forbidden_items']:
+        for term in CLASS_B_TERMS:
+            if term in item.lower():
+                b_forbidden_hits.add(term)
+
+    b_section_hits = set()
+    for heading in module['read_section_headings']:
+        for term in CLASS_B_TERMS:
+            if term in heading.lower():
+                b_section_hits.add(term)
+
+    b_signal_count = (len(b_invariant_ids) + len(b_forbidden_hits)
+                      + len(b_section_hits))
+
+    section_algo_hits = module['section_signals']['algorithmic']
+    section_int_hits = module['section_signals']['integration']
+    iface_total = module['expose_count'] + module['consume_count']
+
+    # Step 3: classify
+    if name_first == 'B':
+        cls = 'B'
+    elif name_first == 'S' and b_signal_count >= 3:
+        # Structural name but strong boundary agreement — trust signals
+        cls = 'B'
+    elif name_first in ('S', 'H', 'I', 'A'):
+        cls = name_first
+    else:
+        # No name suffix — signal-first path
+        if section_algo_hits:
+            cls = 'A'
+        elif section_int_hits:
+            cls = 'I'
+        elif b_signal_count >= 3:
+            cls = 'B'
+        elif module['assertion_count'] >= 5 and module['invariant_count'] >= 2:
+            cls = 'A'
+        elif module['invariant_count'] >= 4:
+            cls = 'A'
+        elif (module['expose_count'] + module['consume_count']) >= 5:
+            cls = 'I'
+        elif (module['assertion_count'] <= 3
+              and module['invariant_count'] <= 1
+              and (module['expose_count'] + module['consume_count']) <= 3):
+            cls = 'S'
+        else:
+            cls = 'U'
+
+    signals_matched = {}
+    if name_sig['B']:
+        signals_matched.setdefault('B', []).extend(
+            f"name_suffix:{t}" for t in name_sig['B'])
+    for inv in sorted(b_invariant_ids):
+        signals_matched.setdefault('B', []).append(f"invariant:{inv}")
+    for t in sorted(b_forbidden_hits):
+        signals_matched.setdefault('B', []).append(f"forbidden:{t}")
+    for t in sorted(b_section_hits):
+        signals_matched.setdefault('B', []).append(f"section:{t}")
+    if cls == 'B':
+        signals_matched.setdefault('B', []).append(
+            f"b_signal_count={b_signal_count}")
+    if name_sig['A']:
+        signals_matched.setdefault('A', []).extend(
+            f"name_suffix:{t}" for t in name_sig['A'])
+    for t in section_algo_hits:
+        signals_matched.setdefault('A', []).append(
+            f"section:algorithmic:{t}")
+    if name_sig['I']:
+        signals_matched.setdefault('I', []).extend(
+            f"name_suffix:{t}" for t in name_sig['I'])
+    for t in section_int_hits:
+        signals_matched.setdefault('I', []).append(
+            f"section:integration:{t}")
+    if name_sig['H']:
+        signals_matched.setdefault('H', []).extend(
+            f"name_suffix:{t}" for t in name_sig['H'])
+    if name_sig['S']:
+        signals_matched.setdefault('S', []).extend(
+            f"name_suffix:{t}" for t in name_sig['S'])
+    signals_matched = {k: sorted(v) for k, v in signals_matched.items()}
+
+    return cls, signals_matched, {
+        'name_first': name_first,
+        'b_signal_count': b_signal_count,
+        'b_reasons_present': b_signal_count > 0,
+    }
 
 
 def main():
@@ -392,14 +551,13 @@ def main():
         anchors = ["#" + r["fragment"].split("#", 1)[1]
                    if "#" in r["fragment"] else r["fragment"]
                    for r in refs]
-        algo_terms = ALGO_TERMS.get(subsystem, [])
-        integ_terms = INTEG_TERMS.get(subsystem, [])
+        algo_terms = ALGORITHMIC_SECTION_TERMS.get(subsystem, [])
+        integ_terms = INTEGRATION_SECTION_TERMS.get(subsystem, [])
         algo_hits, integ_hits = set(), set()
         for r in refs:
             if r["heading"]:
                 text_src = r["heading"]
             else:
-                # §4.5 anchor fallback: resolve against seam TOC.
                 frag_anchor = r["fragment"].split("#", 1)[-1]
                 toc_title = next(
                     (t for t in seam_tocs.get(subsystem, [])
@@ -420,122 +578,44 @@ def main():
         if expose_uncertain or consume_uncertain:
             uncertainty_reasons.append("interface_block_unparseable")
 
+        module_signals = {
+            'name_suffix_signals': suffix,
+            'invariant_ids': invariant_ids,
+            'forbidden_items': forbidden_specific,
+            'read_section_headings': headings,
+            'section_signals': {'algorithmic': sorted(algo_hits),
+                                'integration': sorted(integ_hits)},
+            'assertion_count': assertion_count,
+            'invariant_count': len(invariant_ids),
+            'expose_count': expose_count,
+            'consume_count': consume_count,
+        }
+        cls, ladder_signals, flags = classify(module_signals)
+
         iface_total = expose_count + consume_count
         invariant_count = len(invariant_ids)
 
-        # ---- Ladder ----
-        matched_by_class = defaultdict(set)
-        b_reasons, a_reasons, i_reasons, h_reasons = [], [], [], []
-
-        for inv in invariant_ids:
-            if is_b_invariant(inv):
-                b_reasons.append(f"invariant:{inv}")
-                matched_by_class["B"].add(f"invariant:{inv}")
-        if suffix["B"]:
-            b_reasons += [f"name_suffix:{t}" for t in suffix["B"]]
-            matched_by_class["B"].update(
-                f"name_suffix:{t}" for t in suffix["B"])
-        for item in forbidden_specific:
-            low = item.lower()
-            hits = sorted({t for t in B_TEXT_TERMS if t in low})
-            for t in hits:
-                b_reasons.append(f"forbidden:{t}")
-                matched_by_class["B"].add(f"forbidden:{t}")
-        for h in headings:
-            low = h.lower()
-            hits = sorted({t for t in B_TEXT_TERMS if t in low})
-            for t in hits:
-                b_reasons.append(f"section:{t}")
-                matched_by_class["B"].add(f"section:{t}")
-
-        if suffix["A"]:
-            a_reasons += [f"name_suffix:{t}" for t in suffix["A"]]
-            matched_by_class["A"].update(
-                f"name_suffix:{t}" for t in suffix["A"])
-        if algo_hits:
-            a_reasons += [f"section:algorithmic:{t}"
-                          for t in sorted(algo_hits)]
-            matched_by_class["A"].update(
-                f"section:algorithmic:{t}" for t in sorted(algo_hits))
-        if assertion_count >= 5 and invariant_count >= 2:
-            a_reasons.append(
-                f"density:assertions={assertion_count},"
-                f"invariants={invariant_count}")
-            matched_by_class["A"].add("density:assertions>=5,invariants>=2")
-        if invariant_count >= 4:
-            a_reasons.append(f"density:invariants={invariant_count}")
-            matched_by_class["A"].add("density:invariants>=4")
-        if (not boilerplate and responsibility
-                and any(t in responsibility.lower()
-                        for t in RESPONSIBILITY_ALGO_TERMS)):
-            a_reasons.append("responsibility:algorithmic_term")
-            matched_by_class["A"].add("responsibility:algorithmic_term")
-
-        if suffix["I"]:
-            i_reasons += [f"name_suffix:{t}" for t in suffix["I"]]
-            matched_by_class["I"].update(
-                f"name_suffix:{t}" for t in suffix["I"])
-        if integ_hits:
-            i_reasons += [f"section:integration:{t}"
-                          for t in sorted(integ_hits)]
-            matched_by_class["I"].update(
-                f"section:integration:{t}" for t in sorted(integ_hits))
-        if iface_total >= 5:
-            i_reasons.append(f"surface:iface_total={iface_total}")
-            matched_by_class["I"].add("surface:iface_total>=5")
-
-        if suffix["H"]:
-            h_reasons += [f"name_suffix:{t}" for t in suffix["H"]]
-            matched_by_class["H"].update(
-                f"name_suffix:{t}" for t in suffix["H"])
-        for h in headings:
-            low = h.lower()
-            hits = sorted({t for t in H_HEADING_TERMS if t in low})
-            for t in hits:
-                h_reasons.append(f"section:{t}")
-                matched_by_class["H"].add(f"section:{t}")
-
-        has_s = bool(suffix["S"]) and assertion_count <= 3 \
-            and invariant_count <= 1 and iface_total <= 4
-        if has_s:
-            matched_by_class["S"].update(
-                f"name_suffix:{t}" for t in suffix["S"])
-            matched_by_class["S"].add("density:s_structural")
-
-        if b_reasons:
-            cls = "B"
-        elif a_reasons:
-            cls = "A"
-        elif i_reasons:
-            cls = "I"
-        elif h_reasons:
-            cls = "H"
-        elif has_s:
-            cls = "S"
-        else:
-            cls = "U"
-            uncertainty_reasons.append("no_ladder_signal")
-
-        ladder_signals = {k: sorted(v)
-                          for k, v in matched_by_class.items()}
-
-        # ---- Promotions (§4.1) ----
+        # ---- Promotions (§4.1, centrality promotions H-only) ----
         promotions = []
         if cls in ("S", "H", "I", "A"):
-            if consumer_count >= 5:
+            if consumer_count >= 5 and cls == "H":
+                # Blast radius promotes H only: for S/I/A, high fan-out
+                # confirms hub/connector/central status, not boundary work.
                 cls = advance(cls)
                 promotions.append("blast_radius")
-            elif iface_total >= 8:
+            elif iface_total >= 8 and cls == "H":
+                # Interface surface promotes H only: wide S/I/A interfaces
+                # confirm the name, never contradict it.
                 cls = advance(cls)
                 promotions.append("interface_surface")
             elif invariant_count >= 3 and cls in ("I", "S"):
                 cls = "A"
                 promotions.append("invariant_density")
 
-        # ---- Check-3 override (§4.2) ----
+        # ---- Check-3 override (§4.2, unchanged) ----
         check3_override = False
         if assertion_count >= 8 and cls in ("S", "H", "I"):
-            cls = "B" if b_reasons else "A"
+            cls = "B" if flags['b_reasons_present'] else "A"
             check3_override = True
 
         # ---- Contradictions (Check 5) ----
@@ -552,17 +632,17 @@ def main():
             })
 
         # ---- Priority ambiguity (Check 6) ----
-        fired = [c for c in "BHIA"
-                 if (c == "B" and b_reasons) or (c == "A" and a_reasons)
-                 or (c == "I" and i_reasons) or (c == "H" and h_reasons)]
-        if has_s:
+        fired = [c for c in "BHIA" if c in ladder_signals]
+        if flags['name_first'] == 'S' or (
+                not suffix_classes and cls == 'S'):
             fired.append("S")
+        fired = sorted(set(fired))
         if len(fired) >= 2:
             ambiguity.append({
                 "check": 6,
                 "module": module,
                 "subsystem": subsystem,
-                "fired_classes": sorted(fired),
+                "fired_classes": fired,
                 "signals": ladder_signals,
                 "final_class": cls,
             })
@@ -574,7 +654,7 @@ def main():
             confidence = "medium"
         elif len(fired) >= 2:
             confidence = "medium"
-        elif cls in ("S", "H") and not (suffix["S"] or suffix["H"]):
+        elif not suffix_classes:
             confidence = "medium"
         else:
             confidence = "high"
@@ -610,19 +690,50 @@ def main():
 
     records.sort(key=lambda r: (r["subsystem"], r["module"]))
 
-    # ---- Calibration checks ----
-    warnings = []
+    # ---- §8 distribution gate (failure conditions) ----
     by_class = Counter(r["class"] for r in records)
     total = len(records)
+    distribution = {c: by_class.get(c, 0) for c in "SHIABU"}
+    pct = {c: round(100 * distribution[c] / total, 1) if total else 0.0
+           for c in "SHIABU"}
+    bound_failures = []
+    if pct["S"] < 15:
+        bound_failures.append(f"S {pct['S']}% < 15%")
+    if pct["A"] < 10:
+        bound_failures.append(f"A {pct['A']}% < 10%")
+    if pct["I"] < 10:
+        bound_failures.append(f"I {pct['I']}% < 10%")
+    if pct["B"] > 30:
+        bound_failures.append(f"B {pct['B']}% > 30%")
+    if pct["U"] > 5:
+        bound_failures.append(f"U {pct['U']}% > 5%")
+    for c in "SHIABU":
+        if pct[c] > 45:
+            bound_failures.append(f"{c} {pct[c]}% > 45%")
+    if bound_failures:
+        degen = {
+            "status": "DEGENERATE",
+            "distribution": distribution,
+            "pct": pct,
+            "failing_bounds": bound_failures,
+        }
+        (SUBSYSTEMS_DIR / "triage-report.DEGENERATE.json").write_text(
+            json.dumps(degen, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8")
+        print(f"[TRIAGE DEGENERATE] distribution={distribution} "
+              f"failures={bound_failures}")
+        sys.exit(2)
 
+    # ---- Calibration checks ----
+    warnings = []
+    if total and by_class["U"] / total > 0.05:
+        warnings.append({"check": 1, "message": "Class U exceeds 5%",
+                         "count": by_class["U"], "total": total})
     for c in "SHIAB":
         if total and by_class[c] / total > 0.60:
             warnings.append({"check": 1,
                              "message": f"Class {c} exceeds 60%",
                              "count": by_class[c], "total": total})
-    if total and by_class["U"] / total > 0.05:
-        warnings.append({"check": 1, "message": "Class U exceeds 5%",
-                         "count": by_class["U"], "total": total})
     if by_class["B"] < 2:
         warnings.append({"check": 2,
                          "message": "boundary signals under-firing",
@@ -644,9 +755,6 @@ def main():
                              "consumer_count": r["consumer_count"],
                              "final_class": r["class"]})
 
-    distribution = {c: by_class.get(c, 0) for c in "SHIABU"}
-    pct = {c: round(100 * distribution[c] / total, 1) if total else 0.0
-           for c in "SHIABU"}
     per_subsystem = {}
     for sub in sorted({r["subsystem"] for r in records}):
         sub_recs = [r for r in records if r["subsystem"] == sub]
@@ -727,7 +835,7 @@ def main():
         ]
         return "\n".join(lines)
 
-    md = ["# Module triage report", "",
+    md = ["# Module triage report (name-first classifier)", "",
           f"Modules: {total}; generated from 150 `.omp-spec.md` files + "
           "5 DAG headers + seam-mapping heading passes.",
           "", "## Distribution", "",

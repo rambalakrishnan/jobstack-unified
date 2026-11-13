@@ -1,0 +1,121 @@
+[
+  {
+    "check": 4,
+    "consumer_count": 13,
+    "final_class": "S",
+    "module": "clock_discipline",
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 4,
+    "consumer_count": 25,
+    "final_class": "S",
+    "module": "evidence_artifacts",
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 4,
+    "consumer_count": 25,
+    "final_class": "S",
+    "module": "evidence_journal",
+    "subsystem": "circus-tent"
+  },
+  {
+    "check": 4,
+    "consumer_count": 11,
+    "final_class": "S",
+    "module": "crawler_artifacts",
+    "subsystem": "crawler"
+  },
+  {
+    "check": 4,
+    "consumer_count": 22,
+    "final_class": "S",
+    "module": "crawler_authority",
+    "subsystem": "crawler"
+  },
+  {
+    "check": 4,
+    "consumer_count": 32,
+    "final_class": "S",
+    "module": "crawler_schema",
+    "subsystem": "crawler"
+  },
+  {
+    "check": 4,
+    "consumer_count": 17,
+    "final_class": "S",
+    "module": "crawler_store",
+    "subsystem": "crawler"
+  },
+  {
+    "check": 4,
+    "consumer_count": 15,
+    "final_class": "S",
+    "module": "crawler_time",
+    "subsystem": "crawler"
+  },
+  {
+    "check": 4,
+    "consumer_count": 8,
+    "final_class": "S",
+    "module": "authority",
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 4,
+    "consumer_count": 9,
+    "final_class": "S",
+    "module": "clock_rules",
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 4,
+    "consumer_count": 10,
+    "final_class": "S",
+    "module": "journal_rules",
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 4,
+    "consumer_count": 15,
+    "final_class": "S",
+    "module": "owner_store",
+    "subsystem": "hellscape"
+  },
+  {
+    "check": 4,
+    "consumer_count": 19,
+    "final_class": "S",
+    "module": "access_policy",
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 4,
+    "consumer_count": 30,
+    "final_class": "S",
+    "module": "artifact_store",
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 4,
+    "consumer_count": 29,
+    "final_class": "S",
+    "module": "evidence_journal",
+    "subsystem": "job-hunter"
+  },
+  {
+    "check": 4,
+    "consumer_count": 21,
+    "final_class": "S",
+    "module": "rm_authority",
+    "subsystem": "ringmaster"
+  },
+  {
+    "check": 4,
+    "consumer_count": 14,
+    "final_class": "S",
+    "module": "rm_time",
+    "subsystem": "ringmaster"
+  }
+]

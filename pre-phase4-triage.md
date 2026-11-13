@@ -261,10 +261,20 @@ Run all six checks before producing the report. Append any failing check to `tri
 
 ## §8. Success criteria
 
+The report succeeds when:
+
 - `triage-report.json` contains all 150 modules classified into S, H, I, A, B, or U.
-- `triage-report.md` contains: distribution table, sample module per class, top 10 lowest-confidence modules with signal dumps, all warnings from §6, all contradictions from Check 5 and Check 6.
+- `triage-report.md` contains: distribution table, sample module per class, top 10 lowest-confidence modules with full signal dumps, all warnings from §6, all contradictions from Check 5 and Check 6.
+- **Distribution is discriminating:** all of the following must hold, or the report is a failed run:
+  - S >= 10% of modules
+  - I >= 10% of modules
+  - A >= 10% of modules
+  - B <= 25% of modules (narrower than the current failure)
+  - U <= 5%
+  - No single class other than the union {S, I, A} exceeds 40%
 - All 6 calibration checks in §6 executed; results in warnings and contradictions files.
-- Report explicitly names at least 3 modules where the heuristic is weakest, with full signal dumps.
+- Report explicitly names at least 3 modules where the heuristic is weakest.
 - No file references models, pricing, or cost.
 
-Failure conditions: any module without a class, any confidence claim stronger than the ladder supports, any model or pricing reference in output, `triage-report.md` over 20 pages.
+If the distribution bound fails, the script exits non-zero, writes `subsystems/triage-report.DEGENERATE.json` with the actual distribution and the failing bounds, and stops. Do not commit a degenerate report. The classifier must be corrected and re-run.
+
