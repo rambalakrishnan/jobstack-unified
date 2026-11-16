@@ -1,0 +1,13 @@
+[package]
+name = "rm_diagnostics"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rm_wire = { path = "../rm_wire" }
+rm_authority = { path = "../rm_authority" }
+rm_evidence = { path = "../rm_evidence" }
+rm_time = { path = "../rm_time" }
+rm_lifecycle = { path = "../rm_lifecycle" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

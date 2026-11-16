@@ -1,0 +1,21 @@
+[package]
+name = "rm_delivery"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+rm_authority = { path = "../rm_authority" }
+rm_evidence = { path = "../rm_evidence" }
+rm_time = { path = "../rm_time" }
+rm_leases = { path = "../rm_leases" }
+rm_preparation = { path = "../rm_preparation" }
+rm_lifecycle = { path = "../rm_lifecycle" }
+rm_wire = { path = "../rm_wire" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[dev-dependencies]
+rm_catalog = { path = "../rm_catalog" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
