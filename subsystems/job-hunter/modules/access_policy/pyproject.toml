@@ -1,0 +1,17 @@
+[project]
+name = "access_policy"
+version = "0.1.0"
+description = "Module implementing access_policy at tier 0"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["access_policy"]
+package-dir = {"access_policy" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
