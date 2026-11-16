@@ -1,0 +1,41 @@
+{
+  "kind": "pre_patch_estimate",
+  "note": "Estimate only before patched DAG exists; exact \u00a710 diff runs upon patch approval.",
+  "reimplement": [
+    "control_http",
+    "replay",
+    "session_runtime"
+  ],
+  "reverify": [
+    "hellscape_engine",
+    "manual_acceptance"
+  ],
+  "subsystem": "hellscape",
+  "tier": 10,
+  "unaffected": [
+    "admission",
+    "analysis_owner",
+    "application_owner",
+    "authority",
+    "clock_rules",
+    "connector_entrypoint",
+    "connector_queries",
+    "connector_transport",
+    "cooperative_assets",
+    "diagnostic_reducer",
+    "diagnostic_render",
+    "evidence_bundle",
+    "evidence_codec",
+    "evidence_import",
+    "fixture_policy",
+    "fixture_reducer",
+    "journal_rules",
+    "lifecycle_rules",
+    "native_mapping",
+    "observation_owner",
+    "owner_store",
+    "publication",
+    "reference_connector",
+    "source_verifier"
+  ]
+}

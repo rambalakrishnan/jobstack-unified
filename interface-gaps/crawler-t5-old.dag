@@ -1,0 +1,461 @@
+NODE: crawler_schema | modules/crawler_schema | lang: rust | tier: 0 | deps: []
+  READS: [seam-mappings/crawler-seam-mapping.md#1.3 Exhaustive transformation rule, seam-mappings/crawler-seam-mapping.md#3.1 Type notation, seam-mappings/crawler-seam-mapping.md#3.2 Missingness, seam-mappings/crawler-seam-mapping.md#4. Crawler Artifact Schemas]
+  EXPOSES: [pub struct CheckedRecord { schema_id: String, value: serde_json::Value }, pub struct Fault { pub code: String, pub detail: String }, pub enum SourceEntity { Listing, ClassifierResult, WorkItem, JobDetail, CoverageLedger, CursorState, SessionState, AuditLog, StateMutationRecord, DeadLetter, SeenIds }, pub fn validate(schema_id: &str, value: serde_json::Value) -> Result<CheckedRecord, Fault>, pub fn record_value(record: &CheckedRecord) -> &serde_json::Value, pub fn record_schema(record: &CheckedRecord) -> &str]
+  CONSUMES: []
+  TEST_ASSERTIONS: [C02]
+  INVARIANTS: [EK-NULL, EK-ASSESSMENT, EXT-TIME-NULL, OWD-OWNER]
+  FORBIDDEN:
+    - Accepting unknown versions, duplicate mapping keys, non-finite numbers, undeclared closed-object fields, or normalized null outside Missing.value.
+    - Treating schema validation as authorization, digest verification, capability certification, or satisfaction of cross-record semantic rules.
+    - Inserting default success, zero, false, empty collections, fabricated content, or a seventh NullReason.
+    - Adding fields to closed shared contracts or collapsing capability, opportunity, and result.
+  VERIFICATION: cargo test -p crawler_schema -- c02
+
+NODE: crawler_time | modules/crawler_time | lang: rust | tier: 1 | deps: [crawler_schema]
+  READS: [seam-mappings/crawler-seam-mapping.md#3.4 TimePoint and legacy timestamps, seam-mappings/crawler-seam-mapping.md#3.5 Measurement, seam-mappings/crawler-seam-mapping.md#16.6 Lease behavior]
+  EXPOSES: [pub trait ClockAuthority: Send + Sync { fn now(&self) -> Result<CheckedRecord, Fault>; }, pub fn normalize_timestamp(source: &CheckedRecord, clock_evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn validate_measurement(measurement: &CheckedRecord, registered_clocks: &CheckedRecord) -> Result<(), Fault>, pub fn compare_deadline(now: &CheckedRecord, deadline: &CheckedRecord) -> Result<std::cmp::Ordering, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: pub fn validate(schema_id: &str, value: serde_json::Value) -> Result<CheckedRecord, Fault>, crawler_schema: pub fn record_value(record: &CheckedRecord) -> &serde_json::Value]
+  TEST_ASSERTIONS: [C03, C04]
+  INVARIANTS: [EK-TIME, EK-TIMING-INTERPRETATION, EK-LEASE-RESTART, EXT-TIME-NULL, OWD-TIME-PROVENANCE]
+  FORBIDDEN:
+    - Subtracting or ordering monotonic offsets across different clock IDs or boots.
+    - Converting UTC-only history into invented monotonic coordinates or substituting import receipt time for source occurrence time.
+    - Replacing unavailable duration with zero, discarding observed zero, or dividing aggregate duration into invented step durations.
+    - Treating configured duration or a scheduled deadline as evidence that time elapsed.
+  VERIFICATION: cargo test -p crawler_time -- c03 && cargo test -p crawler_time -- c04
+
+NODE: crawler_hashing | modules/crawler_hashing | lang: rust | tier: 1 | deps: [crawler_schema]
+  READS: [seam-mappings/crawler-seam-mapping.md#3.3 Reference structures, seam-mappings/crawler-seam-mapping.md#3.6 Hash and revision reconciliation, seam-mappings/crawler-seam-mapping.md#18.1 SLM transformation, seam-mappings/crawler-seam-mapping.md#20.1 Fetch identity]
+  EXPOSES: [pub fn digest_bytes(bytes: &[u8]) -> String, pub fn canonical_bytes(record: &CheckedRecord) -> Result<Vec<u8>, Fault>, pub fn reconcile_source_hash(source: &CheckedRecord, bytes: Option<&[u8]>) -> Result<CheckedRecord, Fault>, pub fn frame_reference(entity: &str, components: &[String]) -> Result<String, Fault>, pub fn verify_record_digest(record: &CheckedRecord, expected: &str) -> Result<(), Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: pub fn record_value(record: &CheckedRecord) -> &serde_json::Value, crawler_schema: pub fn validate(schema_id: &str, value: serde_json::Value) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C05]
+  INVARIANTS: [EK-HASHES, EK-ARTIFACTS, OWD-FETCH-IDENTITY, EXT-PREPARATION-PIN]
+  FORBIDDEN:
+    - Treating a hash of a digest string as the digest of original content.
+    - Silently conflating kernel canonicalization, artifact byte identity, fetch identity, classifier input identity, or page hashing.
+    - Concatenating unescaped reference components or conflating integer and string identifiers.
+    - Normalizing Unicode, array order, or redactions while claiming the original kernel or artifact digest.
+  VERIFICATION: cargo test -p crawler_hashing -- c05
+
+NODE: crawler_authority | modules/crawler_authority | lang: rust | tier: 2 | deps: [crawler_schema, crawler_hashing]
+  READS: [seam-mappings/crawler-seam-mapping.md#2. Boundary and Ownership Register, seam-mappings/crawler-seam-mapping.md#13.1 Journal envelope mapping, seam-mappings/crawler-seam-mapping.md#19.2 WorkScope and manifest]
+  EXPOSES: [pub struct Grant { record: CheckedRecord }, pub fn authorize(principal: &CheckedRecord, request: &CheckedRecord, registration: &CheckedRecord) -> Result<Grant, Fault>, pub fn authorize_producer(principal: &CheckedRecord, submission: &CheckedRecord, manifest: &CheckedRecord) -> Result<Grant, Fault>, pub fn authorize_reference(grant: &Grant, reference: &CheckedRecord, operation: &str) -> Result<(), Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_hashing: pub fn verify_record_digest(record: &CheckedRecord, expected: &str) -> Result<(), Fault>]
+  TEST_ASSERTIONS: [C06]
+  INVARIANTS: [EK-PROVENANCE, EK-CLAIMS, EXT-AUTHORITY, OWD-OWNER, OWD-TIME-PROVENANCE]
+  FORBIDDEN:
+    - Accepting caller-supplied principal, owner, producer provenance, assertion authority, or server-envelope fields as authenticated facts.
+    - Treating identifiers, digests, application credentials, or HTTP success as connector-control authority.
+    - Upgrading importer, subject, connector, or manual-observer evidence into origin facts.
+    - Authorizing writes outside the registered owner domain or changing ownership through an unjournaled configuration edit.
+  VERIFICATION: cargo test -p crawler_authority -- c06
+
+NODE: crawler_readonly | modules/crawler_readonly | lang: rust | tier: 3 | deps: [crawler_schema, crawler_authority]
+  READS: [seam-mappings/crawler-seam-mapping.md#14.1 State mutation record, seam-mappings/crawler-seam-mapping.md#19.1 TaskEnvelope, seam-mappings/crawler-seam-mapping.md#19.6 Read-only enforcement]
+  EXPOSES: [pub struct ReadOnlyRequest { record: CheckedRecord }, pub fn authorize_acquisition(grant: &Grant, endpoint: &CheckedRecord, request: &CheckedRecord) -> Result<ReadOnlyRequest, Fault>, pub fn authorize_redirect(grant: &Grant, previous: &ReadOnlyRequest, redirect: &CheckedRecord) -> Result<ReadOnlyRequest, Fault>, pub fn reject_write_action(action: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_authority: Grant, crawler_authority: pub fn authorize_reference(grant: &Grant, reference: &CheckedRecord, operation: &str) -> Result<(), Fault>]
+  TEST_ASSERTIONS: [C40]
+  INVARIANTS: [EXT-READ-ONLY, EXT-TASK, EXT-AUTHORITY, EK-ATTEMPT-SCOPE, OWD-JOB]
+  FORBIDDEN:
+    - Dispatching apply, self-referral, contact-reveal, or other employer/application mutations from crawler tasks.
+    - Determining read-only status from HTTP method alone or allowing task text, redirects, plan artifacts, or callbacks to expand authority.
+    - Inserting state_mutation_record rows or interpreting reserved statuses as executable crawler transitions.
+    - Treating Oregon usemyssn=No as permission to execute self-refer-step1-validate.cfm.
+  VERIFICATION: cargo test -p crawler_readonly -- c40
+
+NODE: crawler_artifacts | modules/crawler_artifacts | lang: rust | tier: 3 | deps: [crawler_schema, crawler_hashing, crawler_authority]
+  READS: [seam-mappings/crawler-seam-mapping.md#3.3 Reference structures, seam-mappings/crawler-seam-mapping.md#9.4 Retention and legacy product fields, seam-mappings/crawler-seam-mapping.md#19.3 Verb behavior, seam-mappings/crawler-seam-mapping.md#20.6 Retention]
+  EXPOSES: [pub trait ArtifactStore: Send + Sync { fn install(&self, grant: &Grant, bytes: &[u8], media_type: &str, restricted: bool) -> Result<CheckedRecord, Fault>; fn read(&self, grant: &Grant, reference: &CheckedRecord) -> Result<Vec<u8>, Fault>; fn delete(&self, grant: &Grant, reference: &CheckedRecord, gc_certificate: &CheckedRecord) -> Result<(), Fault>; }, pub fn collect_artifacts(store: &dyn ArtifactStore, grant: &Grant, request: &CheckedRecord, inventory: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_hashing: pub fn digest_bytes(bytes: &[u8]) -> String, crawler_authority: Grant, crawler_authority: pub fn authorize_reference(grant: &Grant, reference: &CheckedRecord, operation: &str) -> Result<(), Fault>]
+  TEST_ASSERTIONS: [C41]
+  INVARIANTS: [EK-ARTIFACTS, EXT-ARTIFACTS, EXT-AUTHORITY, OWD-RETENTION]
+  FORBIDDEN:
+    - Registering references before durable byte installation or returning mutable bytes under an existing digest.
+    - Retrieving arbitrary caller URLs or filesystem paths through CollectArtifacts.
+    - Rerunning acquisition to manufacture missing artifacts or erasing a known digest when bytes are lost.
+    - Deleting bytes without an authorized, current, concurrency-fenced GC certificate.
+    - Exposing session secrets through ordinary inventories or downgrading restricted access.
+  VERIFICATION: cargo test -p crawler_artifacts -- c41
+
+NODE: crawler_store | modules/crawler_store | lang: rust | tier: 4 | deps: [crawler_schema, crawler_time, crawler_hashing, crawler_authority, crawler_artifacts]
+  READS: [seam-mappings/crawler-seam-mapping.md#2.2 Domain separation, seam-mappings/crawler-seam-mapping.md#13.1 Journal envelope mapping, seam-mappings/crawler-seam-mapping.md#16.5 Atomic stage effects, seam-mappings/crawler-seam-mapping.md#20.4 Exact Contract 04 records, seam-mappings/crawler-seam-mapping.md#Appendix A — Normative contract-identifier cross-reference]
+  EXPOSES: [pub trait OwnerStore: Send + Sync { fn transact(&self, grant: &Grant, transaction: &CheckedRecord) -> Result<CheckedRecord, Fault>; fn read(&self, grant: &Grant, query: &CheckedRecord) -> Result<CheckedRecord, Fault>; }, pub fn import_event(store: &dyn OwnerStore, grant: &Grant, event: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_hashing: pub fn canonical_bytes(record: &CheckedRecord) -> Result<Vec<u8>, Fault>, crawler_hashing: pub fn digest_bytes(bytes: &[u8]) -> String, crawler_authority: Grant, crawler_authority: pub fn authorize_producer(principal: &CheckedRecord, submission: &CheckedRecord, manifest: &CheckedRecord) -> Result<Grant, Fault>, crawler_artifacts: ArtifactStore]
+  TEST_ASSERTIONS: [C07, C22]
+  INVARIANTS: [EK-JOURNAL, EK-ATOMICITY, EK-OBSERVATION, EK-PROVENANCE, OWD-OWNER, OWD-LOCAL-COMMIT, OWD-REVISION]
+  FORBIDDEN:
+    - Acknowledging before owner-local effects, idempotency association, replayable response, and journal evidence are durable.
+    - Accepting invalid transitions, stale fencing predicates, unauthorized owner writes, or unresolved required references.
+    - Editing, deleting, resequencing, or backdating acknowledged journal events.
+    - Sharing an ingest serialized writer, checkpoint lock, or required I/O admission with product writes or large snapshot transfer.
+    - Requiring a central cross-owner journal transaction on an owner's commit path.
+  VERIFICATION: cargo test -p crawler_store -- c07 && cargo test -p crawler_store -- c22
+
+NODE: crawler_normalization | modules/crawler_normalization | lang: rust | tier: 5 | deps: [crawler_schema, crawler_time, crawler_hashing]
+  READS: [seam-mappings/crawler-seam-mapping.md#4.1 OperationalSnapshot, seam-mappings/crawler-seam-mapping.md#5. Common Claimable Fields, seam-mappings/crawler-seam-mapping.md#6. Listing Schema and Mapping, seam-mappings/crawler-seam-mapping.md#7. Classifier Result Schema and Mapping, seam-mappings/crawler-seam-mapping.md#8. Work Item Schema and Mapping, seam-mappings/crawler-seam-mapping.md#9. Job Detail Schema and Mapping, seam-mappings/crawler-seam-mapping.md#10. Coverage Ledger Schema and Mapping, seam-mappings/crawler-seam-mapping.md#11. Cursor Schema and Child Collections, seam-mappings/crawler-seam-mapping.md#12. Session Schema and Mapping, seam-mappings/crawler-seam-mapping.md#13. Audit Schema and Kernel Bridge, seam-mappings/crawler-seam-mapping.md#14. Reserved Mutation and Dead-Letter Schemas, seam-mappings/crawler-seam-mapping.md#15. Seen-ID Schema and Exact Membership]
+  EXPOSES: [pub fn normalize_row(entity: SourceEntity, source: serde_json::Value, evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn assemble_crawler_value(snapshots: &[CheckedRecord], evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: SourceEntity, crawler_time: pub fn normalize_timestamp(source: &CheckedRecord, clock_evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_time: pub fn validate_measurement(measurement: &CheckedRecord, registered_clocks: &CheckedRecord) -> Result<(), Fault>, crawler_hashing: pub fn reconcile_source_hash(source: &CheckedRecord, bytes: Option<&[u8]>) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C01]
+  INVARIANTS: [EK-NULL, EK-TIME, EK-ARTIFACTS, OWD-OWNER, OWD-JOB, OWD-RENDER]
+  FORBIDDEN:
+    - Omitting a source column, silently coercing integer/string identity, or discarding nonidentity conversion evidence.
+    - Packing entire operational rows into undeclared JobCrawlerValue properties.
+    - Converting legacy priority or artifact fields into product revisions on crawler authority.
+    - Treating legacy semantic_state as a shared write target.
+    - Producing a Pass publication value without evidence of its required durable source-response artifact.
+    - Performing storage writes or hidden artifact retrieval during pure normalization.
+  VERIFICATION: cargo test -p crawler_normalization -- c01
+
+NODE: crawler_leases | modules/crawler_leases | lang: rust | tier: 5 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_store]
+  READS: [seam-mappings/crawler-seam-mapping.md#5. Common Claimable Fields, seam-mappings/crawler-seam-mapping.md#16.6 Lease behavior, seam-mappings/crawler-seam-mapping.md#21.4 Recovery]
+  EXPOSES: [pub fn claim(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn renew(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn complete(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn reclaim(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_time: pub fn compare_deadline(now: &CheckedRecord, deadline: &CheckedRecord) -> Result<std::cmp::Ordering, Fault>, crawler_authority: Grant, crawler_store: OwnerStore]
+  TEST_ASSERTIONS: [C09, C10, C11]
+  INVARIANTS: [EK-LEASE, EK-LEASE-RESTART, EK-ATOMICITY, OWD-REVISION, OWD-LOCAL-COMMIT]
+  FORBIDDEN:
+    - Changing pending operational state merely to claim or renew a lease.
+    - Accepting stale tokens, authority epochs, worker/session epochs, revisions, or input generations.
+    - Charging one failed claim generation twice across release, expiry, and confirmed-death recovery.
+    - Comparing lease offsets across authority restarts or treating reclamation as proof of remote termination.
+    - Treating successful completion as a failed retry or bypass as resurrection of exhausted work.
+  VERIFICATION: cargo test -p crawler_leases -- c09 && cargo test -p crawler_leases -- c10 && cargo test -p crawler_leases -- c11
+
+NODE: crawler_capabilities | modules/crawler_capabilities | lang: rust | tier: 5 | deps: [crawler_schema, crawler_hashing, crawler_authority, crawler_store]
+  READS: [seam-mappings/crawler-seam-mapping.md#17.5 Target allocations and blockers, seam-mappings/crawler-seam-mapping.md#19.3 Verb behavior, seam-mappings/crawler-seam-mapping.md#23.2 Explicit remaining evidence boundaries]
+  EXPOSES: [pub fn describe_configuration(store: &dyn OwnerStore, grant: &Grant, configuration: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn check_capability(descriptor: &CheckedRecord, capability_id: &str, scope: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_hashing: pub fn verify_record_digest(record: &CheckedRecord, expected: &str) -> Result<(), Fault>, crawler_authority: Grant, crawler_store: OwnerStore]
+  TEST_ASSERTIONS: [C46]
+  INVARIANTS: [EK-CAPABILITY, EK-ASSESSMENT, EXT-DESCRIBE, EXT-DECLARE-NOT-ASSESS]
+  FORBIDDEN:
+    - Inheriting capability presence or absence across subject versions, modes, or surfaces.
+    - Reporting the Oregon placeholder solver, missing count sources, unverified cursors, unknown lifetimes, or unmeasured performance as verified.
+    - Equating unsupported connector mapping with native absence.
+    - Performing speculative target probes or issuing qualification results while describing configuration.
+  VERIFICATION: cargo test -p crawler_capabilities -- c46
+
+NODE: crawler_admission | modules/crawler_admission | lang: rust | tier: 5 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_store]
+  READS: [seam-mappings/crawler-seam-mapping.md#21.2 Credit-before-wire and control progress, seam-mappings/crawler-seam-mapping.md#21.3 Resource and performance contract]
+  EXPOSES: [pub struct ResponseCredit { reservation: CheckedRecord }, pub struct ControlCredit { reservation: CheckedRecord }, pub struct PagePermit { reservation: CheckedRecord }, pub trait Admission: Send + Sync { fn reserve_response(&self, request: &CheckedRecord) -> Result<ResponseCredit, Fault>; fn reserve_control(&self, scope: &CheckedRecord) -> Result<ControlCredit, Fault>; fn reserve_page(&self, scope: &CheckedRecord, control: bool) -> Result<PagePermit, Fault>; fn settle_response(&self, credit: ResponseCredit, outcome: &CheckedRecord) -> Result<(), Fault>; }]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_authority: Grant, crawler_store: OwnerStore]
+  TEST_ASSERTIONS: [C35]
+  INVARIANTS: [EXT-BOUNDS, EK-ATOMICITY, OWD-LOCAL-COMMIT]
+  FORBIDDEN:
+    - Dispatching output-producing requests without row, byte, and durable-staging reservations.
+    - Making admitted responses wait for new downstream capacity before durable materialization.
+    - Allowing data work to exhaust independently reserved control command, CPU, or cold-bootstrap memory capacity.
+    - Treating model reservations, RSS targets, task budgets, and navigation ceilings as interchangeable.
+    - Silently discarding work or raising response bounds under pressure.
+  VERIFICATION: cargo test -p crawler_admission -- c35
+
+NODE: crawler_retention | modules/crawler_retention | lang: rust | tier: 5 | deps: [crawler_schema, crawler_authority, crawler_artifacts, crawler_store]
+  READS: [seam-mappings/crawler-seam-mapping.md#20.6 Retention, seam-mappings/crawler-seam-mapping.md#Appendix A — Normative contract-identifier cross-reference]
+  EXPOSES: [pub fn plan_retention_pin(dependent: &CheckedRecord, archive_root: &CheckedRecord, dependencies: &[CheckedRecord]) -> Result<CheckedRecord, Fault>, pub fn release_pin(store: &dyn OwnerStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn collect_unreachable(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_authority: Grant, crawler_artifacts: ArtifactStore, crawler_store: OwnerStore]
+  TEST_ASSERTIONS: [C25]
+  INVARIANTS: [OWD-RETENTION, EK-ARTIFACTS, OWD-LOCAL-COMMIT]
+  FORBIDDEN:
+    - Collecting an archive or transitive dependency while a live replacement, retained archive, or evidence root reaches it.
+    - Using TTL, cache eviction, or newer publication as authority to release retention.
+    - Deleting after an unfenced reachability check that can race with pin creation.
+    - Changing a pin's dependent/root, mutating archive contents on release, or reporting lost bytes as successful GC.
+  VERIFICATION: cargo test -p crawler_retention -- c25
+
+NODE: crawler_observe | modules/crawler_observe | lang: rust | tier: 5 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_artifacts, crawler_store]
+  READS: [seam-mappings/crawler-seam-mapping.md#19.5 Observation and output, seam-mappings/crawler-seam-mapping.md#13.1 Journal envelope mapping]
+  EXPOSES: [pub fn observe(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn normalize_native_report(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, grant: &Grant, report: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_authority: Grant, crawler_artifacts: ArtifactStore, crawler_store: OwnerStore]
+  TEST_ASSERTIONS: [C38]
+  INVARIANTS: [EXT-OBSERVE, EXT-NORMALIZE, EXT-EVIDENCE, EK-OBSERVATION, EK-CLAIMS, EK-JOURNAL]
+  FORBIDDEN:
+    - Returning unjournaled observations, another handle's evidence, or claims without independently verified authentication and correlation.
+    - Advancing past unavailable history or silently dropping oversized items.
+    - Treating next as merely the last returned item instead of the last scanned journal position.
+    - Treating an empty page, closed connection, or cutoff as native termination or proof of no future evidence.
+    - Emitting application-attempt axis publications for discovery.
+  VERIFICATION: cargo test -p crawler_observe -- c38
+
+NODE: crawler_browser | modules/crawler_browser | lang: rust | tier: 6 | deps: [crawler_schema, crawler_readonly, crawler_admission, crawler_capabilities]
+  READS: [seam-mappings/crawler-seam-mapping.md#18.2 Transport and render boundary, seam-mappings/crawler-seam-mapping.md#18.3 Ten slots, full-featured-blueprints/1-handoff-brief.txt#The internal browser binding]
+  EXPOSES: [pub struct PageExecutor { page: browser_oxide::Page, owner: std::thread::ThreadId, permit: PagePermit, confinement: std::marker::PhantomData<std::rc::Rc<()>> }, pub fn create_page(profile: &CheckedRecord, permit: PagePermit) -> Result<PageExecutor, Fault>, pub fn execute_page(page: &mut PageExecutor, request: &ReadOnlyRequest, deadline: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn reset_page(page: &mut PageExecutor, session: &CheckedRecord) -> Result<(), Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_readonly: ReadOnlyRequest, crawler_admission: PagePermit, crawler_capabilities: pub fn check_capability(descriptor: &CheckedRecord, capability_id: &str, scope: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C34]
+  INVARIANTS: [EXT-SURFACE, EXT-READ-ONLY, EK-CAPABILITY]
+  FORBIDDEN:
+    - Moving PageExecutor, Page, solver instances, DOM/V8 handles, or capturing closures across the allocating OS thread.
+    - Implementing Send or Sync for PageExecutor or introducing a cross-browser primitive abstraction.
+    - Reusing bootstrap Pages as warm pagination Pages or resetting across incompatible session ownership.
+    - Issuing network requests during from-HTML rendering or extending deadlines during solver execution.
+    - Exposing native Page or DOM handles through the connector.
+  VERIFICATION: cargo test -p crawler_browser -- c34
+
+NODE: crawler_cursors | modules/crawler_cursors | lang: rust | tier: 6 | deps: [crawler_schema, crawler_hashing, crawler_capabilities]
+  READS: [seam-mappings/crawler-seam-mapping.md#4.3 UncertifiedTraversalObservation, seam-mappings/crawler-seam-mapping.md#11. Cursor Schema and Child Collections, seam-mappings/crawler-seam-mapping.md#17.5 Target allocations and blockers]
+  EXPOSES: [pub fn plan_cursor_step(declaration: &CheckedRecord, cursor: &CheckedRecord, response: &CheckedRecord, capability: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn plan_observation_commit(cursor: &CheckedRecord, packet: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn validate_resume(cursor: &CheckedRecord, session: &CheckedRecord, ordering: &CheckedRecord) -> Result<(), Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_hashing: pub fn frame_reference(entity: &str, components: &[String]) -> Result<String, Fault>, crawler_capabilities: pub fn check_capability(descriptor: &CheckedRecord, capability_id: &str, scope: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C28, C29]
+  INVARIANTS: [EK-CAPABILITY, EK-OBSERVATION, EK-ATOMICITY, EXT-DECLARE-NOT-ASSESS]
+  FORBIDDEN:
+    - Using positional pagination outside deterministic ordering with per-run scope.
+    - Renaming page/start/postback coordinates as response-bound continuations.
+    - Promoting an unverified first response to exhaustive-single-response certification.
+    - Committing cursor state directly or planning progress beyond materialized observation/entity effects.
+    - Resuming incompatible session/backend generations, double-counting replay, or accepting conflicting observation identity.
+  VERIFICATION: cargo test -p crawler_cursors -- c28 && cargo test -p crawler_cursors -- c29
+
+NODE: crawler_detectors | modules/crawler_detectors | lang: rust | tier: 6 | deps: [crawler_schema, crawler_hashing, crawler_normalization]
+  READS: [seam-mappings/crawler-seam-mapping.md#17.3 Detector state and trigger matrix, seam-mappings/crawler-seam-mapping.md#17.4 Drift, seam-mappings/crawler-seam-mapping.md#11.3 Exact occurrences and drift entries]
+  EXPOSES: [pub fn evaluate_detectors(declaration: &CheckedRecord, prior: &CheckedRecord, packet: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn evaluate_drift(declaration: &CheckedRecord, observations: &CheckedRecord, prior_ledger: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: SourceEntity, crawler_hashing: pub fn reconcile_source_hash(source: &CheckedRecord, bytes: Option<&[u8]>) -> Result<CheckedRecord, Fault>, crawler_normalization: pub fn normalize_row(entity: SourceEntity, source: serde_json::Value, evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C27, C31]
+  INVARIANTS: [EK-ASSESSMENT, EK-DIAGNOSTIC, OWD-RENDER]
+  FORBIDDEN:
+    - Treating detector diagnostic states as extra operational ledger states.
+    - Treating newest-date regression alone as proof of truncation.
+    - Averaging incompatible backend totals or replacing repeated-distinct arithmetic with total duplicate occurrences.
+    - Performing live prohibited no-op probes or treating over-fetch factors as proof.
+    - Suppressing detector evidence because another partition or rendering stage succeeded.
+  VERIFICATION: cargo test -p crawler_detectors -- c27 && cargo test -p crawler_detectors -- c31
+
+NODE: crawler_seen_ids | modules/crawler_seen_ids | lang: rust | tier: 6 | deps: [crawler_schema, crawler_authority, crawler_store]
+  READS: [seam-mappings/crawler-seam-mapping.md#15. Seen-ID Schema and Exact Membership, seam-mappings/crawler-seam-mapping.md#16.4 Work and detail transitions]
+  EXPOSES: [pub fn exact_success(store: &dyn OwnerStore, grant: &Grant, root: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn plan_seen_transition(before: &CheckedRecord, after: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_authority: Grant, crawler_store: OwnerStore]
+  TEST_ASSERTIONS: [C18]
+  INVARIANTS: [EK-ATOMICITY, EK-LEASE, OWD-RENDER, OWD-FETCH-NOOP]
+  FORBIDDEN:
+    - Adding listings, snippet-only vetoes, pending classification, failed details, or render-failed details to successful membership.
+    - Dropping work from an approximate possible hit without exact confirmation.
+    - Retaining membership after eligible-state exit or committing membership outside its corresponding fenced state transaction.
+    - Suppressing coverage observations when successful detail is reused.
+  VERIFICATION: cargo test -p crawler_seen_ids -- c18
+
+NODE: crawler_inference_host | modules/crawler_inference_host | lang: rust | tier: 6 | deps: [crawler_schema, crawler_time, crawler_admission, crawler_capabilities]
+  READS: [seam-mappings/crawler-seam-mapping.md#18.1 SLM transformation, seam-mappings/crawler-seam-mapping.md#21.3 Resource and performance contract, feature-inventories/crawler-feature-inventory.md#Decision 1 — SLM isolation mechanism, feature-inventories/crawler-feature-inventory.md#Decision 10 — SLM loading lifecycle]
+  EXPOSES: [pub trait InferenceHost: Send + Sync { fn ensure_ready(&self, manifest: &CheckedRecord) -> Result<CheckedRecord, Fault>; fn infer(&self, batch: &CheckedRecord) -> Result<CheckedRecord, Fault>; fn containment_events(&self) -> Result<CheckedRecord, Fault>; }]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_admission: Admission, crawler_admission: ResponseCredit, crawler_admission: ControlCredit, crawler_admission: PagePermit, crawler_capabilities: pub fn check_capability(descriptor: &CheckedRecord, capability_id: &str, scope: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C17]
+  INVARIANTS: [EXT-BOUNDS, EK-OBSERVATION, EK-CLAIMS]
+  FORBIDDEN:
+    - Loading or executing LiteRT inside a crawler-worker address space.
+    - Admitting inference without independently bounded memory, bounded IPC, and host reserves protecting crawler/storage/OS domains.
+    - Claiming classifier rows before readiness or treating SLM-induced crawler termination as an ordinary retry.
+    - Reporting reference latency/memory targets as measured acceptance evidence.
+    - Implementing the inference-host executable in a language other than Rust.
+  VERIFICATION: cargo test -p crawler_inference_host -- c17
+
+NODE: crawler_fetch_identity | modules/crawler_fetch_identity | lang: rust | tier: 6 | deps: [crawler_schema, crawler_hashing, crawler_normalization]
+  READS: [seam-mappings/crawler-seam-mapping.md#20.1 Fetch identity, seam-mappings/crawler-seam-mapping.md#20.2 Same-key rule, seam-mappings/crawler-seam-mapping.md#Appendix A — Normative contract-identifier cross-reference]
+  EXPOSES: [pub fn compute_fetch_key(root: &CheckedRecord, identity: &CheckedRecord) -> Result<String, Fault>, pub fn decide_acquisition_write(existing: &CheckedRecord, candidate: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn validate_metadata_only(before: &CheckedRecord, after: &CheckedRecord) -> Result<(), Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_hashing: pub fn canonical_bytes(record: &CheckedRecord) -> Result<Vec<u8>, Fault>, crawler_hashing: pub fn digest_bytes(bytes: &[u8]) -> String, crawler_normalization: pub fn assemble_crawler_value(snapshots: &[CheckedRecord], evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C19]
+  INVARIANTS: [OWD-FETCH-IDENTITY, OWD-FETCH-NOOP, OWD-REVISION]
+  FORBIDDEN:
+    - Adding run, crawl date, response digest, extractor version, or hidden nonce to fetch identity.
+    - Excluding representation headers to increase cache hits or including ephemeral identity/session headers.
+    - Authorizing same-key acquisition or replacement-lineage rewrites, including repaired failed renders.
+    - Creating replacement archives for metadata-only transitions.
+    - Reading mutable storage or committing writes inside pure identity and decision functions.
+  VERIFICATION: cargo test -p crawler_fetch_identity -- c19
+
+NODE: crawler_publication | modules/crawler_publication | lang: rust | tier: 6 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_artifacts, crawler_store, crawler_normalization]
+  READS: [seam-mappings/crawler-seam-mapping.md#2.2 Domain separation, seam-mappings/crawler-seam-mapping.md#20.4 Exact Contract 04 records, seam-mappings/crawler-seam-mapping.md#Appendix A — Normative contract-identifier cross-reference]
+  EXPOSES: [pub fn install_revision(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, grant: &Grant, revision: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn select_seal(store: &dyn OwnerStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn compose_row(seal: &CheckedRecord, registration: &CheckedRecord, domains: &[CheckedRecord]) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: pub fn validate_measurement(measurement: &CheckedRecord, registered_clocks: &CheckedRecord) -> Result<(), Fault>, crawler_authority: Grant, crawler_artifacts: ArtifactStore, crawler_store: OwnerStore, crawler_normalization: pub fn assemble_crawler_value(snapshots: &[CheckedRecord], evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C23]
+  INVARIANTS: [OWD-PUBLISH, OWD-VIEW, OWD-SEAL, OWD-REVISION, OWD-OWNER, OWD-TIME-PROVENANCE]
+  FORBIDDEN:
+    - Publishing pointers before complete immutable components are verified and locally durable.
+    - Regressing a pointer on reordered delivery or skipping lineage validation.
+    - Conflating source-owner acknowledgement with read-view installation.
+    - Replacing lost published bytes with revision zero or composing partial rows.
+    - Computing publication delay from arbitrary source/destination UTC subtraction.
+  VERIFICATION: cargo test -p crawler_publication -- c23
+
+NODE: crawler_prepare | modules/crawler_prepare | lang: rust | tier: 6 | deps: [crawler_schema, crawler_hashing, crawler_authority, crawler_readonly, crawler_capabilities, crawler_store]
+  READS: [seam-mappings/crawler-seam-mapping.md#19.1 TaskEnvelope, seam-mappings/crawler-seam-mapping.md#19.2 WorkScope and manifest, seam-mappings/crawler-seam-mapping.md#19.4 Preparation and handle fields, seam-mappings/crawler-seam-mapping.md#21.1 Declaration boundary]
+  EXPOSES: [pub fn prepare(store: &dyn OwnerStore, grant: &Grant, request: &CheckedRecord, descriptor: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn verify_preparation(preparation: &CheckedRecord, configuration: &CheckedRecord, authorization: &CheckedRecord) -> Result<(), Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: pub fn record_schema(record: &CheckedRecord) -> &str, crawler_hashing: pub fn canonical_bytes(record: &CheckedRecord) -> Result<Vec<u8>, Fault>, crawler_hashing: pub fn digest_bytes(bytes: &[u8]) -> String, crawler_authority: Grant, crawler_readonly: ReadOnlyRequest, crawler_readonly: pub fn authorize_acquisition(grant: &Grant, endpoint: &CheckedRecord, request: &CheckedRecord) -> Result<ReadOnlyRequest, Fault>, crawler_capabilities: pub fn check_capability(descriptor: &CheckedRecord, capability_id: &str, scope: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_store: OwnerStore]
+  TEST_ASSERTIONS: [C36]
+  INVARIANTS: [EXT-PREPARE, EXT-PREPARATION-PIN, EXT-TASK, EXT-READ-ONLY, EXT-STATE-POLICY, EXT-BOUNDS, EK-ATTEMPT-SCOPE]
+  FORBIDDEN:
+    - Browsing, auth probing, browser startup, planner invocation, context reset, or hidden recovery during Prepare.
+    - Silently improving plans, changing destinations, dropping required bounds, or accepting unsupported required state policy.
+    - Producing startable preparations for blocking concerns or silently repreparing stale input.
+    - Creating application attempts, application commissions, or a Phase 1 crawl_allotment declaration for discovery.
+    - Reserving execution resources or dispatching acquisition as part of declaration validation.
+  VERIFICATION: cargo test -p crawler_prepare -- c36
+
+NODE: crawler_sessions | modules/crawler_sessions | lang: rust | tier: 7 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_readonly, crawler_store, crawler_admission, crawler_browser, crawler_capabilities]
+  READS: [seam-mappings/crawler-seam-mapping.md#12. Session Schema and Mapping, seam-mappings/crawler-seam-mapping.md#16.8 Other state machines, seam-mappings/crawler-seam-mapping.md#18.3 Ten slots, seam-mappings/crawler-seam-mapping.md#21.2 Credit-before-wire and control progress]
+  EXPOSES: [pub struct LiveSession { client: browser_oxide::HttpClient, generation: CheckedRecord }, pub trait SessionManager: Send + Sync { fn establish(&self, grant: &Grant, request: &CheckedRecord, credit: &ControlCredit) -> Result<LiveSession, Fault>; fn exchange(&self, grant: &Grant, request: &ReadOnlyRequest, credit: &ResponseCredit) -> Result<CheckedRecord, Fault>; fn commit_boundary(&self, grant: &Grant, receipt: &CheckedRecord) -> Result<(), Fault>; fn retire(&self, grant: &Grant, request: &CheckedRecord, credit: &ControlCredit) -> Result<CheckedRecord, Fault>; }]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_authority: Grant, crawler_readonly: ReadOnlyRequest, crawler_readonly: pub fn authorize_redirect(grant: &Grant, previous: &ReadOnlyRequest, redirect: &CheckedRecord) -> Result<ReadOnlyRequest, Fault>, crawler_store: OwnerStore, crawler_admission: Admission, crawler_admission: ControlCredit, crawler_admission: ResponseCredit, crawler_admission: PagePermit, crawler_browser: PageExecutor, crawler_browser: pub fn create_page(profile: &CheckedRecord, permit: PagePermit) -> Result<PageExecutor, Fault>, crawler_browser: pub fn execute_page(page: &mut PageExecutor, request: &ReadOnlyRequest, deadline: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_browser: pub fn reset_page(page: &mut PageExecutor, session: &CheckedRecord) -> Result<(), Fault>, crawler_capabilities: pub fn check_capability(descriptor: &CheckedRecord, capability_id: &str, scope: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C32, C33]
+  INVARIANTS: [EK-LEASE, EK-ARTIFACTS, EK-TIME, EXT-STATE-POLICY, EXT-BOUNDS]
+  FORBIDDEN:
+    - Creating session_state rows for topology none or multiple current owners for one generation.
+    - Concurrent stateful requests, preparing requests before rotating cookie application, or excluding redirect/solver hops from serialization.
+    - Sharing independent rotating shards through an unnamespaced process-global store.
+    - Treating ordinary client clones or frozen snapshots as live shared-pool continuity.
+    - Replaying unacknowledged rotating snapshots after crashes or treating handoff receipt as session birth.
+    - Holding claimable row leases during bootstrap or human handoff waits.
+  VERIFICATION: cargo test -p crawler_sessions -- c32 && cargo test -p crawler_sessions -- c33
+
+NODE: crawler_coverage | modules/crawler_coverage | lang: rust | tier: 7 | deps: [crawler_schema, crawler_hashing, crawler_normalization, crawler_cursors, crawler_detectors]
+  READS: [seam-mappings/crawler-seam-mapping.md#4.2 CoverageExport, seam-mappings/crawler-seam-mapping.md#10. Coverage Ledger Schema and Mapping, seam-mappings/crawler-seam-mapping.md#17.1 Proof rules, seam-mappings/crawler-seam-mapping.md#17.2 Bisection]
+  EXPOSES: [pub fn evaluate_proof(declaration: &CheckedRecord, ledger: &CheckedRecord, cohort: &CheckedRecord, detectors: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn plan_split(declaration: &CheckedRecord, parent: &CheckedRecord, evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn build_coverage_export(ledger: &CheckedRecord, cursors: &[CheckedRecord], evaluation: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: SourceEntity, crawler_hashing: pub fn verify_record_digest(record: &CheckedRecord, expected: &str) -> Result<(), Fault>, crawler_normalization: pub fn normalize_row(entity: SourceEntity, source: serde_json::Value, evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_cursors: pub fn validate_resume(cursor: &CheckedRecord, session: &CheckedRecord, ordering: &CheckedRecord) -> Result<(), Fault>, crawler_detectors: pub fn evaluate_detectors(declaration: &CheckedRecord, prior: &CheckedRecord, packet: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_detectors: pub fn evaluate_drift(declaration: &CheckedRecord, observations: &CheckedRecord, prior_ledger: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C26, C30]
+  INVARIANTS: [EK-ASSESSMENT, EK-DIAGNOSTIC, EK-OBSERVATION, OWD-RENDER, EXT-DECLARE-NOT-ASSESS]
+  FORBIDDEN:
+    - Positive proof from zero observations, unverified counts, unresolved detectors, ineligible sessions, or prohibited traversal.
+    - Substituting render coverage or duplicated observations for pagination evidence.
+    - Adding exploratory parent counts to child proof or blindly summing overlaps.
+    - Inventing predicates, assuming unsupported disjointness, exceeding three saturated split rounds, or hiding unresolved descendants.
+    - Committing ledger state directly or aborting valid siblings because another leaf is incomplete.
+  VERIFICATION: cargo test -p crawler_coverage -- c26 && cargo test -p crawler_coverage -- c30
+
+NODE: crawler_classifier | modules/crawler_classifier | lang: rust | tier: 7 | deps: [crawler_schema, crawler_time, crawler_hashing, crawler_authority, crawler_store, crawler_leases, crawler_inference_host]
+  READS: [seam-mappings/crawler-seam-mapping.md#7. Classifier Result Schema and Mapping, seam-mappings/crawler-seam-mapping.md#16.7 Semantic transitions, seam-mappings/crawler-seam-mapping.md#18.1 SLM transformation]
+  EXPOSES: [pub fn classify_batch(host: &dyn InferenceHost, store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, batch: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn apply_cached_result(result: &CheckedRecord, policy: &CheckedRecord, stage: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn derive_semantic_candidate(history: &CheckedRecord, closure: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_hashing: pub fn digest_bytes(bytes: &[u8]) -> String, crawler_authority: Grant, crawler_store: OwnerStore, crawler_leases: pub fn complete(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_leases: pub fn reclaim(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_inference_host: InferenceHost]
+  TEST_ASSERTIONS: [C15, C16]
+  INVARIANTS: [EK-LEASE, EK-ATOMICITY, OWD-RENDER, OWD-JOB, OWD-REVISION]
+  FORBIDDEN:
+    - Accepting mismatched, duplicate, malformed, non-finite, or conflicting genuine outputs.
+    - Silently truncating inputs, exceeding item/token/dwell limits, or extending inference timeout through adaptation.
+    - Changing in-flight policy revision or applying snippet shadow mode to descriptions.
+    - Creating bypass classifier rows, turning shadowed VETO into genuine PASS, or erasing earlier applicable genuine-PASS provenance.
+    - Treating relevance veto as closure or writing CLAIMED/APPLIED product state.
+  VERIFICATION: cargo test -p crawler_classifier -- c15 && cargo test -p crawler_classifier -- c16
+
+NODE: crawler_archives | modules/crawler_archives | lang: rust | tier: 7 | deps: [crawler_schema, crawler_hashing, crawler_authority, crawler_artifacts, crawler_store, crawler_retention, crawler_fetch_identity, crawler_publication]
+  READS: [seam-mappings/crawler-seam-mapping.md#20.3 Changed-key atomic protocol, seam-mappings/crawler-seam-mapping.md#20.5 Archive extents, seam-mappings/crawler-seam-mapping.md#20.6 Retention, seam-mappings/crawler-seam-mapping.md#Appendix A — Normative contract-identifier cross-reference]
+  EXPOSES: [pub fn replace_fetch_key(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, crawler_grant: &Grant, retention_grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn expand_archive(artifacts: &dyn ArtifactStore, grant: &Grant, root: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_hashing: pub fn canonical_bytes(record: &CheckedRecord) -> Result<Vec<u8>, Fault>, crawler_authority: Grant, crawler_artifacts: ArtifactStore, crawler_store: OwnerStore, crawler_retention: pub fn plan_retention_pin(dependent: &CheckedRecord, archive_root: &CheckedRecord, dependencies: &[CheckedRecord]) -> Result<CheckedRecord, Fault>, crawler_fetch_identity: pub fn decide_acquisition_write(existing: &CheckedRecord, candidate: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_publication: pub fn select_seal(store: &dyn OwnerStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_publication: pub fn compose_row(seal: &CheckedRecord, registration: &CheckedRecord, domains: &[CheckedRecord]) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C20, C21, C24]
+  INVARIANTS: [OWD-REPLACE, OWD-ARCHIVE, OWD-RETENTION, OWD-SEAL, OWD-LOCAL-COMMIT, OWD-FETCH-NOOP, EK-ARTIFACTS]
+  FORBIDDEN:
+    - Committing changed fetch identity without a complete retrievable prior LogicalRow and atomic retention protection.
+    - Omitting selected downstream publication, missingness, registration, references, or seal vector from payload_json.
+    - Committing after either checked old crawler revision/key or local downstream publication pointer changes.
+    - Expanding archives through mutable peer queries, diffs, hash lists, defaults, or revised content.
+    - Serializing large downstream payloads under ingest locks or waiting for peer acknowledgement.
+    - Treating staged orphan extents as committed archives.
+  VERIFICATION: cargo test -p crawler_archives -- c20 && cargo test -p crawler_archives -- c21 && cargo test -p crawler_archives -- c24
+
+NODE: crawler_dispatch | modules/crawler_dispatch | lang: rust | tier: 7 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_store, crawler_admission, crawler_prepare]
+  READS: [seam-mappings/crawler-seam-mapping.md#19.3 Verb behavior, seam-mappings/crawler-seam-mapping.md#19.4 Preparation and handle fields, seam-mappings/crawler-seam-mapping.md#19.7 Error and control meaning]
+  EXPOSES: [pub fn start(store: &dyn OwnerStore, clock: &dyn ClockAuthority, admission: &dyn Admission, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn authorize_resume(store: &dyn OwnerStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_authority: Grant, crawler_store: OwnerStore, crawler_admission: Admission, crawler_admission: ResponseCredit, crawler_admission: ControlCredit, crawler_admission: PagePermit, crawler_prepare: pub fn verify_preparation(preparation: &CheckedRecord, configuration: &CheckedRecord, authorization: &CheckedRecord) -> Result<(), Fault>]
+  TEST_ASSERTIONS: [C37]
+  INVARIANTS: [EXT-START, EXT-IDEMPOTENCY, EXT-RESUME, EXT-PREPARATION-PIN, EXT-BOUNDS, EK-ATOMICITY]
+  FORBIDDEN:
+    - Delivering before durable handle, immutable request binding, idempotency association, and dispatch intent.
+    - Waiting for native completion before returning local Start receipt.
+    - Retrying uncertain delivery with a fresh logical key or interpreting local admission as native acceptance.
+    - Resuming merely after lease expiry, changed context, or draining/closed observation.
+    - Repeating completed side-effecting steps through recovery.
+  VERIFICATION: cargo test -p crawler_dispatch -- c37
+
+NODE: crawler_acquisition | modules/crawler_acquisition | lang: rust | tier: 8 | deps: [crawler_schema, crawler_time, crawler_hashing, crawler_authority, crawler_readonly, crawler_artifacts, crawler_admission, crawler_browser, crawler_sessions, crawler_normalization]
+  READS: [seam-mappings/crawler-seam-mapping.md#9.1 Complete JobCrawlerValue construction, seam-mappings/crawler-seam-mapping.md#9.2 Render cases, seam-mappings/crawler-seam-mapping.md#9.3 Render history, seam-mappings/crawler-seam-mapping.md#18.2 Transport and render boundary]
+  EXPOSES: [pub trait Acquisition: Send + Sync { fn acquire(&self, grant: &Grant, request: &ReadOnlyRequest, credit: ResponseCredit) -> Result<CheckedRecord, Fault>; }, pub fn normalize_structured_response(response: &CheckedRecord, declaration: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn extract_accepted_content(acquisition: &CheckedRecord, declaration: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: SourceEntity, crawler_time: ClockAuthority, crawler_hashing: pub fn digest_bytes(bytes: &[u8]) -> String, crawler_authority: Grant, crawler_readonly: ReadOnlyRequest, crawler_artifacts: ArtifactStore, crawler_admission: Admission, crawler_admission: ResponseCredit, crawler_admission: ControlCredit, crawler_admission: PagePermit, crawler_browser: PageExecutor, crawler_browser: pub fn execute_page(page: &mut PageExecutor, request: &ReadOnlyRequest, deadline: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_sessions: SessionManager, crawler_sessions: LiveSession, crawler_normalization: pub fn normalize_row(entity: SourceEntity, source: serde_json::Value, evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C13, C14]
+  INVARIANTS: [OWD-RENDER, EK-NULL, EK-ARTIFACTS, EXT-READ-ONLY, EXT-BOUNDS]
+  FORBIDDEN:
+    - Extracting/classifying unaccepted content or populating content fields in failed-render details.
+    - Materializing Pass with required content missing or relabeling incomplete extraction as render failure.
+    - Feeding raw JSON to an HTML-only classifier, accepting HTML challenges as JSON, or manufacturing descriptions.
+    - Treating clearance/bootstrap success as accepted HTTP content.
+    - Exceeding the hybrid deadline or accepting decoded bytes beyond reservations.
+    - Treating empty valid structured output as positive coverage.
+  VERIFICATION: cargo test -p crawler_acquisition -- c13 && cargo test -p crawler_acquisition -- c14
+
+NODE: crawler_controls | modules/crawler_controls | lang: rust | tier: 8 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_readonly, crawler_store, crawler_admission, crawler_capabilities, crawler_sessions, crawler_dispatch]
+  READS: [seam-mappings/crawler-seam-mapping.md#19.3 Verb behavior, seam-mappings/crawler-seam-mapping.md#19.7 Error and control meaning, seam-mappings/crawler-seam-mapping.md#21.2 Credit-before-wire and control progress]
+  EXPOSES: [pub trait NativeControls: Send + Sync { fn invoke(&self, grant: &Grant, operation: &CheckedRecord) -> Result<CheckedRecord, Fault>; }, pub fn control(store: &dyn OwnerStore, clock: &dyn ClockAuthority, admission: &dyn Admission, native: &dyn NativeControls, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_authority: Grant, crawler_readonly: ReadOnlyRequest, crawler_store: OwnerStore, crawler_admission: Admission, crawler_admission: ResponseCredit, crawler_admission: ControlCredit, crawler_admission: PagePermit, crawler_capabilities: pub fn check_capability(descriptor: &CheckedRecord, capability_id: &str, scope: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_sessions: SessionManager, crawler_sessions: LiveSession, crawler_dispatch: pub fn authorize_resume(store: &dyn OwnerStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C39]
+  INVARIANTS: [EXT-CLOSE, EXT-CONTROLS, EXT-BOUNDS, EXT-AUTHORITY, EK-CLAIMS, EK-CAPABILITY]
+  FORBIDDEN:
+    - Equating connection close, observation close, cancel request, stop claim, context release, containment, and observed effect.
+    - Invoking undeclared cancel/release endpoints or calling unmapped operations native absence.
+    - Reopening closed observation or rewriting close-time knowledge.
+    - Substituting forced termination for cooperative cancellation, rollback, or proof of no remote effect.
+    - Executing arbitrary shell commands or unbounded shared-resource cleanup.
+    - Blocking local drain/finalization behind task queues.
+  VERIFICATION: cargo test -p crawler_controls -- c39
+
+NODE: crawler_replay | modules/crawler_replay | lang: rust | tier: 8 | deps: [crawler_schema, crawler_hashing, crawler_authority, crawler_artifacts, crawler_normalization, crawler_detectors, crawler_coverage]
+  READS: [seam-mappings/crawler-seam-mapping.md#22. Diagnostics, Replay, Failure Codes, and Reconciliation Issues, seam-mappings/crawler-seam-mapping.md#17.1 Proof rules]
+  EXPOSES: [pub fn derive_diagnostic(manifest: &CheckedRecord, prefix: &CheckedRecord, bundle: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn replay_offline(artifacts: &dyn ArtifactStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: SourceEntity, crawler_hashing: pub fn canonical_bytes(record: &CheckedRecord) -> Result<Vec<u8>, Fault>, crawler_hashing: pub fn digest_bytes(bytes: &[u8]) -> String, crawler_authority: Grant, crawler_artifacts: ArtifactStore, crawler_normalization: pub fn normalize_row(entity: SourceEntity, source: serde_json::Value, evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_detectors: pub fn evaluate_detectors(declaration: &CheckedRecord, prior: &CheckedRecord, packet: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_coverage: pub fn evaluate_proof(declaration: &CheckedRecord, ledger: &CheckedRecord, cohort: &CheckedRecord, detectors: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C43]
+  INVARIANTS: [EK-DIAGNOSTIC, EK-REPLAY, EK-ARTIFACTS, EK-ASSESSMENT, EK-TIMING-INTERPRETATION]
+  FORBIDDEN:
+    - Invoking browsers, subjects, live acquisition, inference, or external writes during replay.
+    - Using current wall time, mutable rows, or unrecorded network lookups as diagnostic evidence.
+    - Feeding recorded derived outputs back as authoritative inputs.
+    - Returning matched with missing required comparisons or inputs.
+    - Mutating diagnostics when late evidence, classifier changes, or replay receipts arrive.
+  VERIFICATION: cargo test -p crawler_replay -- c43
+
+NODE: crawler_pipeline | modules/crawler_pipeline | lang: rust | tier: 9 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_readonly, crawler_artifacts, crawler_store, crawler_normalization, crawler_leases, crawler_seen_ids, crawler_admission, crawler_cursors, crawler_coverage, crawler_inference_host, crawler_classifier, crawler_fetch_identity, crawler_archives, crawler_acquisition]
+  READS: [seam-mappings/crawler-seam-mapping.md#15. Seen-ID Schema and Exact Membership, seam-mappings/crawler-seam-mapping.md#16.2 Surface routes, seam-mappings/crawler-seam-mapping.md#16.3 Listing transitions, seam-mappings/crawler-seam-mapping.md#16.4 Work and detail transitions, seam-mappings/crawler-seam-mapping.md#16.5 Atomic stage effects, seam-mappings/crawler-seam-mapping.md#20.2 Same-key rule, seam-mappings/crawler-seam-mapping.md#20.3 Changed-key atomic protocol]
+  EXPOSES: [pub trait Pipeline: Send + Sync { fn advance(&self, grant: &Grant, command: &CheckedRecord) -> Result<CheckedRecord, Fault>; }, pub fn route_surface(declaration: &CheckedRecord, listing: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn validate_stage_transaction(before: &CheckedRecord, transaction: &CheckedRecord) -> Result<(), Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_authority: Grant, crawler_readonly: ReadOnlyRequest, crawler_readonly: pub fn reject_write_action(action: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_artifacts: ArtifactStore, crawler_store: OwnerStore, crawler_normalization: pub fn assemble_crawler_value(snapshots: &[CheckedRecord], evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_leases: pub fn claim(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_leases: pub fn renew(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_leases: pub fn complete(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_seen_ids: pub fn exact_success(store: &dyn OwnerStore, grant: &Grant, root: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_seen_ids: pub fn plan_seen_transition(before: &CheckedRecord, after: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_admission: Admission, crawler_admission: ResponseCredit, crawler_admission: ControlCredit, crawler_admission: PagePermit, crawler_cursors: pub fn plan_cursor_step(declaration: &CheckedRecord, cursor: &CheckedRecord, response: &CheckedRecord, capability: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_cursors: pub fn plan_observation_commit(cursor: &CheckedRecord, packet: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_coverage: pub fn evaluate_proof(declaration: &CheckedRecord, ledger: &CheckedRecord, cohort: &CheckedRecord, detectors: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_coverage: pub fn plan_split(declaration: &CheckedRecord, parent: &CheckedRecord, evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_inference_host: InferenceHost, crawler_classifier: pub fn classify_batch(host: &dyn InferenceHost, store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, batch: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_classifier: pub fn apply_cached_result(result: &CheckedRecord, policy: &CheckedRecord, stage: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_classifier: pub fn derive_semantic_candidate(history: &CheckedRecord, closure: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_fetch_identity: pub fn compute_fetch_key(root: &CheckedRecord, identity: &CheckedRecord) -> Result<String, Fault>, crawler_fetch_identity: pub fn decide_acquisition_write(existing: &CheckedRecord, candidate: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_fetch_identity: pub fn validate_metadata_only(before: &CheckedRecord, after: &CheckedRecord) -> Result<(), Fault>, crawler_archives: pub fn replace_fetch_key(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, crawler_grant: &Grant, retention_grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_acquisition: Acquisition, crawler_acquisition: pub fn normalize_structured_response(response: &CheckedRecord, declaration: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_acquisition: pub fn extract_accepted_content(acquisition: &CheckedRecord, declaration: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C08, C12]
+  INVARIANTS: [EK-ATOMICITY, EK-LEASE, OWD-LOCAL-COMMIT, OWD-REVISION, OWD-RENDER, OWD-FETCH-NOOP, OWD-REPLACE]
+  FORBIDDEN:
+    - Introducing hidden stages, undeclared states, or independent shadow queues.
+    - Exposing downstream entities without upstream delegation/completion or advancing cursors beyond durable packets.
+    - Holding transactions across network acquisition, inference, signal emission, or human waiting.
+    - Treating same-key failures as successful reuse or allowing reset policy to invalidate fetch identity.
+    - Allowing adapters to commit tables, alter fencing, or override proofs.
+    - Finalizing invented required content outside the four-field synthesis mapping.
+  VERIFICATION: cargo test -p crawler_pipeline -- c08 && cargo test -p crawler_pipeline -- c12
+
+NODE: crawler_feed | modules/crawler_feed | lang: rust | tier: 10 | deps: [crawler_schema, crawler_authority, crawler_artifacts, crawler_store, crawler_normalization, crawler_publication, crawler_archives, crawler_coverage, crawler_pipeline]
+  READS: [seam-mappings/crawler-seam-mapping.md#4.4 JobFeedManifest, seam-mappings/crawler-seam-mapping.md#9.1 Complete JobCrawlerValue construction, seam-mappings/crawler-seam-mapping.md#19.5 Observation and output, seam-mappings/crawler-seam-mapping.md#20.4 Exact Contract 04 records]
+  EXPOSES: [pub fn publish_feed(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_authority: Grant, crawler_artifacts: ArtifactStore, crawler_store: OwnerStore, crawler_normalization: pub fn assemble_crawler_value(snapshots: &[CheckedRecord], evidence: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_publication: pub fn install_revision(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, grant: &Grant, revision: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_publication: pub fn compose_row(seal: &CheckedRecord, registration: &CheckedRecord, domains: &[CheckedRecord]) -> Result<CheckedRecord, Fault>, crawler_archives: pub fn expand_archive(artifacts: &dyn ArtifactStore, grant: &Grant, root: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_coverage: pub fn build_coverage_export(ledger: &CheckedRecord, cursors: &[CheckedRecord], evaluation: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_pipeline: Pipeline]
+  TEST_ASSERTIONS: [C42]
+  INVARIANTS: [OWD-JOB, OWD-VIEW, OWD-PUBLISH, EXT-EVIDENCE, EXT-DECLARE-NOT-ASSESS, EK-CLAIMS, EK-ATTEMPT-SCOPE]
+  FORBIDDEN:
+    - Treating complete output as proven coverage, suitability, permission to apply, or application success.
+    - Fabricating details for listing-only vetoes or omitting blocked/empty coverage partitions.
+    - Publishing crawler-authored downstream revisions or inferring APPLIED from native completion, practice receipts, or submit clicks.
+    - Omitting revision vectors, selection policy, cutoff, limitations, or required evidence.
+  VERIFICATION: cargo test -p crawler_feed -- c42
+
+NODE: crawler_recovery | modules/crawler_recovery | lang: rust | tier: 10 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_readonly, crawler_artifacts, crawler_store, crawler_leases, crawler_admission, crawler_sessions, crawler_archives, crawler_pipeline]
+  READS: [seam-mappings/crawler-seam-mapping.md#16.6 Lease behavior, seam-mappings/crawler-seam-mapping.md#16.8 Other state machines, seam-mappings/crawler-seam-mapping.md#21.4 Recovery, seam-mappings/crawler-seam-mapping.md#20.3 Changed-key atomic protocol]
+  EXPOSES: [pub fn recover(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, clock: &dyn ClockAuthority, admission: &dyn Admission, sessions: &dyn SessionManager, pipeline: &dyn Pipeline, grant: &Grant, incident: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_authority: Grant, crawler_readonly: ReadOnlyRequest, crawler_artifacts: ArtifactStore, crawler_store: OwnerStore, crawler_leases: pub fn reclaim(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_admission: Admission, crawler_admission: ResponseCredit, crawler_admission: ControlCredit, crawler_admission: PagePermit, crawler_sessions: SessionManager, crawler_sessions: LiveSession, crawler_archives: pub fn expand_archive(artifacts: &dyn ArtifactStore, grant: &Grant, root: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_pipeline: Pipeline]
+  TEST_ASSERTIONS: [C44]
+  INVARIANTS: [EK-ATOMICITY, EK-LEASE, EK-LEASE-RESTART, EK-ARTIFACTS, OWD-REPLACE, OWD-RETENTION, EXT-FAILURE]
+  FORBIDDEN:
+    - Losing acknowledged entities, results, cursor boundaries, or journal effects within the declared fault model.
+    - Refetching proven partitions merely because a process restarted.
+    - Replaying completed effects, reclaiming without fencing, or accepting stale session/worker publication.
+    - Treating unavailable storage as successful commit or advancing before durability.
+    - Applying one target's failure to unrelated targets.
+    - Claiming permanent-media-loss recovery from the process/reboot guarantee.
+  VERIFICATION: cargo test -p crawler_recovery -- c44
+
+NODE: crawler_runtime | modules/crawler_runtime | lang: rust | tier: 11 | deps: [crawler_schema, crawler_time, crawler_authority, crawler_readonly, crawler_artifacts, crawler_store, crawler_admission, crawler_retention, crawler_capabilities, crawler_prepare, crawler_dispatch, crawler_observe, crawler_controls, crawler_sessions, crawler_pipeline, crawler_feed, crawler_replay, crawler_recovery]
+  READS: [seam-mappings/crawler-seam-mapping.md#1.4 Independent delivery, seam-mappings/crawler-seam-mapping.md#19.3 Verb behavior, seam-mappings/crawler-seam-mapping.md#20.6 Retention, seam-mappings/crawler-seam-mapping.md#21.3 Resource and performance contract, seam-mappings/crawler-seam-mapping.md#22. Diagnostics, Replay, Failure Codes, and Reconciliation Issues, seam-mappings/crawler-seam-mapping.md#23.1 Completion criteria, full-featured-blueprints/1-handoff-brief.txt#Part VIII — The Step 0 deliverable, full-featured-blueprints/1-handoff-brief.txt#Part IX — The roadmap after Step 0]
+  EXPOSES: [pub struct Runtime { manifest: CheckedRecord, store: std::sync::Arc<dyn OwnerStore>, artifacts: std::sync::Arc<dyn ArtifactStore>, admission: std::sync::Arc<dyn Admission>, clock: std::sync::Arc<dyn ClockAuthority>, sessions: std::sync::Arc<dyn SessionManager>, pipeline: std::sync::Arc<dyn Pipeline>, native_controls: std::sync::Arc<dyn NativeControls> }, pub fn serve_connector(runtime: &Runtime, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, pub fn drive_committed_work(runtime: &Runtime, grant: &Grant, scope: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  CONSUMES: [crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_time: ClockAuthority, crawler_authority: Grant, crawler_authority: pub fn authorize(principal: &CheckedRecord, request: &CheckedRecord, registration: &CheckedRecord) -> Result<Grant, Fault>, crawler_readonly: ReadOnlyRequest, crawler_artifacts: ArtifactStore, crawler_artifacts: pub fn collect_artifacts(store: &dyn ArtifactStore, grant: &Grant, request: &CheckedRecord, inventory: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_store: OwnerStore, crawler_store: pub fn import_event(store: &dyn OwnerStore, grant: &Grant, event: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_admission: Admission, crawler_admission: ResponseCredit, crawler_admission: ControlCredit, crawler_admission: PagePermit, crawler_retention: pub fn release_pin(store: &dyn OwnerStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_retention: pub fn collect_unreachable(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_capabilities: pub fn describe_configuration(store: &dyn OwnerStore, grant: &Grant, configuration: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_prepare: pub fn prepare(store: &dyn OwnerStore, grant: &Grant, request: &CheckedRecord, descriptor: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_dispatch: pub fn start(store: &dyn OwnerStore, clock: &dyn ClockAuthority, admission: &dyn Admission, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_observe: pub fn observe(store: &dyn OwnerStore, clock: &dyn ClockAuthority, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_observe: pub fn normalize_native_report(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, grant: &Grant, report: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_controls: NativeControls, crawler_controls: pub fn control(store: &dyn OwnerStore, clock: &dyn ClockAuthority, admission: &dyn Admission, native: &dyn NativeControls, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_sessions: SessionManager, crawler_sessions: LiveSession, crawler_pipeline: Pipeline, crawler_pipeline: pub fn route_surface(declaration: &CheckedRecord, listing: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_pipeline: pub fn validate_stage_transaction(before: &CheckedRecord, transaction: &CheckedRecord) -> Result<(), Fault>, crawler_feed: pub fn publish_feed(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_replay: pub fn derive_diagnostic(manifest: &CheckedRecord, prefix: &CheckedRecord, bundle: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_replay: pub fn replay_offline(artifacts: &dyn ArtifactStore, grant: &Grant, request: &CheckedRecord) -> Result<CheckedRecord, Fault>, crawler_recovery: pub fn recover(store: &dyn OwnerStore, artifacts: &dyn ArtifactStore, clock: &dyn ClockAuthority, admission: &dyn Admission, sessions: &dyn SessionManager, pipeline: &dyn Pipeline, grant: &Grant, incident: &CheckedRecord) -> Result<CheckedRecord, Fault>]
+  TEST_ASSERTIONS: [C45]
+  INVARIANTS: [EXT-SURFACE, EXT-READ-ONLY, EXT-BOUNDS, EXT-FAILURE, EK-ATOMICITY, EK-CLAIMS, OWD-OWNER, OWD-LOCAL-COMMIT, OWD-PUBLISH]
+  FORBIDDEN:
+    - Requiring an orchestrator, Hellscape, Circus Tent, Ringmaster, or another live peer for the Illinois silo suite.
+    - Merging component runtimes, sharing cross-browser primitives, or introducing non-Rust crawler modules.
+    - Adding connector verbs or turning normal replies into composite task-success flags.
+    - Trusting principal records not supplied by authenticated registration or expanding an existing grant without authorization.
+    - Running import, diagnostic, retention-release, or GC maintenance without its separately authorized owner scope.
+    - Letting synchronous signal emission hold session, transaction, completion, or V8 ownership locks.
+    - Hiding excluded latency or advertising unresolved capabilities and unexecuted tests as deployment certification.
+  VERIFICATION: cargo test -p crawler_runtime -- c45

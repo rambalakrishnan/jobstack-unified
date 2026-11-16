@@ -1,0 +1,19 @@
+{
+  "gaps": [
+    {
+      "actual_exposed": "validate treats any JSON object containing key `reason` as a Missing envelope (check_value ORs null_valued with contains_key(reason)); classifier rows with reason text plus 19 other keys fault as malformed_missing $.row",
+      "blocking_test_cases": [
+        "C01 classifier_result reason",
+        "C01 complete field inventory"
+      ],
+      "declared_in_consumes": "crawler_schema: CheckedRecord, crawler_schema: Fault, crawler_schema: SourceEntity",
+      "missing_from_dependency": "crawler_schema",
+      "required_signature": "pub fn validate(schema_id: &str, value: serde_json::Value) -> Result<CheckedRecord, Fault> accepting classifier_result rows containing domain field `reason: TEXT` alongside other keys"
+    }
+  ],
+  "modules_blocked": [
+    "crawler_normalization"
+  ],
+  "subsystem": "crawler",
+  "tier": 5
+}

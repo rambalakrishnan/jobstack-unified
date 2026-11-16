@@ -1,0 +1,28 @@
+{
+  "gaps": [
+    {
+      "actual_exposed": "module unimplemented: directory contains only .omp-spec.md, no go.mod/module.go; EXPOSES declares FinalizeSession but no code exists",
+      "blocking_test_cases": [
+        "TestEndObservationAndNativeCancelRemainSeparateCommands",
+        "TestPracticeCompletionCannotTriggerProductionDispatch"
+      ],
+      "declared_in_consumes": "session_runtime: func FinalizeSession(ctx context.Context, primary *OwnerStore, application *OwnerStore, observation *OwnerStore, commission AttemptCommission, reason CloseReason) (DiagnosticDocument, error)",
+      "missing_from_dependency": "session_runtime",
+      "required_signature": "func FinalizeSession(ctx context.Context, primary *OwnerStore, application *OwnerStore, observation *OwnerStore, commission AttemptCommission, reason CloseReason) (DiagnosticDocument, error)"
+    },
+    {
+      "actual_exposed": "module unimplemented: directory contains only .omp-spec.md, no go.mod/module.go; EXPOSES declares ReplayBundle but no code exists",
+      "blocking_test_cases": [
+        "TestExportOrdersInputsReceiptAndAcceptanceWithoutHashCycles"
+      ],
+      "declared_in_consumes": "evidence_bundle/export then replay: func ReplayBundle(ctx context.Context, store *OwnerStore, bundle ArtifactReference, sourceDiagnostic ArtifactReference, mode string) (ReplayReceipt, error)",
+      "missing_from_dependency": "replay",
+      "required_signature": "func ReplayBundle(ctx context.Context, store *OwnerStore, bundle ArtifactReference, sourceDiagnostic ArtifactReference, mode string) (ReplayReceipt, error)"
+    }
+  ],
+  "modules_blocked": [
+    "control_http"
+  ],
+  "subsystem": "hellscape",
+  "tier": 10
+}
