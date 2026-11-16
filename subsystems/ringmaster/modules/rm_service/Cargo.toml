@@ -4,6 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+rm_wire = { path = "../rm_wire" }
+rm_authority = { path = "../rm_authority" }
+rm_evidence = { path = "../rm_evidence" }
+rm_time = { path = "../rm_time" }
+rm_catalog = { path = "../rm_catalog" }
+rm_preparation = { path = "../rm_preparation" }
+rm_delivery = { path = "../rm_delivery" }
+rm_observe = { path = "../rm_observe" }
+rm_artifacts = { path = "../rm_artifacts" }
+rm_controls = { path = "../rm_controls" }
+rm_supervisor = { path = "../rm_supervisor" }
+rm_diagnostics = { path = "../rm_diagnostics" }
+rm_lifecycle = { path = "../rm_lifecycle" }
 serde_json = "1"
 
 [dev-dependencies]

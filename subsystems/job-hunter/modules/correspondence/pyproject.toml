@@ -1,0 +1,17 @@
+[project]
+name = "correspondence"
+version = "0.1.0"
+description = "Module implementing correspondence at tier 5"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["correspondence"]
+package-dir = {"correspondence" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

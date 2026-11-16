@@ -1,0 +1,58 @@
+module admission
+
+go 1.26.0
+
+require (
+	application_owner v0.0.0
+	authority v0.0.0
+	evidence_codec v0.0.0
+	fixture_policy v0.0.0
+	observation_owner v0.0.0
+	owner_store v0.0.0
+	publication v0.0.0
+)
+
+require (
+	clock_rules v0.0.0 // indirect
+	evidence_import v0.0.0 // indirect
+	fixture_reducer v0.0.0 // indirect
+	github.com/dustin/go-humanize v1.1.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/mattn/go-isatty v0.0.24 // indirect
+	github.com/ncruces/go-strftime v1.1.0 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	journal_rules v0.0.0 // indirect
+	lifecycle_rules v0.0.0 // indirect
+	modernc.org/libc v1.79.0 // indirect
+	modernc.org/mathutil v1.7.1 // indirect
+	modernc.org/memory v1.12.1 // indirect
+	modernc.org/sqlite v1.61.0 // indirect
+	source_verifier v0.0.0 // indirect
+)
+
+replace application_owner => ../application_owner
+
+replace authority => ../authority
+
+replace evidence_codec => ../evidence_codec
+
+replace fixture_policy => ../fixture_policy
+
+replace observation_owner => ../observation_owner
+
+replace owner_store => ../owner_store
+
+replace publication => ../publication
+
+replace clock_rules => ../clock_rules
+
+replace evidence_import => ../evidence_import
+
+replace fixture_reducer => ../fixture_reducer
+
+replace journal_rules => ../journal_rules
+
+replace lifecycle_rules => ../lifecycle_rules
+
+replace source_verifier => ../source_verifier

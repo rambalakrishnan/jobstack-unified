@@ -1,0 +1,17 @@
+[project]
+name = "attempt_commissioning"
+version = "0.1.0"
+description = "Module implementing attempt_commissioning at tier 5"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["attempt_commissioning"]
+package-dir = {"attempt_commissioning" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

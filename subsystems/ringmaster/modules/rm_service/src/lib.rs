@@ -10,26 +10,44 @@
 //! requiring Ringmaster startup, a browser installation, Hellscape, or a
 //! completed portfolio integration.
 //!
+//! Every facade below delegates to the real sibling implementation; the
+//! manual path calls exactly `authenticate_channel`, `verify_attempt_scope`,
+//! and `validate_snapshot`, and never touches dispatch machinery.
+//!
 //! Invariants honored here:
-//! - EK-MANUAL / LIFE-MANUAL: manual mode carries manual provenance only.
+//! - EK-MANUAL / LIFE-MANUAL: manual mode carries manual provenance only;
+//!   dispatch and execution slots stay at revision zero with
+//!   `not_applicable`.
 //! - EK-ATTEMPT-SCOPE: kind is immutable; practice is held_in, production
-//!   is held_out and requires an employer origin.
-//! - EXT-SURFACE: exactly the nine versioned verbs are recognized.
-//! - EXT-AUTHORITY: identity comes from authenticated channel registration.
-//! - EXT-TASK: manual commissions are not dispatchable through Prepare/Start.
+//!   is held_out and requires an employer origin. Origin references are
+//!   carried, never promoted into commitments.
+//! - EXT-SURFACE: exactly the nine versioned verbs are recognized
+//!   (re-exported from `rm_authority`).
+//! - EXT-AUTHORITY: identity comes from authenticated channel registration;
+//!   handles are never shared across principals.
+//! - EXT-TASK: manual commissions are not dispatchable through
+//!   Prepare/Start (enforced by the shared `authorize_work` gate).
 //! - EXT-DECLARE-NOT-ASSESS: recording journals observations; it never emits
 //!   an application-success flag.
-//! - EXT-FAILURE: ConnectorError carries the full §17 envelope.
-//!
-//! Dependency design: the ten `rm_*` modules are sibling crates owned by
-//! parallel implementers. Until they land, this crate carries minimal
-//! in-crate stubs behind `// <module> (stub)` section headers. Stubs
-//! implement the exact declared CONSUMES signatures; several enforce the
-//! boundary rules the conformance tests rely on (manual-mode rejection in
-//! Prepare/Start, kind/target coherence, manual zero-axis snapshots).
+//! - EXT-FAILURE: errors carry the full §17 envelope (`ConnectorError`).
 
-use serde_json::Value;
+#![forbid(unsafe_code)]
+
 use std::cell::RefCell;
+
+// ---------------------------------------------------------------------------
+// Shared kernel (canonical definitions live in `rm_authority`)
+// ---------------------------------------------------------------------------
+
+pub use rm_authority::{
+    AttemptCommission, AttemptKind, AuthenticatedPrincipal, ConnectorError, EvaluationPartition,
+    ExecutionMode, Manifest, TargetClass, NINE_OPERATIONS,
+};
+use rm_evidence::{JournalPrefix, PositiveInteger};
+use rm_lifecycle::{
+    AttemptContext, AttemptSnapshot, AxisSlot, SealName, SealPoint, SlotValue, VersionVector,
+};
+use rm_time::Missing;
 
 // ---------------------------------------------------------------------------
 // Dependency call log (test observability)
@@ -56,724 +74,387 @@ pub fn clear_dependency_calls() {
 }
 
 // ---------------------------------------------------------------------------
-// Shared kernel types
+// Service-owned errors (§17 envelope, never dispatched)
 // ---------------------------------------------------------------------------
 
-/// The nine versioned connector verbs (EXT-SURFACE). No tenth verb exists.
-pub const NINE_OPERATIONS: [&str; 9] = [
-    "Describe",
-    "Prepare",
-    "Start",
-    "Observe",
-    "RequestNativeCancel",
-    "CloseObservationConnection",
-    "CollectArtifacts",
-    "ReleaseNativeContext",
-    "Contain",
-];
-
-/// ConnectorError: full §17 envelope. `kind` is always `connector_error`.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ConnectorError {
-    pub kind: String,
-    pub code: String,
-    pub fault_domain: String,
-    pub detail: String,
-    pub operation_delivery: String,
-    pub retry_guidance: String,
-    pub retry_after: Option<String>,
-    pub handle: Option<String>,
-    pub evidence_refs: Vec<String>,
-}
-
-impl ConnectorError {
-    fn new(
-        code: &str,
-        fault_domain: &str,
-        detail: String,
-        operation_delivery: &str,
-        retry_guidance: &str,
-    ) -> Self {
-        ConnectorError {
-            kind: "connector_error".to_string(),
-            code: code.to_string(),
-            fault_domain: fault_domain.to_string(),
-            detail,
-            operation_delivery: operation_delivery.to_string(),
-            retry_guidance: retry_guidance.to_string(),
-            retry_after: None,
-            handle: None,
-            evidence_refs: Vec::new(),
-        }
+fn service_error(code: &str, fault_domain: &str, detail: impl Into<String>) -> ConnectorError {
+    ConnectorError {
+        kind: "connector_error".to_string(),
+        code: code.to_string(),
+        fault_domain: fault_domain.to_string(),
+        detail: detail.into(),
+        operation_delivery: "not_applicable".to_string(),
+        retry_guidance: "operator_review".to_string(),
+        retry_after: None,
+        handle: None,
+        evidence_refs: Vec::new(),
     }
 }
 
-impl std::fmt::Display for ConnectorError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} [{}]: {}", self.code, self.fault_domain, self.detail)
-    }
-}
-
-impl std::error::Error for ConnectorError {}
-
-/// Caller identity derived from authenticated channel registration.
-/// IDs and digests are never bearer authority on their own (EXT-AUTHORITY).
-#[derive(Debug, Clone, PartialEq)]
-pub struct AuthenticatedPrincipal {
-    pub principal_id: String,
-    pub owner_domain: String,
-    pub roles: Vec<String>,
-}
-
-/// Admitted work manifest the commission must bind to.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Manifest {
-    pub record_type: String,
-    pub schema_version: String,
-    pub manifest_id: String,
-    pub admission_ref: String,
-}
-
-/// Immutable attempt kind (EK-ATTEMPT-SCOPE).
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum AttemptKind {
-    Practice,
-    Production,
-}
-
-/// Target class: fixtures are held_in, employer origins held_out.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum TargetClass {
-    Fixture,
-    Employer,
-}
-
-/// Execution mode. Manual commissions are not dispatchable (EXT-TASK).
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ExecutionMode {
-    Manual,
-    Subject,
-}
-
-/// Immutable commission authorizing an application attempt.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AttemptCommission {
-    pub record_type: String,
-    pub schema_version: String,
-    pub commission_id: String,
-    pub kind: AttemptKind,
-    pub target: TargetClass,
-    pub mode: ExecutionMode,
-    pub admission_ref: String,
-    pub operator_id: String,
-    pub origin_ref: Option<String>,
-}
-
-/// Shared task-shaped connector request envelope (§12.1).
-#[derive(Debug, Clone, PartialEq)]
-pub struct ConnectorRequest {
-    pub record_type: String,
-    pub schema_version: String,
-    pub request_id: String,
-    pub connector_id: String,
-    pub operation: String,
-    pub call_limit: u64,
-    pub payload: Value,
-}
-
-/// Describe input: which connector, which version.
-#[derive(Debug, Clone, PartialEq)]
-pub struct DescribeRequest {
-    pub connector_id: String,
-    pub connector_version: String,
-}
-
-/// Connector capability declaration. The connector declares; it never
-/// assesses (EXT-DECLARE-NOT-ASSESS): no success flag lives here.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ConnectorDescriptor {
-    pub connector_id: String,
-    pub connector_version: String,
-    pub operations: Vec<String>,
-}
-
-/// Preparation receipt. Never issued for manual commissions.
-#[derive(Debug, Clone, PartialEq)]
-pub struct PrepareResult {
-    pub preparation_id: String,
-    pub ready: bool,
-}
-
-/// Dispatch receipt: one handle, one logical execution.
-#[derive(Debug, Clone, PartialEq)]
-pub struct StartResult {
-    pub handle: String,
-    pub logical_key: String,
-}
-
-/// Observation read request.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ObserveRequest {
-    pub handle: String,
-    pub cursor: String,
-}
-
-/// One observation page. Native failure is evidence here, never a
-/// ConnectorError (EXT-FAILURE).
-#[derive(Debug, Clone, PartialEq)]
-pub struct ObservationPage {
-    pub events: Vec<Value>,
-    pub next_cursor: String,
-    pub more: bool,
-}
-
-/// Authorized artifact reference.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ArtifactReference {
-    pub reference: String,
-}
-
-/// Artifact inventory response.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ArtifactInventory {
-    pub refs: Vec<ArtifactReference>,
-}
-
-/// One artifact byte chunk.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ArtifactChunk {
-    pub bytes: Vec<u8>,
-    pub eof: bool,
-}
-
-/// Control-plane effect receipt (transport effect only, never a task
-/// outcome claim).
-#[derive(Debug, Clone, PartialEq)]
-pub struct ControlReceipt {
-    pub operation: String,
-    pub effect: String,
-}
-
-/// Monotonic service clock reading.
-#[derive(Debug, Clone, PartialEq)]
-pub struct TimePoint {
-    pub clock_id: String,
-    pub tick: u64,
-}
-
-/// Offline diagnostic document (maintenance path, separately authorized).
-#[derive(Debug, Clone, PartialEq)]
-pub struct DiagnosticDocument {
-    pub diagnostic_id: String,
-    pub digest: String,
-}
-
-/// Offline analysis request (never runs through task execution).
-#[derive(Debug, Clone, PartialEq)]
-pub struct AnalysisRequest {
-    pub analysis_id: String,
-    pub question: String,
-}
-
-/// Journal prefix scoping offline replay reads.
-#[derive(Debug, Clone, PartialEq)]
-pub struct JournalPrefix {
-    pub prefix: String,
-}
-
-/// Offline replay receipt. Replay never touches a browser, subject,
-/// model, or external write.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ReplayReceipt {
-    pub analysis_id: String,
-    pub matched: bool,
-    pub offline: bool,
-}
-
-/// Derived read composition over the five axis slots. Manual
-/// dispatch/execution axes stay at revision zero with inapplicable
-/// values (LIFE-MANUAL); later evidence cannot erase a publication.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AttemptSnapshot {
-    pub record_type: String,
-    pub schema_version: String,
-    pub attempt_id: String,
-    pub commission_id: String,
-    pub mode: ExecutionMode,
-    pub dispatch_revision: u64,
-    pub execution_revision: u64,
-}
-
 // ---------------------------------------------------------------------------
-// rm_authority (stub)
+// Composition facades: each delegates to the real sibling implementation
 // ---------------------------------------------------------------------------
 
-/// Authenticate the channel from registration bytes. Identity is derived
-/// from authenticated registration, never from bare IDs (EXT-AUTHORITY).
+/// Authenticate the channel from registration bytes (delegates to
+/// `rm_authority`). Identity is derived from authenticated registration,
+/// never from bare IDs (EXT-AUTHORITY).
 pub fn authenticate_channel(
     channel: &mut dyn std::io::Read,
 ) -> Result<AuthenticatedPrincipal, ConnectorError> {
     log_call("authenticate_channel");
-    let mut bytes = Vec::new();
-    channel.read_to_end(&mut bytes).map_err(|e| {
-        ConnectorError::new(
-            "UNAUTHENTICATED",
-            "request",
-            format!("channel read failed: {e}"),
-            "not_dispatched",
-            "operator_review",
-        )
-    })?;
-    let value: Value = serde_json::from_slice(&bytes).map_err(|e| {
-        ConnectorError::new(
-            "UNAUTHENTICATED",
-            "request",
-            format!("channel registration is not JSON: {e}"),
-            "not_dispatched",
-            "operator_review",
-        )
-    })?;
-    let principal_id = value
-        .get("principal_id")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| {
-            ConnectorError::new(
-                "UNAUTHENTICATED",
-                "request",
-                "channel identity not established: missing principal_id".to_string(),
-                "not_dispatched",
-                "operator_review",
-            )
-        })?;
-    Ok(AuthenticatedPrincipal {
-        principal_id: principal_id.to_string(),
-        owner_domain: value
-            .get("owner_domain")
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown")
-            .to_string(),
-        roles: value
-            .get("roles")
-            .and_then(|v| v.as_array())
-            .map(|a| {
-                a.iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect()
-            })
-            .unwrap_or_default(),
-    })
+    rm_authority::authenticate_channel(channel)
 }
 
-/// Verify the commission binds to the admitted manifest with coherent
-/// kind/target lineage: practice is held_in, production is held_out and
-/// requires an employer origin (EK-ATTEMPT-SCOPE).
+/// Verify the commission binds to the admitted manifest (delegates to
+/// `rm_authority`): hash integrity, admission binding, and kind/target
+/// coherence (EK-ATTEMPT-SCOPE).
 pub fn verify_attempt_scope(
     manifest: &Manifest,
     commission: &AttemptCommission,
 ) -> Result<(), ConnectorError> {
     log_call("verify_attempt_scope");
-    if commission.admission_ref != manifest.admission_ref {
-        return Err(ConnectorError::new(
-            "NOT_ADMITTED",
-            "policy",
-            format!(
-                "admission binding mismatch: commission {:?} not admitted under manifest {:?}",
-                commission.admission_ref, manifest.admission_ref
-            ),
-            "not_dispatched",
-            "operator_review",
-        ));
-    }
-    let coherent = match (commission.kind, commission.target) {
-        (AttemptKind::Practice, TargetClass::Fixture) => true,
-        (AttemptKind::Production, TargetClass::Employer) => true,
-        _ => false,
-    };
-    if !coherent {
-        return Err(ConnectorError::new(
-            "NOT_ADMITTED",
-            "policy",
-            "kind/target incoherence: practice is held_in, production requires an employer origin"
-                .to_string(),
-            "not_dispatched",
-            "operator_review",
-        ));
-    }
-    Ok(())
+    rm_authority::verify_attempt_scope(manifest, commission)
 }
 
-// ---------------------------------------------------------------------------
-// rm_catalog (stub)
-// ---------------------------------------------------------------------------
-
-/// Describe the connector's declared capabilities. Unknown versions are
-/// rejected; declarations never carry assessment (EXT-DECLARE-NOT-ASSESS).
+/// Describe the connector's declared capabilities (delegates to
+/// `rm_catalog`). Declarations never carry assessment
+/// (EXT-DECLARE-NOT-ASSESS).
 pub fn describe(
     principal: &AuthenticatedPrincipal,
-    request: &DescribeRequest,
-) -> Result<ConnectorDescriptor, ConnectorError> {
+    request: &rm_catalog::DescribeRequest,
+) -> Result<rm_catalog::ConnectorDescriptor, ConnectorError> {
     log_call("describe");
-    let _ = principal;
-    if request.connector_version.trim().is_empty() {
-        return Err(ConnectorError::new(
-            "UNSUPPORTED_VERSION",
-            "request",
-            "unknown contract/version: empty connector_version".to_string(),
-            "not_applicable",
-            "operator_review",
-        ));
-    }
-    Ok(ConnectorDescriptor {
-        connector_id: request.connector_id.clone(),
-        connector_version: request.connector_version.clone(),
-        operations: NINE_OPERATIONS.iter().map(|s| s.to_string()).collect(),
-    })
+    rm_catalog::describe(principal, request)
 }
 
-// ---------------------------------------------------------------------------
-// rm_preparation (stub)
-// ---------------------------------------------------------------------------
-
-/// Prepare an automated task. Manual commissions are not dispatchable
-/// through this contract (EXT-TASK): they are rejected, never prepared.
+/// Prepare an automated task (delegates to `rm_preparation`). Manual
+/// commissions are rejected by the shared authority gate, never prepared
+/// (EXT-TASK).
 pub fn prepare(
     principal: &AuthenticatedPrincipal,
-    command: &ConnectorRequest,
-) -> Result<PrepareResult, ConnectorError> {
+    command: &rm_preparation::ConnectorRequest,
+) -> Result<rm_preparation::PrepareResult, ConnectorError> {
     log_call("prepare");
-    let _ = principal;
-    check_operation(&command.operation)?;
-    if is_manual_payload(&command.payload) {
-        return Err(ConnectorError::new(
-            "NOT_ADMITTED",
-            "policy",
-            "manual commissions are not dispatchable through Prepare".to_string(),
-            "not_dispatched",
-            "operator_review",
-        ));
-    }
-    Ok(PrepareResult {
-        preparation_id: format!("prep-{}", command.request_id),
-        ready: true,
-    })
+    rm_preparation::prepare(principal, command)
 }
 
-// ---------------------------------------------------------------------------
-// rm_delivery (stub)
-// ---------------------------------------------------------------------------
-
-/// Start (dispatch) an automated task. Manual commissions are rejected;
-/// one handle maps to one logical execution.
+/// Start (dispatch) an automated task (delegates to `rm_delivery`). Manual
+/// commissions cannot reach dispatch: Prepare refuses them first, and the
+/// shared authority gate refuses them again.
 pub fn start(
     principal: &AuthenticatedPrincipal,
-    command: &ConnectorRequest,
-) -> Result<StartResult, ConnectorError> {
+    command: &rm_delivery::ConnectorRequest,
+) -> Result<rm_delivery::StartResult, ConnectorError> {
     log_call("start");
-    let _ = principal;
-    check_operation(&command.operation)?;
-    if is_manual_payload(&command.payload) {
-        return Err(ConnectorError::new(
-            "NOT_ADMITTED",
-            "policy",
-            "manual commissions are not dispatchable through Start".to_string(),
-            "not_dispatched",
-            "operator_review",
-        ));
-    }
-    Ok(StartResult {
-        handle: format!("handle-{}", command.request_id),
-        logical_key: command.request_id.clone(),
-    })
+    rm_delivery::start(principal, command)
 }
 
-// ---------------------------------------------------------------------------
-// rm_observe (stub)
-// ---------------------------------------------------------------------------
-
-/// Observe task evidence. Returns the (empty) page; observed native
-/// failure would arrive here as evidence, not as ConnectorError.
+/// Observe task evidence (delegates to `rm_observe`). Observed native
+/// failure arrives here as evidence, never as ConnectorError (EXT-FAILURE).
 pub fn observe(
     principal: &AuthenticatedPrincipal,
-    request: &ObserveRequest,
-) -> Result<ObservationPage, ConnectorError> {
+    request: &rm_observe::ObserveRequest,
+) -> Result<rm_observe::ObservationPage, ConnectorError> {
     log_call("observe");
-    let _ = (principal, request);
-    Ok(ObservationPage {
-        events: Vec::new(),
-        next_cursor: String::new(),
-        more: false,
-    })
+    rm_observe::observe(principal, request)
 }
 
-// ---------------------------------------------------------------------------
-// rm_artifacts (stub)
-// ---------------------------------------------------------------------------
-
-/// Collect the authorized artifact inventory slots.
+/// Collect the authorized artifact inventory slots (delegates to
+/// `rm_artifacts`).
 pub fn collect_inventory(
     principal: &AuthenticatedPrincipal,
-    command: &ConnectorRequest,
-) -> Result<ArtifactInventory, ConnectorError> {
+    command: &rm_artifacts::ConnectorRequest,
+) -> Result<rm_artifacts::ArtifactInventory, ConnectorError> {
     log_call("collect_inventory");
-    let _ = (principal, command);
-    Ok(ArtifactInventory { refs: Vec::new() })
+    rm_artifacts::collect_inventory(principal, command)
 }
 
-/// Collect one authorized artifact chunk.
+/// Collect one authorized artifact chunk (delegates to `rm_artifacts`).
 pub fn collect_chunk(
     principal: &AuthenticatedPrincipal,
-    command: &ConnectorRequest,
-) -> Result<ArtifactChunk, ConnectorError> {
+    command: &rm_artifacts::ConnectorRequest,
+) -> Result<rm_artifacts::ArtifactChunk, ConnectorError> {
     log_call("collect_chunk");
-    let _ = (principal, command);
-    Ok(ArtifactChunk {
-        bytes: Vec::new(),
-        eof: true,
-    })
+    rm_artifacts::collect_chunk(principal, command)
 }
 
-// ---------------------------------------------------------------------------
-// rm_controls (stub)
-// ---------------------------------------------------------------------------
-
-/// Apply a transport-level control. Records the effect; never claims a
-/// task outcome.
+/// Apply a transport-level control (delegates to `rm_controls`). Records
+/// the effect; never claims a task outcome.
 pub fn control(
     principal: &AuthenticatedPrincipal,
-    request: &ConnectorRequest,
-) -> Result<ControlReceipt, ConnectorError> {
+    request: &rm_controls::ConnectorRequest,
+) -> Result<rm_controls::ControlReceipt, ConnectorError> {
     log_call("control");
-    let _ = principal;
-    check_operation(&request.operation)?;
-    Ok(ControlReceipt {
-        operation: request.operation.clone(),
-        effect: "recorded".to_string(),
-    })
+    rm_controls::control(principal, request)
 }
 
-// ---------------------------------------------------------------------------
-// rm_supervisor (stub)
-// ---------------------------------------------------------------------------
-
-/// Drive one bounded supervision quantum. Never blocks the local
-/// close/control path on an unbounded native call.
+/// Drive one bounded supervision quantum (delegates to `rm_supervisor`).
 pub fn drive_once(
     principal: &AuthenticatedPrincipal,
-    now: &TimePoint,
+    now: &rm_time::TimePoint,
 ) -> Result<(), ConnectorError> {
     log_call("drive_once");
-    let _ = (principal, now);
-    Ok(())
+    rm_supervisor::drive_once(principal, now)
 }
 
-// ---------------------------------------------------------------------------
-// rm_diagnostics (stub)
-// ---------------------------------------------------------------------------
-
-/// Verify a diagnostic document offline. Maintenance path: separately
-/// authorized, never connector-issued qualification.
+/// Verify a diagnostic document offline (delegates to `rm_diagnostics`).
+/// Maintenance path: separately authorized, never connector-issued
+/// qualification.
 pub fn verify_diagnostic(
     principal: &AuthenticatedPrincipal,
-    diagnostic: &DiagnosticDocument,
+    diagnostic: &rm_diagnostics::DiagnosticDocument,
 ) -> Result<(), ConnectorError> {
     log_call("verify_diagnostic");
-    let _ = (principal, diagnostic);
-    Ok(())
+    rm_diagnostics::verify_diagnostic(principal, diagnostic)
 }
 
-/// Replay a diagnostic offline against retained bytes. Never touches a
-/// browser, subject, model, or external write.
+/// Replay a diagnostic offline against retained bytes (delegates to
+/// `rm_diagnostics`). Never touches a browser, subject, model, or
+/// external write.
 pub fn replay_diagnostic(
     principal: &AuthenticatedPrincipal,
-    request: &AnalysisRequest,
-    prefix: &JournalPrefix,
-    source: &ArtifactReference,
-) -> Result<ReplayReceipt, ConnectorError> {
+    request: &rm_diagnostics::AnalysisRequest,
+    prefix: &rm_evidence::JournalPrefix,
+    source: &rm_evidence::ArtifactReference,
+) -> Result<rm_diagnostics::ReplayReceipt, ConnectorError> {
     log_call("replay_diagnostic");
-    let _ = (prefix, source);
-    let _ = principal;
-    Ok(ReplayReceipt {
-        analysis_id: request.analysis_id.clone(),
-        matched: false,
-        offline: true,
-    })
+    rm_diagnostics::replay_diagnostic(principal, request, prefix, source)
 }
 
-// ---------------------------------------------------------------------------
-// rm_lifecycle (stub)
-// ---------------------------------------------------------------------------
-
-/// Validate a derived attempt snapshot. Manual dispatch/execution axes
-/// must remain at revision zero (LIFE-MANUAL).
+/// Validate a derived attempt snapshot (delegates to `rm_lifecycle`).
+/// Read-side only: confers no authority to author or repair any axis.
 pub fn validate_snapshot(
     principal: &AuthenticatedPrincipal,
-    snapshot: &AttemptSnapshot,
+    snapshot: &rm_lifecycle::AttemptSnapshot,
 ) -> Result<(), ConnectorError> {
     log_call("validate_snapshot");
-    let _ = principal;
-    if snapshot.record_type != "attempt_snapshot" {
-        return Err(ConnectorError::new(
-            "INVALID_REQUEST",
-            "request",
-            "snapshot identity mismatch: expected record_type attempt_snapshot".to_string(),
-            "not_applicable",
-            "operator_review",
-        ));
-    }
-    if snapshot.mode == ExecutionMode::Manual
-        && (snapshot.dispatch_revision != 0 || snapshot.execution_revision != 0)
-    {
-        return Err(ConnectorError::new(
-            "INVALID_REQUEST",
-            "request",
-            "manual dispatch/execution axes must remain at revision zero".to_string(),
-            "not_applicable",
-            "operator_review",
-        ));
-    }
-    Ok(())
+    rm_lifecycle::validate_snapshot(principal, snapshot)
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Owned behavior: manual production recording [RM-C54]
 // ---------------------------------------------------------------------------
 
-fn check_operation(operation: &str) -> Result<(), ConnectorError> {
-    if !NINE_OPERATIONS.contains(&operation) {
-        return Err(ConnectorError::new(
-            "INVALID_REQUEST",
-            "request",
-            format!("unknown connector verb `{operation}`; exactly nine versioned verbs exist"),
-            "not_dispatched",
-            "operator_review",
-        ));
-    }
-    Ok(())
-}
+/// Provenance carried by every human action and note in a manual record.
+/// Manual provenance is never upgraded and never sets an authoritative
+/// business predicate on its own.
+pub const MANUAL_PROVENANCE: &str = "manual_observer";
 
-fn is_manual_payload(payload: &Value) -> bool {
-    payload.get("mode").and_then(|v| v.as_str()) == Some("manual")
+/// One human action/note with manual provenance and disclosed assistance
+/// context (assistance lives on the commission/record, disclosed once).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ManualNote {
+    pub body: String,
+    pub provenance: String,
 }
-
-fn fnv1a_hex(bytes: &[u8]) -> String {
-    let mut hash: u64 = 0xcbf29ce484222325;
-    for b in bytes {
-        hash ^= u64::from(*b);
-        hash = hash.wrapping_mul(0x100000001b3);
-    }
-    format!("{hash:016x}")
-}
-
-// ---------------------------------------------------------------------------
-// EXPOSES: (none declared) — service-owned manual recording composition
-// ---------------------------------------------------------------------------
-// The DAG declares no new public items for this tier; the composition
-// below is the service wiring that [RM-C54] conformance exercises. It is
-// not a tenth verb, browser primitive, or whole-attempt update API.
 
 /// A manually executed production/practice application, as commissioned
 /// by an operator. Carries no automation subject, native run ID,
 /// connector version, or binding version (EK-MANUAL, LIFE-MANUAL).
-/// Human notes retain manual provenance and disclosed assistance; a note
-/// alone can never set an authoritative business predicate.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ManualCommission {
     pub commission_id: String,
+    pub attempt_id: String,
+    pub operator: String,
+    pub journal_id: String,
     pub kind: AttemptKind,
-    pub target: TargetClass,
-    pub operator_id: String,
-    pub notes: String,
+    pub target_class: TargetClass,
+    pub target_id: String,
+    pub notes: Vec<String>,
     pub assistance: Option<String>,
 }
 
 /// Journaled record of a manual application. No subject, connector
 /// version, native run ID, execution publication, or success flag is
-/// fabricated: dispatch/execution revisions are zero and provenance is
-/// `manual_observer`. Origin facts are preserved as references, never
-/// promoted into commitments.
+/// fabricated: every axis slot is unpublished at revision zero and
+/// provenance is `manual_observer`. Origin facts are preserved as
+/// carried references, never promoted into commitments. The embedded
+/// commission binds to the admitted manifest run (a binding, not an
+/// invented native run) and the embedded snapshot passed real
+/// lifecycle validation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RecordedAttempt {
     pub attempt_id: String,
     pub commission_id: String,
     pub kind: AttemptKind,
-    pub target: TargetClass,
-    pub operator_id: String,
+    pub target_class: TargetClass,
+    pub target_id: String,
+    pub operator: String,
     pub provenance: String,
-    pub origin_ref: Option<String>,
-    pub notes_digest: String,
-    pub dispatch_revision: u64,
-    pub execution_revision: u64,
+    pub assistance: Option<String>,
+    pub notes: Vec<ManualNote>,
+    pub origin_refs: Vec<String>,
+    pub commission: AttemptCommission,
+    pub snapshot: AttemptSnapshot,
+}
+
+/// Bind a manual commission to its admitted manifest as a real
+/// `AttemptCommission`. The run, manifest hash, and admission reference
+/// are copied from the manifest (binding, never invention); the
+/// task-semantic hash covers the admitted manifest task; the partition
+/// follows the immutable kind.
+fn build_attempt_commission(
+    manifest: &Manifest,
+    commission: &ManualCommission,
+) -> Result<AttemptCommission, ConnectorError> {
+    let task_bytes = serde_json::to_vec(&manifest.task).map_err(|error| {
+        service_error(
+            "INVALID_REQUEST",
+            "request",
+            format!("manifest task cannot be serialized: {error}"),
+        )
+    })?;
+    let task_semantic_hash = rm_wire::canonical_digest(&task_bytes).map_err(|error| {
+        service_error(
+            "INVALID_REQUEST",
+            "request",
+            format!("manifest task cannot be hashed: {error}"),
+        )
+    })?;
+    let evaluation_partition = match commission.kind {
+        AttemptKind::Practice => EvaluationPartition::HeldIn,
+        AttemptKind::Production => EvaluationPartition::HeldOut,
+    };
+    Ok(AttemptCommission {
+        record_type: "attempt_commission".to_string(),
+        schema_version: "application-attempt-lifecycle/0.1.0".to_string(),
+        commission_id: commission.commission_id.clone(),
+        run_id: manifest.run_id.clone(),
+        journal_id: commission.journal_id.clone(),
+        manifest_hash: manifest.manifest_hash.clone(),
+        admission_ref: manifest.admission_ref.clone(),
+        attempt_id: commission.attempt_id.clone(),
+        kind: commission.kind,
+        target_class: commission.target_class,
+        evaluation_partition,
+        target_id: commission.target_id.clone(),
+        derived_from: Vec::new(),
+        rehearsal_of: None,
+        performance_of: None,
+        task_semantic_hash: task_semantic_hash.as_str().to_string(),
+        idempotency_key: format!("manual-record:{}", commission.commission_id),
+        imported_evidence: Vec::new(),
+    })
+}
+
+fn unpublished_slot(reason: &str, detail: &str) -> AxisSlot {
+    AxisSlot {
+        revision: 0,
+        value: SlotValue::Unpublished(Missing::with_detail(reason, detail)),
+    }
+}
+
+/// Build the manual read composition: every axis unpublished at revision
+/// zero (dispatch/execution `not_applicable` per LIFE-MANUAL), sealed at
+/// the commissioned view. The input prefix is pinned at the commission
+/// digest; no evidence resolves against it while no axis is published.
+fn build_manual_snapshot(
+    commission: &AttemptCommission,
+) -> Result<AttemptSnapshot, ConnectorError> {
+    let digest = rm_lifecycle::commission_digest(commission)?;
+    Ok(AttemptSnapshot {
+        record_type: rm_lifecycle::SNAPSHOT_RECORD_TYPE.to_string(),
+        schema_version: rm_lifecycle::LIFECYCLE_SCHEMA_VERSION.to_string(),
+        attempt: AttemptContext {
+            attempt_id: commission.attempt_id.clone(),
+            kind: commission.kind,
+            target_class: commission.target_class,
+            target_id: commission.target_id.clone(),
+            evaluation_partition: commission.evaluation_partition,
+        },
+        commission: commission.clone(),
+        commission_digest: digest.clone(),
+        input_prefix: JournalPrefix {
+            journal_id: commission.journal_id.clone(),
+            last_sequence: PositiveInteger::new(1)?,
+            head_hash: digest,
+        },
+        dispatch: unpublished_slot("not_applicable", "manual mode: no automation dispatch"),
+        observation: unpublished_slot(
+            "not_observed",
+            "manual mode: human actions journaled in the manual record, no connector observation publication",
+        ),
+        execution: unpublished_slot("not_applicable", "manual mode: no automation subject"),
+        application: unpublished_slot(
+            "not_observed",
+            "manual mode: origin references carried, no origin fact publication",
+        ),
+        report: unpublished_slot("not_observed", "manual mode: no reconciler report"),
+        seal_point: SealPoint {
+            seal_id: format!("seal-manual-{}", commission.attempt_id),
+            name: SealName::Commissioned,
+            versions: VersionVector {
+                dispatch: 0,
+                observation: 0,
+                execution: 0,
+                application: 0,
+                report: 0,
+            },
+            evidence_refs: Vec::new(),
+        },
+    })
 }
 
 /// Record a real manually executed application.
 ///
-/// Flow: authenticate the operator channel, verify commission scope
-/// against the admitted manifest, then validate the resulting snapshot.
-/// Prepare/Start (and every other dispatch-path entry point) are never
-/// invoked: manual work needs no Ringmaster startup, browser, Hellscape,
-/// or portfolio integration. Production recording additionally requires
-/// an employer origin evidence reference; without one the commission is
-/// not admitted.
+/// Flow: authenticate the operator channel, confirm the channel principal
+/// is the commissioning operator, require an employer origin reference
+/// for production, verify commission scope against the admitted manifest,
+/// then validate the resulting snapshot. Prepare/Start (and every other
+/// dispatch-path entry point) are never invoked: manual work needs no
+/// Ringmaster startup, browser, Hellscape, or portfolio integration —
+/// only the manifest, the commission, and the operator channel.
 pub fn record_manual_production(
     channel: &mut dyn std::io::Read,
     manifest: &Manifest,
     commission: &ManualCommission,
     origin_ref: Option<String>,
 ) -> Result<RecordedAttempt, ConnectorError> {
-    if commission.kind == AttemptKind::Production && origin_ref.is_none() {
-        return Err(ConnectorError::new(
-            "NOT_ADMITTED",
-            "policy",
-            "production manual recording requires an employer origin evidence reference"
-                .to_string(),
-            "not_dispatched",
-            "operator_review",
-        ));
-    }
     let principal = authenticate_channel(channel)?;
-    if principal.principal_id != commission.operator_id {
-        return Err(ConnectorError::new(
+    if principal.principal_id() != commission.operator {
+        return Err(service_error(
             "FORBIDDEN",
             "policy",
-            "operator commission mismatch: authenticated principal is not the commissioning operator"
-                .to_string(),
-            "not_dispatched",
-            "operator_review",
+            format!(
+                "operator mismatch: channel principal {:?} is not the commissioning operator {:?}; handles are never shared across principals",
+                principal.principal_id(),
+                commission.operator
+            ),
         ));
     }
-    let scope = AttemptCommission {
-        record_type: "attempt_commission".to_string(),
-        schema_version: "ringmaster/0.1.0".to_string(),
-        commission_id: commission.commission_id.clone(),
-        kind: commission.kind,
-        target: commission.target,
-        mode: ExecutionMode::Manual,
-        admission_ref: manifest.admission_ref.clone(),
-        operator_id: commission.operator_id.clone(),
-        origin_ref: origin_ref.clone(),
-    };
-    verify_attempt_scope(manifest, &scope)?;
-    let snapshot = AttemptSnapshot {
-        record_type: "attempt_snapshot".to_string(),
-        schema_version: "ringmaster/0.1.0".to_string(),
-        attempt_id: format!("manual-{}", commission.commission_id),
-        commission_id: commission.commission_id.clone(),
-        mode: ExecutionMode::Manual,
-        dispatch_revision: 0,
-        execution_revision: 0,
-    };
+    if commission.kind == AttemptKind::Production
+        && origin_ref.as_deref().map(str::is_empty).unwrap_or(true)
+    {
+        return Err(service_error(
+            "NOT_ADMITTED",
+            "policy",
+            "production recording requires an employer origin evidence reference; recording without one is not admitted",
+        ));
+    }
+    let attempt_commission = build_attempt_commission(manifest, commission)?;
+    verify_attempt_scope(manifest, &attempt_commission)?;
+    let snapshot = build_manual_snapshot(&attempt_commission)?;
     validate_snapshot(&principal, &snapshot)?;
     Ok(RecordedAttempt {
-        attempt_id: snapshot.attempt_id,
+        attempt_id: commission.attempt_id.clone(),
         commission_id: commission.commission_id.clone(),
         kind: commission.kind,
-        target: commission.target,
-        operator_id: commission.operator_id.clone(),
-        provenance: "manual_observer".to_string(),
-        origin_ref,
-        notes_digest: fnv1a_hex(commission.notes.as_bytes()),
-        dispatch_revision: 0,
-        execution_revision: 0,
+        target_class: commission.target_class,
+        target_id: commission.target_id.clone(),
+        operator: commission.operator.clone(),
+        provenance: MANUAL_PROVENANCE.to_string(),
+        assistance: commission.assistance.clone(),
+        notes: commission
+            .notes
+            .iter()
+            .map(|body| ManualNote {
+                body: body.clone(),
+                provenance: MANUAL_PROVENANCE.to_string(),
+            })
+            .collect(),
+        origin_refs: origin_ref.into_iter().collect(),
+        commission: attempt_commission,
+        snapshot,
     })
 }
 
@@ -783,27 +464,33 @@ mod unit_tests {
 
     #[test]
     fn rm_c54_error_envelope_carries_section_17_fields() {
-        let err = ConnectorError::new(
-            "NOT_ADMITTED",
-            "policy",
-            "detail".to_string(),
-            "not_dispatched",
-            "operator_review",
-        );
-        assert_eq!(err.kind, "connector_error");
-        assert!(!err.code.is_empty());
-        assert!(!err.fault_domain.is_empty());
-        assert!(!err.detail.is_empty());
-        assert!(!err.operation_delivery.is_empty());
-        assert!(!err.retry_guidance.is_empty());
+        let error = service_error("NOT_ADMITTED", "policy", "unit probe");
+        assert_eq!(error.kind, "connector_error");
+        assert_eq!(error.code, "NOT_ADMITTED");
+        assert_eq!(error.fault_domain, "policy");
+        assert_eq!(error.detail, "unit probe");
+        assert_eq!(error.operation_delivery, "not_applicable");
+        assert_eq!(error.retry_guidance, "operator_review");
+        assert_eq!(error.retry_after, None);
+        assert_eq!(error.handle, None);
+        assert!(error.evidence_refs.is_empty());
     }
 
     #[test]
     fn rm_c54_nine_verbs_recognized_exactly() {
-        assert_eq!(NINE_OPERATIONS.len(), 9);
-        for op in NINE_OPERATIONS {
-            check_operation(op).expect("ninth-verb allow-list must accept all nine");
-        }
-        check_operation("LaunchRockets").expect_err("tenth verb must be rejected");
+        assert_eq!(
+            NINE_OPERATIONS,
+            [
+                "Describe",
+                "Prepare",
+                "Start",
+                "Observe",
+                "RequestNativeCancel",
+                "CloseObservationConnection",
+                "CollectArtifacts",
+                "ReleaseNativeContext",
+                "Contain",
+            ]
+        );
     }
 }

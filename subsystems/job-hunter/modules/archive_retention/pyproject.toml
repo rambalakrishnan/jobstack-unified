@@ -1,0 +1,17 @@
+[project]
+name = "archive_retention"
+version = "0.1.0"
+description = "Module implementing archive_retention at tier 5"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["archive_retention"]
+package-dir = {"archive_retention" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

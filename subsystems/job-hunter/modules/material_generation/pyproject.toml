@@ -1,0 +1,17 @@
+[project]
+name = "material_generation"
+version = "0.1.0"
+description = "Module implementing material_generation at tier 5"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["material_generation"]
+package-dir = {"material_generation" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
