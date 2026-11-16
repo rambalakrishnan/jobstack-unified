@@ -1,22 +1,37 @@
 """Conformance tests for contract_codec (seam mapping sections 3.1/3.3/3.4)."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+try:
+    from contract_codec import (
+        ClockDescriptor,
+        Measurement,
+        TimePoint,
+        canonical_digest,
+        make_missing,
+        validate_measurement,
+        validate_record,
+    )
+except ImportError:  # pragma: no cover - system pytest without editable install
+    _pkg_path = Path(__file__).resolve().parents[1] / "src" / "__init__.py"
+    _spec = importlib.util.spec_from_file_location("contract_codec", _pkg_path)
+    assert _spec is not None and _spec.loader is not None
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules["contract_codec"] = _mod
+    _spec.loader.exec_module(_mod)
+    ClockDescriptor = _mod.ClockDescriptor
+    Measurement = _mod.Measurement
+    TimePoint = _mod.TimePoint
+    canonical_digest = _mod.canonical_digest
+    make_missing = _mod.make_missing
+    validate_measurement = _mod.validate_measurement
+    validate_record = _mod.validate_record
 
 import pytest
-from src import (
-    ClockDescriptor,
-    Measurement,
-    TimePoint,
-    canonical_digest,
-    make_missing,
-    validate_measurement,
-    validate_record,
-)
 
 
 def _clocks():
