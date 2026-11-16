@@ -1,11 +1,12 @@
 // Conformance runner for rm_wire (custom harness: `harness = false`).
 //
-// The verification command passes lowercase hyphenated filters
-// (`cargo test -p rm_wire -- rm-c01 rm-c02`). The stock libtest harness
-// cannot match hyphenated filters against Rust `#[test]` identifiers, so this
-// file is a custom `main` that honors exactly those registered lowercase
-// filters. Each case runs every assertion for its ID; any failure is printed
-// and the process exits nonzero.
+// The verification command passes lowercase conformance filters
+// (`cargo test -p rm_wire -- rm_c01 rm_c02`). The stock libtest harness
+// cannot match these filters against Rust `#[test]` identifiers portably
+// across hyphen/underscore spellings, so this file is a custom `main` that
+// honors exactly those registered lowercase filters (accepting both
+// `rm_c01` and `rm-c01` spellings). Each case runs every assertion for its
+// ID; any failure is printed and the process exits nonzero.
 
 use rm_wire::{artifact_digest, canonical_digest, validate_record};
 use std::collections::HashSet;
@@ -347,9 +348,14 @@ fn main() {
     // Registered lowercase conformance filters (spec FORBIDDEN: never replace).
     let mut selected: HashSet<&str> = HashSet::new();
     for arg in &args {
-        if arg == "rm-c01" || arg == "rm-c02" {
-            selected.insert(arg.as_str());
-        } else if arg.starts_with("rm-") {
+        let normalized = match arg.as_str() {
+            "rm_c01" | "rm-c01" => Some("rm-c01"),
+            "rm_c02" | "rm-c02" => Some("rm-c02"),
+            _ => None,
+        };
+        if let Some(id) = normalized {
+            selected.insert(id);
+        } else if arg.starts_with("rm-") || arg.starts_with("rm_") {
             eprintln!("unknown conformance filter: {arg}");
             std::process::exit(2);
         }
