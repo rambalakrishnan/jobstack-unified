@@ -154,17 +154,8 @@ fn check_value(path: &str, value: &Value) -> Result<(), Fault> {
             Ok(())
         }
         Value::Object(map) => {
-            // Envelope-shaped objects validate strictly; anything else is data.
-            // `reason` alone does not mark an envelope: domain records (e.g.
-            // ClassifierResult) carry `reason` as bounded text. Missing always
-            // has value:null, so null_valued anchors detection; value+reason
-            // pairs and bare reason singletons are malformed-envelope attempts.
             let null_valued = map.get("value").is_some_and(Value::is_null);
-            let has_value = map.contains_key("value");
-            let has_reason = map.contains_key("reason");
-            let looks_like_envelope =
-                null_valued || (has_value && has_reason) || (has_reason && map.len() == 1);
-            if looks_like_envelope {
+            if null_valued || map.contains_key("reason") {
                 check_missing(path, map)
             } else {
                 for (key, item) in map {

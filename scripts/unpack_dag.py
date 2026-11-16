@@ -221,25 +221,16 @@ def matches_anchor(heading_text: str, anchor: str) -> bool:
     return False
 
 def transform_rust_verification(cmd: str) -> str:
-    # Underscore filter tokens (rm-c01 -> rm_c01) per && -separated command.
-    # Only tokens after each command's own `--` are filters; flags (starting
-    # with `-`) and structure are preserved so chained invocations survive.
     if " -- " not in cmd:
         return cmd
-    chunks = []
-    for piece in cmd.split(" && "):
-        if " -- " not in piece:
-            chunks.append(piece)
-            continue
-        prefix, tail = piece.split(" -- ", 1)
-        tokens = []
-        for tok in tail.split():
-            if tok.startswith("-"):
-                tokens.append(tok)
-            else:
-                tokens.append(tok.replace("-", "_"))
-        chunks.append(f"{prefix} -- {' '.join(tokens)}")
-    return " && ".join(chunks)
+    prefix, tail = cmd.split(" -- ", 1)
+    tokens = []
+    for tok in tail.split():
+        if tok.startswith("--"):
+            tokens.append(tok)
+        else:
+            tokens.append(tok.replace("-", "_"))
+    return f"{prefix} -- {' '.join(tokens)}"
 
 class SpecUnpacker:
     def __init__(self, workspace_root: Path = None):
