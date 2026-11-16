@@ -37,3 +37,24 @@ git add -A && git commit -m "<subsystem/scope>: <what changed>" && git push
 - Never `git push --force`, never amend another agent's commit.
 - Never commit build output (`target/`, `__pycache__/`, `*.pyc`) — covered
   by `.gitignore`. Never commit secrets.
+
+## Agent commit protocol (binding on all agents, all depths)
+
+Every agent — including subagents at any depth — MUST commit AND push its
+file changes with a descriptive message before yielding:
+
+```bash
+git add -A && git commit -m "<subsystem/scope>: <what changed>" && git push
+```
+
+- Phase 4 exception (BtrFS isolated: true subagents): Module coders
+spawned by Phase 4 with isolated: true MUST NOT run git add, git commit,
+or git push. OMP's isolation backend (Apply Isolated Changes: true,
+Isolation Merge Strategy: branch) commits and integrates each isolated
+checkout automatically. The Phase 4 orchestrator pushes cleanly at tier
+boundaries.
+- Commit when a unit of work completes (module implemented, spec unpacked,
+audit written), not once per session.
+- Never git push --force, never amend another agent's commit.
+- Never commit build output (target/, __pycache__/, *.pyc, .venv/,
+*.egg-info/) — covered by .gitignore. Never commit secrets.
