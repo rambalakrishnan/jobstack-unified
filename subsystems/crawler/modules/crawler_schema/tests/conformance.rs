@@ -79,3 +79,36 @@ fn c02_real_values_distinct_from_missing() {
     .expect("empty collections, zero, false, and empty string are real values");
     assert_eq!(record_value(&record)["ids"], json!([]));
 }
+
+/// Domain `reason` data fields coexist with Missing envelopes. [C02]
+#[test]
+fn c02_data_reason_field_accepted() {
+    // ClassifierResult-style row: `reason` is bounded domain text ("Exact
+    // accepted explanation"), not a null marker. Must validate alongside
+    // genuine Missing envelopes nested in the same record.
+    let record = validate(
+        "classifier_result",
+        json!({
+            "target": "job-001",
+            "job_id": "job-001",
+            "stage": "description",
+            "model_version": "clf-7",
+            "input_hash": "0123456789abcdef",
+            "verdict": "PASS",
+            "verdict_applied": "PASS",
+            "confidence": 0.97,
+            "reason": "Exact accepted explanation with sibling keys",
+            "classified_at": missing("not_applicable"),
+            "latency_ms": 12,
+            "model_artifact_digest": "aa",
+            "tokenizer_digest": "bb",
+            "prompt_digest": "cc",
+            "canonicalization_version": "canon-2",
+        }),
+    )
+    .expect("domain reason text alongside sibling keys must validate");
+    assert_eq!(
+        record_value(&record)["reason"],
+        json!("Exact accepted explanation with sibling keys")
+    );
+}

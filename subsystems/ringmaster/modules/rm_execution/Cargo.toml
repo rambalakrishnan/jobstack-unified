@@ -1,0 +1,21 @@
+[package]
+name = "rm_execution"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rm_wire = { path = "../rm_wire" }
+rm_authority = { path = "../rm_authority" }
+rm_evidence = { path = "../rm_evidence" }
+rm_time = { path = "../rm_time" }
+rm_leases = { path = "../rm_leases" }
+rm_catalog = { path = "../rm_catalog" }
+rm_browseroxide = { path = "../rm_browseroxide" }
+rm_learning = { path = "../rm_learning" }
+rm_targets = { path = "../rm_targets" }
+rm_extraction = { path = "../rm_extraction" }
+rm_delivery = { path = "../rm_delivery" }
+rm_recovery = { path = "../rm_recovery" }
+rm_preparation = { path = "../rm_preparation" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,17 @@
+[project]
+name = "legacy_collections"
+version = "0.1.0"
+description = "Module implementing legacy_collections at tier 3"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["legacy_collections"]
+package-dir = {"legacy_collections" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

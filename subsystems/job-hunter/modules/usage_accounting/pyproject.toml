@@ -1,0 +1,17 @@
+[project]
+name = "usage_accounting"
+version = "0.1.0"
+description = "Module implementing usage_accounting at tier 3"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["usage_accounting"]
+package-dir = {"usage_accounting" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
