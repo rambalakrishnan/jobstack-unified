@@ -1,0 +1,17 @@
+[project]
+name = "product_domain"
+version = "0.1.0"
+description = "Module implementing product_domain at tier 7"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["product_domain"]
+package-dir = {"product_domain" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

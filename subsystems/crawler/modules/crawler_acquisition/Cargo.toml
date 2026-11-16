@@ -1,0 +1,15 @@
+[package]
+name = "crawler_acquisition"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crawler_schema = { path = "../crawler_schema" }
+crawler_hashing = { path = "../crawler_hashing" }
+crawler_authority = { path = "../crawler_authority" }
+crawler_readonly = { path = "../crawler_readonly" }
+crawler_admission = { path = "../crawler_admission" }
+serde_json = "1"
+
+[dev-dependencies]
+serde_json = "1"

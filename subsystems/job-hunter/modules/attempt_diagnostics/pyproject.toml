@@ -1,0 +1,17 @@
+[project]
+name = "attempt_diagnostics"
+version = "0.1.0"
+description = "Module implementing attempt_diagnostics at tier 7"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["attempt_diagnostics"]
+package-dir = {"attempt_diagnostics" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
