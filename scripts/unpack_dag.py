@@ -5,19 +5,96 @@ Expands module-graph-0.1.0.dag into per-module .omp-spec.md files.
 Requires: pip install pyyaml
 Usage: python3 scripts/unpack_dag.py subsystems/<subsystem>/module-graph-0.1.0.dag
 """
-import re, sys
+import re
+import sys
 from pathlib import Path
 import yaml
 
 LSP_REGISTRY = {
-    "rust": {"server": "rust-analyzer", "marker": "Cargo.toml", "lang": "Rust",
-             "entry_file": "src/lib.rs", "test_file": "tests/conformance.rs"},
-    "python": {"server": "pyright", "marker": "pyproject.toml", "lang": "Python",
-               "entry_file": "src/__init__.py", "test_file": "tests/test_conformance.py"},
-    "go": {"server": "gopls", "marker": "go.mod", "lang": "Go",
-           "entry_file": "module.go", "test_file": "conformance_test.go"},
-    "typescript": {"server": "tsserver", "marker": "package.json", "lang": "TypeScript",
-                   "entry_file": "src/index.ts", "test_file": "tests/conformance.test.ts"},
+    "rust": {
+        "server": "rust-analyzer",
+        "marker": "Cargo.toml",
+        "lang": "Rust",
+        "entry_file": "src/lib.rs",
+        "test_file": "tests/conformance.rs",
+        "language_setup": """1. Create `Cargo.toml` in your working directory (`[package]` name = "{package_name}", edition = "2021").
+2. Add each `CONSUMES` dependency under `[dependencies]` as a path dependency:
+   `<dep_name> = {{ path = "../<dep_name>" }}`
+3. Implement every `EXPOSES` item in `src/lib.rs`.
+4. Implement conformance tests in `tests/conformance.rs` (one `#[test]` per `TEST_ASSERTION`, matching any test filter token in `verification_command`).
+5. Run your `verification_command` until exit 0.
+
+FORBIDDEN:
+- Do NOT use `../../<dep_name>` — siblings live at `../<dep_name>`.
+- Do NOT edit sibling crates or shared workspace files outside your working directory.""",
+    },
+    "python": {
+        "server": "pyright",
+        "marker": "pyproject.toml",
+        "lang": "Python",
+        "entry_file": "src/__init__.py",
+        "test_file": "tests/test_conformance.py",
+        "language_setup": """1. Create an isolated virtual environment IN YOUR WORKING DIRECTORY:
+   `python3 -m venv .venv`
+   Every subsequent pip/python/pytest command MUST go through `.venv/bin/`.
+
+2. Install each `CONSUMES` dependency into your `.venv`:
+   `.venv/bin/pip install -e ../<dep_name>` (one call per dependency)
+
+3. Create `pyproject.toml` with this exact package mapping (no other top-level package allowed):
+   ```toml
+   [build-system]
+   requires = ["setuptools>=68", "wheel"]
+   build-backend = "setuptools.build_meta"
+
+   [project]
+   name = "{package_name}"
+   version = "0.1.0"
+   requires-python = ">=3.10"
+
+   [tool.setuptools]
+   packages = ["{package_name}"]
+   package-dir = {{"{package_name}" = "src"}}
+   ```
+   This makes `import {package_name}` resolve to your `src/` directory.
+   Do NOT rely on `import src.*` — that collides across modules.
+
+4. Install the module itself: `.venv/bin/pip install -e .`
+
+5. Run tests via: `.venv/bin/pytest tests/test_conformance.py` (or `.venv/bin/<verification_command>`).
+
+6. Downstream modules will import you as `import {package_name}` (or `from {package_name} import X`). Your `EXPOSES` signatures must be re-exported from `src/__init__.py`.
+
+FORBIDDEN:
+- Do NOT install into system Python or any environment outside your working directory.
+- Do NOT use `src` as an importable package name.
+- Do NOT share a `.venv` with sibling modules.
+- Do NOT commit `.venv/` (it is gitignored).""",
+    },
+    "go": {
+        "server": "gopls",
+        "marker": "go.mod",
+        "lang": "Go",
+        "entry_file": "module.go",
+        "test_file": "conformance_test.go",
+        "language_setup": """1. Initialize `go.mod` in your working directory (`module {package_name}`).
+2. For each `CONSUMES` dependency, add a `require` and local `replace` directive in `go.mod`:
+   `replace <dep_name> => ../<dep_name>`
+3. Implement every `EXPOSES` symbol in `module.go` (and helper files in this directory if needed).
+4. Implement conformance tests in `conformance_test.go` (one `Test...(*testing.T)` function per `TEST_ASSERTION`).
+5. Run your `verification_command` until exit 0.
+
+FORBIDDEN:
+- Do NOT modify sibling modules or `go.mod` files outside your working directory.""",
+    },
+    "typescript": {
+        "server": "tsserver",
+        "marker": "package.json",
+        "lang": "TypeScript",
+        "entry_file": "src/index.ts",
+        "test_file": "tests/conformance.test.ts",
+        "language_setup": "Configure `package.json` and `tsconfig.json` in your working directory.",
+    },
 }
 
 OMP_TEMPLATE = """---
@@ -60,8 +137,11 @@ verification_expect: "0"
 ## Files to Create or Modify
 | Path | Action | Description |
 |------|--------|-------------|
-| {entry_file} | create | Module entry point and public interface |
+| {entry_file} | create | {entry_desc} |
 | {test_file} | create | Conformance test assertions implementation |
+
+## Language-Specific Setup (MANDATORY)
+{language_setup}
 
 ## Public Interface (EXPOSES)
 ```{lang_lower}
@@ -96,7 +176,9 @@ Output this JSON block and terminate:
     {{
       "missing_from_dependency": "<module_name>",
       "required_signature": "<exact signature needed>",
-      "blocking_test_cases": ["<case_id>"]
+      "declared_in_consumes": "<declared>",
+      "actual_exposed": "<actual>",
+      "blocking_test_cases": ["<case_id_or_assertion>"]
     }}
   ]
 }}
@@ -105,10 +187,15 @@ Output this JSON block and terminate:
 # OUTPUT CONTRACT
 ```json
 {{
-  "status": "COMPLETED" | "FAILED" | "BLOCKED",
-  "summary": "Implementation summary",
-  "files_changed": ["paths"],
-  "verification_result": "pass" | "fail"
+  "status": "COMPLETED" | "FAILED" | "BLOCKED" | "RATE_LIMITED",
+  "module": "{name}",
+  "subsystem": "{subsystem_name}",
+  "files_created": ["<paths>"],
+  "verification_result": "pass" | "fail",
+  "assertions_passing": 0,
+  "assertions_total": 0,
+  "reason": "<if FAILED or BLOCKED>",
+  "evidence": "<if FAILED, BLOCKED, or RATE_LIMITED>"
 }}
 ```
 """
@@ -134,19 +221,13 @@ def matches_anchor(heading_text: str, anchor: str) -> bool:
     return False
 
 def transform_rust_verification(cmd: str) -> str:
-    """Convert hyphenated case IDs after `--` to underscored test names.
-
-    Rust identifiers (including test function names) cannot contain hyphens.
-    Cargo flags after `--` start with `--` and are preserved as-is.
-    Anything else in the filter tail is a test name and needs hyphens -> underscores.
-    """
     if " -- " not in cmd:
         return cmd
     prefix, tail = cmd.split(" -- ", 1)
     tokens = []
     for tok in tail.split():
         if tok.startswith("--"):
-            tokens.append(tok)  # cargo flag (--nocapture, --release, --test, etc.)
+            tokens.append(tok)
         else:
             tokens.append(tok.replace("-", "_"))
     return f"{prefix} -- {' '.join(tokens)}"
@@ -168,12 +249,19 @@ class SpecUnpacker:
                 except Exception as e:
                     self.errors.append(f"Failed to parse {cf}: {e}")
                     continue
+                def _scan(node):
+                    if isinstance(node, dict):
+                        if "id" in node and "rule" in node:
+                            yield node
+                        else:
+                            for v in node.values():
+                                yield from _scan(v)
+                    elif isinstance(node, list):
+                        for item in node:
+                            yield from _scan(item)
                 for data in docs:
-                    if isinstance(data, dict):
-                        rules = data.get("x-semantic-rules", []) or data.get("x-invariants", []) or []
-                        for r in rules:
-                            if isinstance(r, dict) and "id" in r and "rule" in r:
-                                self.invariant_index[r["id"]] = f"**[{r['id']}]**: {r['rule'].strip()}"
+                    for r in _scan(data):
+                        self.invariant_index[r["id"]] = f"**[{r['id']}]**: {r['rule'].strip()}"
         seam_dir = self.workspace_root / "seam-mappings"
         if seam_dir.exists():
             for sf in seam_dir.glob("*.md"):
@@ -269,13 +357,23 @@ class SpecUnpacker:
                     if item: forbidden_items.append(f"- {item}")
             forbidden_formatted = "\n".join(forbidden_items) if forbidden_items else "- No forbidden constraints specified."
             lsp = LSP_REGISTRY[lang]
+            package_name = name.replace("-", "_")
+            language_setup = lsp.get(
+                "language_setup", "No language-specific setup required."
+            ).format(package_name=package_name)
+            entry_desc = (
+                f"Package source; installed as `{package_name}`"
+                if lang == "python"
+                else "Module entry point and public interface"
+            )
             spec = OMP_TEMPLATE.format(
                 name=name, responsibility=f"Module implementing {name} at tier {tier}",
                 verification=(transform_rust_verification(f.get("VERIFICATION", "").strip())
                               if lang == "rust" else f.get("VERIFICATION", "").strip()),
                 subsystem_name=subsystem_name,
                 lsp_lang=lsp["lang"], lsp_server=lsp["server"], lsp_marker=lsp["marker"],
-                entry_file=lsp["entry_file"], test_file=lsp["test_file"],
+                entry_file=lsp["entry_file"], entry_desc=entry_desc, test_file=lsp["test_file"],
+                language_setup=language_setup,
                 invariants_dereferenced=self.deref_invariants(f.get("INVARIANTS", "")),
                 test_assertions_dereferenced=self.deref_assertions(f.get("TEST_ASSERTIONS", "")),
                 inlined_blind_spots=self.resolve_reads(f.get("READS", "")),
