@@ -1104,6 +1104,18 @@ def cmd_tick() -> int:
             if ln.strip() and "interface-gaps/" not in ln and "phase4-rollup.json" not in ln
         ]
         if dirty_lines:
+            # This tick already marked tasks_to_spawn IN_PROGRESS above, but the
+            # batch is discarded unspawned. Restore prior pending states or the
+            # affected tiers strand forever (never re-emitted, never recorded).
+            for t in tasks_to_spawn:
+                mv = state["subsystems"][t["subsystem"]]["modules"][t["module"]]
+                if mv.get("status") == "IN_PROGRESS":
+                    if mv.get("retries", 0) > 0 or mv.get("prior_error"):
+                        mv["status"] = "RETRY_PENDING"
+                    else:
+                        mv["status"] = "PENDING"
+            for sub in PILOT_SUBSYSTEMS:
+                state["subsystems"][sub]["in_progress"] = []
             state["halted"] = True
             state["halt_reason"] = f"Dirty git working tree before batch spawn: {dirty_lines[:5]}"
             render_progress(state, force=True)

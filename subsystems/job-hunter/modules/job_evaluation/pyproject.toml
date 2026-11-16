@@ -1,0 +1,17 @@
+[project]
+name = "job_evaluation"
+version = "0.1.0"
+description = "Module implementing job_evaluation at tier 7"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["job_evaluation"]
+package-dir = {"job_evaluation" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
