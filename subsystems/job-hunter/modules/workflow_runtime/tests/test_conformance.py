@@ -9,18 +9,37 @@ Covers exactly the -k filter named in the module spec:
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src import (  # noqa: E402
-    MANUAL_LANE_DEPENDENCIES,
-    WorkflowRuntime,
-)
+def _load_workflow_runtime():
+    if "workflow_runtime" in sys.modules:
+        return sys.modules["workflow_runtime"]
+    try:
+        import workflow_runtime as installed  # noqa: F401
+        return installed
+    except ModuleNotFoundError:
+        pass
+    here = Path(__file__).resolve()
+    path = here.parents[1] / "src" / "__init__.py"
+    # Local stubs live beside src/; make them importable before loading.
+    sys.path.insert(0, str(here.parents[1]))
+    spec = importlib.util.spec_from_file_location("workflow_runtime", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["workflow_runtime"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+_wr = _load_workflow_runtime()
+MANUAL_LANE_DEPENDENCIES = _wr.MANUAL_LANE_DEPENDENCIES
+WorkflowRuntime = _wr.WorkflowRuntime
 from stubs import models as m  # noqa: E402
 from stubs import (  # noqa: E402
     attempt_commissioning,

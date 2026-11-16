@@ -23,8 +23,16 @@ Boundary discipline honored here:
 from __future__ import annotations
 
 import asyncio
+import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Union
+
+# Local synthetic peers live beside src/ (module dir). Make them importable
+# whether this package is loaded from the checkout or pip-installed.
+_MODULE_DIR = str(Path(__file__).resolve().parents[1])
+if _MODULE_DIR not in sys.path:
+    sys.path.insert(0, _MODULE_DIR)
 
 from stubs import models as m
 from stubs import (
