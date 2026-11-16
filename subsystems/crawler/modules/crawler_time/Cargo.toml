@@ -1,0 +1,11 @@
+[package]
+name = "crawler_time"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crawler_schema = { path = "../crawler_schema" }
+serde_json = "1"
+
+[dev-dependencies]
+serde_json = "1"
