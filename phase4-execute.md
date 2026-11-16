@@ -15,6 +15,8 @@ Instruct the TUI: "Read `phase4-execute.md` in full and execute §1 through §14
 **Mandatory isolation flag on EVERY `task` spawn:**
 `task.isolation.enabled` alone does NOT isolate subagents. Every `task` tool call spawning a module coder MUST explicitly pass `"isolated": true` so OMP creates a BtrFS copy-on-write worktree and merges changes back per branch strategy.
 
+**DEGRADED MODE (active 2026-11-16):** OMP's worktree git-open layer is broken (`git open ... does not appear to be a git repository` on CLI-valid repos, including fresh clones). Coders spawn with `"isolated": false` in the shared checkout under module-dir discipline; `scrub_batch_to_pre_sha` reverts unverified work at `record` via CLI git; the dispatcher commits passing module dirs between every `record` and the next `tick` (the tick guard HALTs on dirt). Revert to `"isolated": true` and delete this note once OMP isolation works.
+
 **No automatic Astra invocation.** Any `INTERFACE_GAP` halts that subsystem only, snapshots the pre-patch DAG, writes a gap report + pre-patch estimate, and enters `AWAITING_OPERATOR_APPROVAL`. Independent subsystems continue.
 
 ---
@@ -41,7 +43,7 @@ Confirm in OMP's provider registry / model list that `opencode-go`, `meta`, and 
 
 The OMP TUI agent acts strictly as the **thin `task` dispatcher**:
 1. Calls `python3 scripts/phase4-orchestrate.py tick`.
-2. Spawns all returned `tasks` in parallel using OMP's `task` tool with `"isolated": true`.
+2. Spawns all returned `tasks` in parallel using OMP's `task` tool with `"isolated": false` (degraded mode; see note above).
 3. Writes the subagents' JSON responses to `.phase4-batch-results.json` (matching `{subsystem, module, ...coder_json}`) and calls `python3 scripts/phase4-orchestrate.py record --results-file .phase4-batch-results.json`.
 4. Sleeps 30 seconds on `WAIT`, or exits on `DONE` / `HALT`.
 
@@ -71,11 +73,11 @@ Repeat until `tick` returns `"action": "DONE"` or `"action": "HALT"`:
    - If `action == "WAIT"`: sleep `seconds` (30s), then continue loop.
    - If `action == "SPAWN_TASKS"`:
      Spawn all entries in `tasks` IN PARALLEL via the OMP `task` tool,
-     passing EVERY field literally and ALWAYS setting `"isolated": true`:
+     passing EVERY field literally and ALWAYS setting `"isolated": false`:
        - model: task.model
        - provider: task.provider
        - cwd / working_directory: task.cwd
-       - isolated: true   <-- MANDATORY (BtrFS snapshot isolation)
+     - isolated: false  <-- DEGRADED (shared checkout; scrubber owns safety)
        - prompt: task.prompt
      Wait for all spawned tasks in this batch to return.
      If a subagent fails to emit valid JSON (e.g. HTTP 429 or crash), wrap it as
@@ -87,7 +89,7 @@ Repeat until `tick` returns `"action": "DONE"` or `"action": "HALT"`:
 ## What you must NOT do
 - Do NOT invoke Astra.
 - Do NOT implement modules yourself or edit `.omp-spec.md` / `.dag` files.
-- Do NOT skip `"isolated": true` on any coder `task` call.
+- Do NOT set `"isolated": true` (broken git layer); spawn non-isolated per degraded mode.
 - Do NOT maintain separate progress/health state in memory — trust `phase4-orchestrate.py`.
 ```
 
@@ -144,7 +146,7 @@ Do NOT: install into system Python, reuse a sibling `.venv`, use `src` as an imp
 
 ### Git & Scope Discipline (overrides `README.md` for Phase 4)
 
-- Do NOT run `git add`, `git commit`, or `git push`. OMP's `isolated: true` BtrFS runner commits and merges your module branch automatically.
+- Do NOT run `git add`, `git commit`, or `git push`. The dispatcher commits verified module dirs between `record` and the next `tick`; the orchestrator scrubs unverified work automatically.
 - Do NOT modify files outside `subsystems/{SUBSYSTEM}/modules/{MODULE_NAME}/` or edit `.omp-spec.md`.
 
 ### Failure protocol (`RATE_LIMITED` / `pypi` addition)
@@ -324,6 +326,7 @@ Every subsystem writes `subsystems/{subsystem}/phase4_audit.json`:
 9. **No automatic Astra.** `INTERFACE_GAP` = operator gate.
 10. **Provider failover is state-driven.** Orchestrator maintains authoritative state; coordinators read before spawn.
 11. **Progress chart every 5 minutes.** Snapshot, not log. `cat phase4-progress.md` is the dashboard.
+12. **Degraded non-isolated mode (active).** Coders share the checkout; module-dir discipline + scrubber replace worktree isolation; dispatcher commits per batch.
 
 ---
 

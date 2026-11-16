@@ -607,13 +607,11 @@ Read `.omp-spec.md` in your working directory in full before writing code.
 - Shared contracts (read-only): `../../../contracts/` (from module dir, or `./contracts/` at repo root)
 {retry_block}
 ## Mandatory Rules (override conflicting boilerplate in README.md or .omp-spec.md)
-1. **Do NOT run `git add`, `git commit`, or `git push`.** OMP's `isolated: true` runner handles integration automatically.
+1. **Do NOT run `git add`, `git commit`, or `git push`.** You run NON-ISOLATED in the shared checkout (degraded mode: OMP worktree isolation is broken). The dispatcher commits verified work; the orchestrator scrubs the rest via CLI git.
 2. **Do NOT modify files outside `subsystems/{subsystem}/modules/{mod_name}/`**, and do NOT modify `.omp-spec.md`.
-3. **Check dependencies BEFORE editing:** Inspect your `CONSUMES` siblings (`../<dep>`) first. If a required upstream signature/type is missing or incompatible, report `INTERFACE_GAP` immediately without leaving edits behind.
-4. **CRITICAL — WORKSPACE WIPE ON ANY NON-`COMPLETED` EXIT:**
-   OMP treats every normal JSON yield (`exitCode = 0`) as mergeable. If you are returning **`INTERFACE_GAP`**, **`FAILED`**, **`BLOCKED`**, or **`RATE_LIMITED`**, you MUST run:
-   `TOP=$(git rev-parse --show-toplevel) && git -C "$TOP" checkout -- . && git -C "$TOP" clean -fdx`
-   **immediately before** emitting your final JSON response so zero half-written or broken files exist in your worktree to be merged.
+3. **Check dependencies BEFORE editing:** Inspect your `CONSUMES` siblings (`../<dep>`) first. If a required upstream signature/type is missing or incompatible, stop editing and report `INTERFACE_GAP` immediately; the orchestrator scrubs leftover files automatically.
+4. **CRITICAL — SHARED CHECKOUT, NEVER WIPE:**
+   You run NON-ISOLATED alongside sibling coders. If you are returning **`INTERFACE_GAP`**, **`FAILED`**, **`BLOCKED`**, or **`RATE_LIMITED`**, simply STOP EDITING and emit your JSON. NEVER run `git checkout`, `git clean`, `git reset`, or delete files outside your module dir — the orchestrator reverts unverified work via CLI git after `record`.
 5. Follow the `## Language-Specific Setup (MANDATORY)` section of `.omp-spec.md` verbatim.
    - Python: use `.venv/` inside your working directory and `[tool.setuptools] packages = ["{mod_name.replace('-', '_')}"]`, `package-dir = {{"{mod_name.replace('-', '_')}" = "src"}}`. Never use `src` as an importable package name.
    - Rust: use `path = "../<dep>"` in `Cargo.toml`. Match test function names to any filter token in `{ver_cmd}`.
@@ -636,7 +634,7 @@ COMPLETED:
   "usage": {{"input_tokens": <int_or_null>, "output_tokens": <int_or_null>, "cost_usd": <float_or_null>}}
 }}
 
-INTERFACE_GAP (MUST run `TOP=$(git rev-parse --show-toplevel) && git -C "$TOP" checkout -- . && git -C "$TOP" clean -fdx` first):
+INTERFACE_GAP (stop editing; orchestrator scrubs automatically):
 {{
   "status": "INTERFACE_GAP",
   "gaps": [{{
@@ -649,7 +647,7 @@ INTERFACE_GAP (MUST run `TOP=$(git rev-parse --show-toplevel) && git -C "$TOP" c
   "usage": {{"input_tokens": null, "output_tokens": null, "cost_usd": null}}
 }}
 
-FAILED (MUST wipe `$TOP` with git checkout/clean first):
+FAILED (stop editing; orchestrator scrubs automatically):
 {{
   "status": "FAILED",
   "reason": "<specific>",
@@ -657,14 +655,14 @@ FAILED (MUST wipe `$TOP` with git checkout/clean first):
   "usage": {{"input_tokens": null, "output_tokens": null, "cost_usd": null}}
 }}
 
-BLOCKED (MUST wipe `$TOP` with git checkout/clean first):
+BLOCKED (stop editing; orchestrator scrubs automatically):
 {{
   "status": "BLOCKED",
   "reason": "<specific>",
   "evidence": "<concise error output>"
 }}
 
-RATE_LIMITED (MUST wipe `$TOP` with git checkout/clean first):
+RATE_LIMITED (stop editing; orchestrator scrubs automatically):
 {{
   "status": "RATE_LIMITED",
   "provider": "<{provider} or pypi>",
@@ -690,7 +688,7 @@ An upstream dependency in `{subsystem}` was patched.
 1. Re-run `{ver_cmd}` (for Python, rebuild `.venv` deps via `.venv/bin/pip install -e ../<dep>` first if needed, then `.venv/bin/pytest`).
 2. Do NOT modify implementation code unless verification fails due to upstream API compatibility; if an upstream signature is still missing, report `INTERFACE_GAP`.
 3. Do NOT run `git add`, `git commit`, or `git push`.
-4. **CRITICAL — WORKSPACE WIPE ON ANY NON-`COMPLETED` EXIT:** If returning `INTERFACE_GAP`, `FAILED`, `BLOCKED`, or `RATE_LIMITED`, run `TOP=$(git rev-parse --show-toplevel) && git -C "$TOP" checkout -- . && git -C "$TOP" clean -fdx` immediately before yielding so OMP does not merge partial edits.
+4. **CRITICAL — SHARED CHECKOUT, NEVER WIPE:** If returning `INTERFACE_GAP`, `FAILED`, `BLOCKED`, or `RATE_LIMITED`, stop editing and yield; NEVER run git checkout/clean/reset. The orchestrator reverts unverified work via CLI git after `record`.
 5. Return ONLY valid JSON matching the §5 schema (`COMPLETED`, `INTERFACE_GAP`, `FAILED`, `BLOCKED`, or `RATE_LIMITED`)."""
 
 
@@ -1085,7 +1083,7 @@ def cmd_tick() -> int:
                 "role": "coder",
                 "model": model,
                 "provider": provider,
-                "isolated": True,
+                "isolated": False,  # DEGRADED MODE: OMP worktree git-open broken; CLI scrubber owns safety
                 "cwd": f"subsystems/{sub}/modules/{m}",
                 "prompt": prompt,
             })
