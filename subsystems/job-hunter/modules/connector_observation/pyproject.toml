@@ -1,0 +1,17 @@
+[project]
+name = "connector_observation"
+version = "0.1.0"
+description = "Module implementing connector_observation at tier 6"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["connector_observation"]
+package-dir = {"connector_observation" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

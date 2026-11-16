@@ -1,0 +1,19 @@
+[package]
+name = "crawler_archives"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crawler_schema = { path = "../crawler_schema" }
+crawler_hashing = { path = "../crawler_hashing" }
+crawler_authority = { path = "../crawler_authority" }
+crawler_artifacts = { path = "../crawler_artifacts" }
+crawler_store = { path = "../crawler_store" }
+crawler_retention = { path = "../crawler_retention" }
+crawler_fetch_identity = { path = "../crawler_fetch_identity" }
+crawler_publication = { path = "../crawler_publication" }
+serde_json = "1"
+
+[dev-dependencies]
+crawler_time = { path = "../crawler_time" }
+serde_json = "1"

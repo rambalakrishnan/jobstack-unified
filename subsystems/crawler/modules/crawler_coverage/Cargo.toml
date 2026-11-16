@@ -1,0 +1,15 @@
+[package]
+name = "crawler_coverage"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crawler_schema = { path = "../crawler_schema" }
+crawler_hashing = { path = "../crawler_hashing" }
+crawler_normalization = { path = "../crawler_normalization" }
+crawler_cursors = { path = "../crawler_cursors" }
+crawler_detectors = { path = "../crawler_detectors" }
+serde_json = "1"
+
+[dev-dependencies]
+serde_json = "1"

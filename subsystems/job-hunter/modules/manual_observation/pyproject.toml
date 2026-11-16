@@ -1,0 +1,17 @@
+[project]
+name = "manual_observation"
+version = "0.1.0"
+description = "Module implementing manual_observation at tier 6"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["manual_observation"]
+package-dir = {"manual_observation" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

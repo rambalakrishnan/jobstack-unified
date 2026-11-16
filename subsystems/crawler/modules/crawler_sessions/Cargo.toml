@@ -1,0 +1,22 @@
+[package]
+name = "crawler_sessions"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crawler_schema = { path = "../crawler_schema" }
+crawler_time = { path = "../crawler_time" }
+crawler_authority = { path = "../crawler_authority" }
+crawler_readonly = { path = "../crawler_readonly" }
+crawler_store = { path = "../crawler_store" }
+crawler_admission = { path = "../crawler_admission" }
+browser_oxide = "0.1.3"
+serde_json = "1"
+url = "2"
+tokio = { version = "1", features = ["sync"] }
+
+[dev-dependencies]
+crawler_hashing = { path = "../crawler_hashing" }
+crawler_artifacts = { path = "../crawler_artifacts" }
+serde_json = "1"
+url = "2"

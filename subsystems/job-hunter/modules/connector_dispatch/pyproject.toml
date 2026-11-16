@@ -1,0 +1,17 @@
+[project]
+name = "connector_dispatch"
+version = "0.1.0"
+description = "Module implementing connector_dispatch at tier 6"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["connector_dispatch"]
+package-dir = {"connector_dispatch" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
