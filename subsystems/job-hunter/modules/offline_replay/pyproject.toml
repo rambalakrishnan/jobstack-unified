@@ -1,0 +1,17 @@
+[project]
+name = "offline_replay"
+version = "0.1.0"
+description = "Module implementing offline_replay at tier 8"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["offline_replay"]
+package-dir = {"offline_replay" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
