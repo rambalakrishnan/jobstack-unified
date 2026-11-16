@@ -15,3 +15,16 @@ __pycache__/
 # Local run scaffolding (ledger/tracking dotfiles)
 subsystems/.phase3-*.json
 subsystems/*/.phase3-*.json
+
+# Python per-module isolation (never commit or merge across BtrFS worktrees)
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Phase 4 orchestrator runtime state & dashboards
+phase4-state.json
+phase4-progress.md
+phase4-progress.json
+phase4-commands.json
+phase4-approvals.json
+.phase4-*.tmp*
