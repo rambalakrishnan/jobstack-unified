@@ -1,0 +1,17 @@
+[project]
+name = "claim_reconciliation"
+version = "0.1.0"
+description = "Module implementing claim_reconciliation at tier 6"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["claim_reconciliation"]
+package-dir = {"claim_reconciliation" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

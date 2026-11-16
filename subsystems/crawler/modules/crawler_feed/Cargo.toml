@@ -1,0 +1,16 @@
+[package]
+name = "crawler_feed"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crawler_schema = { path = "../crawler_schema" }
+crawler_authority = { path = "../crawler_authority" }
+crawler_artifacts = { path = "../crawler_artifacts" }
+crawler_store = { path = "../crawler_store" }
+serde_json = "1"
+
+[dev-dependencies]
+serde_json = "1"
+crawler_hashing = { path = "../crawler_hashing" }
+crawler_time = { path = "../crawler_time" }
