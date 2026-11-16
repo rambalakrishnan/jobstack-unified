@@ -1,0 +1,19 @@
+[package]
+name = "rm_supervisor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rm_authority = { path = "../rm_authority" }
+rm_evidence = { path = "../rm_evidence" }
+rm_time = { path = "../rm_time" }
+rm_preparation = { path = "../rm_preparation" }
+rm_delivery = { path = "../rm_delivery" }
+rm_controls = { path = "../rm_controls" }
+rm_lifecycle = { path = "../rm_lifecycle" }
+serde_json = "1"
+
+[dev-dependencies]
+rm_catalog = { path = "../rm_catalog" }
+rm_leases = { path = "../rm_leases" }
+rm_wire = { path = "../rm_wire" }

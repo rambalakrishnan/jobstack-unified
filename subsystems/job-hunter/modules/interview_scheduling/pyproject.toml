@@ -1,0 +1,17 @@
+[project]
+name = "interview_scheduling"
+version = "0.1.0"
+description = "Module implementing interview_scheduling at tier 4"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["interview_scheduling"]
+package-dir = {"interview_scheduling" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

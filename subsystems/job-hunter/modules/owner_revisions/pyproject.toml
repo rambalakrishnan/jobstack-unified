@@ -1,0 +1,17 @@
+[project]
+name = "owner_revisions"
+version = "0.1.0"
+description = "Module implementing owner_revisions at tier 4"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["owner_revisions"]
+package-dir = {"owner_revisions" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

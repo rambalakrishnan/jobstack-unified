@@ -1,0 +1,17 @@
+[project]
+name = "query_policy"
+version = "0.1.0"
+description = "Module implementing query_policy at tier 4"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["query_policy"]
+package-dir = {"query_policy" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,17 @@
+[project]
+name = "model_gateway"
+version = "0.1.0"
+description = "Module implementing model_gateway at tier 4"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["model_gateway"]
+package-dir = {"model_gateway" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

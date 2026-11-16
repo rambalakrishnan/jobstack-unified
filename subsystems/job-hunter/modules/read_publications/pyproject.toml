@@ -1,0 +1,17 @@
+[project]
+name = "read_publications"
+version = "0.1.0"
+description = "Module implementing read_publications at tier 4"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["read_publications"]
+package-dir = {"read_publications" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
