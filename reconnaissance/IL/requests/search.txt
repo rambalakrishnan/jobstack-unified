@@ -1,0 +1,18 @@
+# IL search request (verbatim shape from il/scripts/t1_dummy_cookie.py)
+# Evidence: il/samples/t1c_html_pp50_*.html (200, 50 cards), t1c_control_*.txt
+method: GET
+url: https://ijl.illinois.gov/search/jobs?per_page=50
+http_version: 1.1 (HTTP/2 untested; httpx ran http2=False)
+follow_redirects: false
+timeout_s: 25
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36
+  Accept: text/html
+cookies:
+  _session_id: "00000000000000000000000000000000"  # any 32-hex value works; server may rotate via Set-Cookie
+params:
+  per_page: 50          # 10/20/50 honored; 100 clamps to 50
+  page: 1               # 1-based
+notes:
+  - foo=bar cookie control still returns 202 (il/samples/t1c_control_*.txt)
+  - JSON variant: same URL + Accept: application/json, fixed 10/page (il/scripts/t1_params_probe.py json_variant)

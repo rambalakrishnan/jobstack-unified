@@ -1,0 +1,18 @@
+# MN search request (verbatim shape from mn/scripts/probe_filters.py)
+# Evidence: mn/samples/t0_feed_page0_20261026T191021Z.html (200, 167,768 b, 10 cards, "Showing 500 jobs")
+method: GET
+url: https://careerforce.mn.gov/job-search
+http_version: 2 (negotiated; httpx default)
+follow_redirects: true
+timeout_s: 25
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+  Accept: text/html,application/xhtml+xml
+cookies: none required (ALB jar optional; keep one per crawl for sticky-target consistency)
+params:
+  page: 0               # 0-indexed; verified 0..999; 1000+ -> 200 empty state
+  sort: date-posted-desc  # best-match (default) | date-posted-desc | job-title-asc | company-asc
+notes:
+  - Bare curl UA -> 403 + 118 b; truncated UA -> 403 + 520 b (mn/samples/t0_403_limitparam_20261026T200500Z.html); full UA always 200
+  - "Showing 500 jobs" is cosmetic min(true_count, 500); never a total
+  - No JSON representation exists on this route

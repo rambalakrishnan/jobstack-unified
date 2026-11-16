@@ -1,0 +1,12 @@
+# MN detail request (verbatim shape from mn/scripts/probe_order_detail.py detail probe)
+# Evidence: mn/samples/t0_detail_8eb1059c476c4ed5b62d5dd0dfd5198c8003_20261026T192000Z.html (75,931 b, 200, "Showing 1 jobs")
+method: GET
+url: https://careerforce.mn.gov/job-search?jvid={jvid}   # e.g. ?jvid=8eb1059c476c4ed5b62d5dd0dfd5198c8003 (36 chars: 32 hex + 8003)
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+  Accept: text/html,application/xhtml+xml
+cookies: none required
+notes:
+  - Detail is the SAME route in single-job mode: one card, div.job-description__full, no pager
+  - Adds no structured fields (no salary/type/category elements); prose-only enrichment
+  - 1 request per job; enrich only the delta set or lazily (mn/REPORT.md §Module Design Notes)

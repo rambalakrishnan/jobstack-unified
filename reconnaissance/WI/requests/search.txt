@@ -1,0 +1,19 @@
+# WI search request (verbatim shape from wi/scripts/14_minimal_qs.py)
+# Evidence: wi/samples/t0_page1_verified_20261026T191741Z.html (200, 82,231 B, 20 rows, "500+ Jobs Found. (525+ openings)"),
+# wi/samples/t0_minimal_qs_20261026T191741Z.json (no-QS / ?kwords= / full-QS all 200 + 20 rows + grid)
+method: GET
+url: https://jobcenterofwisconsin.com/Presentation/JobSeekers/JobOrderList.aspx
+http_version: 1.1 (negotiated by httpx; no HTTP/2 requirement observed)
+follow_redirects: true
+timeout_s: 30
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+  Accept: text/html,*/*;q=0.8
+  Accept-Language: en-US,en;q=0.9
+cookies: none (server sets only BIGipServer F5 persistence; client need store nothing)
+params: none required — bare URL returns unfiltered page 1 (81,847 B); canonical full query string returns the same 20 job IDs (82,231 B)
+canonical_query: ?kwords=&onet=&loctyp=&loc=&dist=&city=&edu=&shft=&ww=&wd=&tbsel=N&STCode=&src=JCW,PARTNERS&MOSCode=&Appr=False&VetsReadyEmployer=
+notes:
+  - Response: text/html; charset=utf-8, cache-control: private, x-aspnet-version: 4.0.30319 (wi/samples/t0_page1_verified_*.headers.txt)
+  - 1.5-2 s spacing used throughout recon; one 3.6 s response observed (jitter, not throttling)
+  - Paging is NOT a query param (no page=/start= anywhere); see pagination.md for the postback chain

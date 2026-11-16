@@ -1,0 +1,152 @@
+# OR-A adapter declaration (§13.A shape per seam §21.1 field groups).
+# NOTE: no Rust loader consumes this file yet (adapters are config artifacts +
+# the four extensions per §21.1; no per-state loader module exists in
+# subsystems/crawler/modules). Values below are recon-evidenced for Phase 5.
+# Every field: `# from:` cite or `null # [uncertain: ...]`.
+# PROHIBITION: the site's contact-unlock write is documented ONLY as prohibition
+# evidence in reconnaissance/OR/README.md. It MUST NOT appear here as an operation —
+# no such method/path/params exist in this file. Phase 5 must test it is never called.
+# POLICY: robots Disallow:/ + CFAA block-page language — prohibited by policy
+# (or/REPORT.md §Transport, SYNTHESIS.md §4). Gate behind OED agreement.
+
+identity_axes:
+  adapter_id: OR-A  # from: Phase 4 target naming (OR-A; single OR feed or/REPORT.md https://secure.emp.state.or.us/jobs/index.cfm)
+  adapter_version: null  # [uncertain: no version in recon]
+  target: OR-A  # from: or/REPORT.md (single feed https://secure.emp.state.or.us/jobs/index.cfm)
+  phase_slots: [A, B]  # from: or/REPORT.md §Enumeration Strategy (list walk + detail fetch loop)
+  bootstrap_requirement: browser_challenge_clear  # from: or/scripts/t4_uaoverride_probe.py (PASSED) + or/scripts/t2_bootstrap_and_replay.py
+  session_requirement: live_rotating_jar  # from: or/scripts/t1_session_crawl.py (stateful client; snapshots die)
+  truncation_model: hard_cap_1000_banner  # from: or/samples/paging_20261026T192128Z/B_sales_start1001.body (Reached limit banner)
+  ordering_model: Deterministic  # from: or/samples/total_20261026T192247Z/all_locations.body (ord-ascending 2845592→4597628)
+  state_mutation_surface: prohibited_site_write  # from: reconnaissance/OR/README.md prohibition evidence (crawl path is GET-only; the contact-unlock write must never be called)
+  request_estimate_per_crawl: 27000  # from: or/REPORT.md §Enumeration Strategy (~27,000: 26,699 details + ~150–400 lists)
+  byte_estimate_per_crawl: 1000000000  # from: or/REPORT.md §Enumeration Strategy (~1 GB: ~780 MB details + 0.3–0.6 GB lists; approximate)
+  phase_a_sufficient: false  # from: or/REPORT.md §Response Schema (description + full fields only on detail; listing carries headlines)
+  phase_b_value: full_description_plus_16_labels  # from: or/samples/detail_20261026T192030Z/02_detail_4594067.body (Job Summary + label set; employer contact excluded as prohibited)
+  classification_surface: [coldfusion_html, f5_volt_adc_challenge, rotating_jar]  # from: or/REPORT.md §Platform & Stack + §Transport
+
+transport:
+  bootstrap_mode: headless_chromium_ua_ch_override  # from: or/scripts/t4_uaoverride_probe.py (CDP Emulation.setUserAgentOverride)
+  pagination_mode: partition_only_no_offset  # from: or/scripts/t1_paging_probe.py (start is a no-op; split loc×cat instead)
+  endpoints:  # from: or/REPORT.md §Request Contract
+    - {method: GET, path: /jobs/index.cfm, purpose: search_home, params: []}
+    - {method: GET, path: /jobs/index.cfm, purpose: list_html, params: [location_content, cat, keytype, keyword, loc, calling_pg, showcounts, system, type, lang]}
+    - {method: GET, path: /jobs/index.cfm, purpose: detail_html, params: [location_content, ord, system, type, lang]}
+    - {method: GET, path: /jobs/index.cfm, purpose: advanced_form, params: [location_content, system]}
+    - {method: GET, path: /robots.txt, purpose: policy}
+  endpoint_transport_overrides: null  # [uncertain: single transport observed for all endpoints]
+  profile_ref: null  # [uncertain: no named profile in recon]
+  response_schema_ref: reconnaissance/OR/extraction.json  # from: Phase 3.5 extraction
+  render_readiness_predicates: ["status == 200", "tbl_jobSearch present or Job Listing ID present"]  # from: or/scripts/t2_bootstrap_and_replay.py (kind classification by body markers)
+  session_lapse_predicates: ["body contains Uint8Array (challenge)", "body starts with 'Please advise your users' (WAF block)"]  # from: or/REPORT.md §Module Design Notes failure modes
+  nav_timeout_ms: 30000  # from: or/REPORT.md §Request Contract (verified httpx request, timeout=30)
+  nav_max_iter: null  # [uncertain: not measured]
+  bootstrap_timeout_ms: null  # [uncertain: bootstrap observed ≈8–10 s (or/REPORT.md §Module Design Notes); no timeout threshold evidenced]
+  bootstrap_retry_limit: null  # [uncertain: re-bootstrap on challenge/block body evidenced; no retry limit measured]
+  solver_names: []  # [uncertain: [INCOMPLETE: §4.OR-solver] stays open — UA-CH bootstrap observed passing, no solver designed here; see reconnaissance/OR/README.md]
+  other_mechanism: null  # [uncertain: none observed]
+  unsolvable_policy: rebootstrap_with_fresh_ua_ch  # from: or/REPORT.md §Module Design Notes (re-bootstrap on challenge; back off + fresh UA/CH on block)
+  max_response_bytes: 1700858  # from: or/samples/total_20261026T192247Z/all_locations.json (largest observed page)
+  io_buffer_bytes: null  # [uncertain: deployment declaration]
+  max_rows_per_response: 1373  # from: or/samples/feed_20261026T191839Z/c2_home_sales.body (1000 query + 373 statewide rows)
+
+sessions:
+  shard_topology: per_shard  # from: or/REPORT.md §Enumeration Strategy (N bootstraps → N sessions, 3–4 safe; never thread one jar)
+  shard_count: null  # [uncertain: workers are independent jars, no keyed-shard count evidenced]
+  worker_count: 4  # from: or/REPORT.md §Module Design Notes (3–4 independent bootstrap+client pairs)
+  max_inflight_per_session: 1  # from: seam §18 stateful-session rule; recon used sequential probes
+  initial_bootstrap_cost_class: browser_pass  # from: or/REPORT.md §Module Design Notes (≈8–10 s + ~10 asset requests per bootstrap)
+  absolute_lifetime: null  # [uncertain: CFID/CFTOKEN expire +1 day (upper bound, or/samples/session_20261026T191747Z/00_cookies.json); live chain limit unmeasured — 6 requests observed]
+  idle_lifetime: null  # [uncertain: not measured]
+  rebootstrap_buffer: null  # [uncertain: not measured]
+  keepalive_request: null  # from: or/REPORT.md (no keepalive; re-bootstrap on challenge/block body)
+  handoff_max_age_seconds: null  # [uncertain: no handoff observed]
+  engine_session_domain: secure.emp.state.or.us  # from: or/samples/session_20261026T191747Z/00_cookies.json (cookie domain)
+  control_reserve_slots: null  # [uncertain: deployment declaration]
+  saturation_grace: null  # [uncertain: no throttling observed to calibrate]
+  resume_watermark: max_ord  # from: or/REPORT.md §Enumeration Strategy (persist max(ord); skip ord <= max_seen)
+  worker_detection_bounds: null  # [uncertain: deployment declaration]
+  worker_restart_bounds: null  # [uncertain: deployment declaration]
+
+warmth:
+  warm_pool_size: 0  # from: seam §18 (HttpClient, warm pool zero)
+  preconnect: true  # from: seam §18 (preconnect enabled)
+  preconnect_origins: ["https://secure.emp.state.or.us"]  # from: recon (single app host; asset hosts unneeded for crawl)
+  max_connections_per_slot: null  # [uncertain: deployment declaration]
+  connection_idle_timeout: null  # [uncertain: not measured]
+  page_reset_timeout: null  # [uncertain: not measured]
+
+coverage:
+  partition_keys: [loc, cat]  # from: or/REPORT.md §Enumeration Strategy (single loc → loc×cat on Reached limit)
+  domain_extractor: adv_form_option_lists  # from: or/samples/bootstrap_20261026T191507Z_explore/adv.body (#location1 62 options / 54 codes, #occupationalGroup 36)
+  split_limit: null  # [uncertain: 2-level ladder proposed but loc×cat splits never executed; only single-dimension queries measured]
+  total_source: reached_limit_banner  # from: or/samples/total_20261026T192247Z/all_locations.body (Reached limit: 1000 of 26699)
+  total_extractor: banner_regex_Reached_limit_N  # from: or/samples/total_20261026T192247Z/all_locations.body (N in <strong> after 'of')
+  total_unit: matches_exact_in_banner  # from: or/samples/total_20261026T192247Z/all_locations.json (N=26699 is the true match count)
+  floor_flag: false  # from: or/samples/total_20261026T192247Z/all_locations.body (banner N is exact, not a floor)
+  session_minimum: null  # [uncertain: single-session evidence only]
+  row_cap: 1000  # from: or/samples/feed_20261026T191839Z/c2_home_sales.body (1000 query rows + 373 statewide)
+  page_size: 1000  # from: or/REPORT.md §Feed Discovery (1000 query rows + 373 statewide per response)
+  saturation_patterns: ["Reached limit banner present", "query row count == 1000"]  # from: or/REPORT.md §Enumeration Strategy (split signal + belt-and-braces count)
+  tail_threshold: 1000  # from: recon (cap edge)
+  noop_threshold: null  # [uncertain: start-param no-op evidenced (or/samples/paging_20261026T192128Z/B_sales_start1001.body); no numeric threshold applies]
+  overflow_banners: ["Reached limit: 1000 of {N} Jobs matching"]  # from: or/samples/total_20261026T192247Z/all_locations.body
+  posted_date_extractor: td_posted_span_hide_YYYYMMDD  # from: or/REPORT.md §Response Schema (td:nth-child(4) span.hide)
+  coverage_capability: partially_proven_partition_walk  # from: or/REPORT.md (loc csv + cat singles measured; loc×cat splits proposed, never executed)
+
+ordering_dedup:
+  cursor_kind: none_partition_walk  # from: or/REPORT.md §Feed Discovery (no offset/continuation exists; start is a no-op)
+  cursor_status: not_applicable  # from: recon (no cursor exists; partitions are keyed, not positional)
+  coverage_scope: per_run  # from: seam §17.5
+  duplicate_baseline: statewide_373_rows_per_list_page  # from: or/data/probe.sqlite listing_row (373 statewide rows in all four captures)
+  overfetch_factors: null  # [uncertain: not measured beyond the 373-row statewide re-fetch]
+  reconciliation_limit: null  # [uncertain: deployment declaration]
+  dedupe_location: ord  # from: or/REPORT.md §Enumeration Strategy (dedupe by ord)
+  reset_policy: null  # [uncertain: not evidenced]
+  excluded_headers: null  # [uncertain: none observed]
+  representation_headers: []  # from: recon (HTML only; no Accept-driven representation switch observed)
+  volatile_selectors: []  # from: recon (stable ColdFusion table/label DOM observed; none flagged volatile)
+  replay_capture_mode: live_rotating_jar  # from: or/scripts/t1_session_crawl.py
+
+slm:
+  shadow_mode: null  # [uncertain: no SLM in recon]
+  shadow_revision: null  # [uncertain: no SLM in recon]
+  bypass: null  # [uncertain: no SLM in recon]
+  model: null  # [uncertain: no SLM in recon]
+  version: null  # [uncertain: no SLM in recon]
+  artifact: null  # [uncertain: no SLM in recon]
+  digests: null  # [uncertain: no SLM in recon]
+  parameters: null  # [uncertain: no SLM in recon]
+  quantization: null  # [uncertain: no SLM in recon]
+  input_token_limit: null  # [uncertain: no SLM in recon]
+  batch_token_limit: null  # [uncertain: no SLM in recon]
+  item_limit: null  # [uncertain: no SLM in recon]
+  inference_timeout: null  # [uncertain: no SLM in recon]
+  batch_dwell: null  # [uncertain: no SLM in recon]
+  result_ttl: null  # [uncertain: no SLM in recon]
+  load_timeout: null  # [uncertain: no SLM in recon]
+  isolation_reservation: null  # [uncertain: no SLM in recon]
+
+queue_storage:
+  lease_ttl: null  # [uncertain: deployment declaration]
+  lease_overrides: null  # [uncertain: deployment declaration]
+  retry_limit: null  # [uncertain: no retry count evidenced; bad partitions must not be retried (or/REPORT.md §Module Design Notes)]
+  retry_overrides: null  # [uncertain: deployment declaration]
+  sweeper_interval: null  # [uncertain: deployment declaration]
+  row_capacity: 26699  # from: or/samples/total_20261026T192247Z/all_locations.json (corpus size at capture; drifts live)
+  byte_capacity: null  # [uncertain: ~1 GB/crawl observed (or/REPORT.md); no capacity declared]
+  staging_budget: null  # [uncertain: deployment declaration]
+  transaction_microbatch_limit: null  # [uncertain: deployment declaration]
+  projection_lag_target: null  # [uncertain: deployment declaration]
+  publication_metadata_bound: null  # [uncertain: deployment declaration]
+
+memory_content_telemetry:
+  memory_targets: null  # [uncertain: deployment declaration (crawler defaults 200MB)]
+  overshoot_percent: null  # [uncertain: deployment declaration]
+  overshoot_amount: null  # [uncertain: deployment declaration]
+  overshoot_justification: null  # [uncertain: deployment declaration]
+  content_declarations: null  # [uncertain: no extractor declaration exists; shape in reconnaissance/OR/extraction.json]
+  failure_extensions: [challenge_js, waf_block_notice, no_criteria_error, reached_limit_truncation]  # from: or/REPORT.md §Module Design Notes failure modes
+  sink_threshold: null  # [uncertain: deployment declaration]
+  telemetry_record_bound: null  # [uncertain: deployment declaration]
+  diagnostic_byte_bound: null  # [uncertain: deployment declaration]

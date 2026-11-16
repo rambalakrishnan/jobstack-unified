@@ -1,0 +1,41 @@
+# OR search request (verbatim shape from or/scripts/t1_paging_probe.py, request A)
+# Evidence: or/samples/paging_20261026T192128Z/A_multi_loc_008_019.body (200, 1,255,301 B,
+#   654 query + 373 statewide rows, no truncation) + .json (params/final_url/n_rows)
+method: GET
+url: https://secure.emp.state.or.us/jobs/index.cfm?cat=00&keytype=Both&calling_pg=search_home&location_content=joblist.cfm&showcounts=Y&system=new&type=N&lang=E&keyword=&loc=008%2C019&start=1
+http_version: 1.1 (edge speaks HTTP/2; crawl ran entirely over 1.1 — or/REPORT.md §Transport)
+follow_redirects: true
+timeout_s: 30
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36
+  sec-ch-ua: '"Google Chrome";v="151", "Chromium";v="151", "Not=A?Brand";v="99"'
+  sec-ch-ua-mobile: '?0'
+  sec-ch-ua-platform: '"Linux"'
+  Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+  Accept-Language: en-US,en;q=0.9
+  Upgrade-Insecure-Requests: 1
+cookies:
+  CFID: <live jar>          # 6 chars, HttpOnly Secure Lax, +1 day
+  CFTOKEN: <live jar>       # 52 chars, HttpOnly Secure Lax, +1 day
+  TS01dc4fc6: <live jar>    # 106 chars, HttpOnly Secure Strict, session
+  Lyp1CWKh: <live jar>      # 88 chars, volt-adc, ~1 yr
+  OClmoOot: <live jar>      # 481 chars, volt-adc, ROTATED ON EVERY RESPONSE
+  # Jar MUST be a live rotating jar in one stateful client (or/scripts/t1_session_crawl.py);
+  # a frozen snapshot dies after ~3 requests (or/samples/bootstrap_*_explore/kw_a*.body).
+  # Full values: or/samples/session_20261026T191747Z/00_cookies.json (expired — shape ref only)
+params:
+  cat: 00                              # Any group; rejected alone — paired with loc here
+  keytype: Both                        # Title|Description|Both
+  keyword: ""                          # may be empty when loc carries the criteria
+  loc: 008,019                         # csv of 3-digit codes; comma syntax proven (654 = 281+373)
+  calling_pg: search_home
+  location_content: joblist.cfm
+  showcounts: Y
+  system: new                          # new|WIOA; only new used for listings [uncertain: universe diff]
+  type: N
+  lang: E
+  start: 1                             # IGNORED by server; present in form echo only — never paginate
+notes:
+  - Response: table#tbl_jobSearch (654 rows, ord-ascending) + table#tbl_jobSearch2 (373 statewide)
+  - Judge by body, not status: 244-250 KB = challenge, 1,581 B = WAF block, 15-30 KB+ = app
+  - UA MUST match sec-ch-ua (HeadlessChrome leak => block notice; or/samples/t4_*.json)

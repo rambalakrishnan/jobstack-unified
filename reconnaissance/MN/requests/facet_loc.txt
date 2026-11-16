@@ -1,0 +1,12 @@
+# MN loc-facet request (verbatim shape from mn/scripts/probe_slice_cap.py)
+# Evidence: mn/samples/t0_mpls_p0_datedesc_20261026T194000Z.html (200, 140,158 b), t0_mpls_p711 (4 cards), t0_mpls_p712 (0 cards)
+method: GET
+url: https://careerforce.mn.gov/job-search?loc=Minneapolis~D~%20MN&sort=date-posted-desc&page=0
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+cookies: none required (same stateless rule as search)
+notes:
+  - loc value is the facet <option value> byte-for-byte (~D~ = comma); spaces %-escaped (mn/REPORT.md §Request Contract)
+  - AND-composition proven: loc=Woodbury + company=Walmart -> "Showing 31 jobs", all Walmart (mn/samples/t0_compose_woodbury_walmart_20261026T195800Z.html)
+  - Minneapolis slice = 7,114 rows (p711 last, p712 empty): the 10,000 ceiling is per-query, so every city slice is fully enumerable
+  - Facet lists truncate at top 500: union a company tail pass for coverage (residual gap UNKNOWN)

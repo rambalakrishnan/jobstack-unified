@@ -1,0 +1,40 @@
+# OR location-facet request (verbatim shape from or/scripts/t1_detail_probe.py, Q1)
+# Evidence: or/samples/detail_20261026T192030Z/01_loc008.body (200, 793,462 B,
+#   loc=008 Albany: 281 query + 373 statewide rows, cap not hit) + 01_loc008.json
+method: GET
+url: https://secure.emp.state.or.us/jobs/index.cfm?cat=00&keytype=Both&keyword=&loc=008&calling_pg=search_home&location_content=joblist.cfm&showcounts=Y&system=new&type=N&lang=E&start=1
+http_version: 1.1
+follow_redirects: true
+timeout_s: 30
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36
+  sec-ch-ua: '"Google Chrome";v="151", "Chromium";v="151", "Not=A?Brand";v="99"'
+  sec-ch-ua-mobile: '?0'
+  sec-ch-ua-platform: '"Linux"'
+  Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+  Accept-Language: en-US,en;q=0.9
+  Upgrade-Insecure-Requests: 1
+cookies:
+  <same live 5-cookie rotating jar as search.txt>   # CFID/CFTOKEN/TS01dc4fc6/Lyp1CWKh/OClmoOot
+params:
+  cat: 00
+  keytype: Both
+  keyword: ""
+  loc: 008                            # single 3-digit location code (Albany); csv also accepted
+  location_content: joblist.cfm
+  showcounts: Y
+  system: new
+  type: N
+  lang: E
+  start: 1                            # IGNORED — never paginate
+notes:
+  - Location vocabulary: 62 <OPTION>s in #location1 (adv form), 54 distinct codes once
+    placeholders/regionals expand; occupational: 36 options in #occupationalGroup (name=cat,
+    00 = Any). Source: or/samples/bootstrap_20261026T191507Z_explore/adv.body
+  - Regional options carry comma lists (e.g. Central Oregon =
+    '011,012,020,023,024,043,044,048') — that syntax is what proves loc accepts csv
+  - Partition ladder: single loc first; if 'Reached limit:' appears, split loc x cat
+    (36 occupational groups). See pagination.md
+  - Every facet page re-appends the same 373 statewide rows (#tbl_jobSearch2) — dedupe by ord
+  - Loc codes are zones, not strict cities: loc=008 returns 262 Albany rows plus
+    Jefferson/Tangent/Millersburg/Scio (281 total) — verified in the fixture capture

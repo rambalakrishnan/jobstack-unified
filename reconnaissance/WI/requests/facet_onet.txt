@@ -1,0 +1,17 @@
+# WI onet-facet request (verbatim shape from wi/scripts/05_partition_probe.py occarea_29 variant + wi/scripts/06_qs_filter_test.py)
+# Evidence: wi/samples/t1_part_occarea_29_healthcare_20261026T191156Z.html (85,226 B, 20 rows, "500+ Jobs Found. (512+ openings)"),
+# wi/samples/t1_partitions_20261026T191156Z.json (emitted URL + count per variant),
+# wi/samples/t1_qsfilter_20261026T191241Z.json (onet=45 -> "101 Jobs Found. (372 openings)", direct GET, no POST/cookies)
+method: GET
+url: https://jobcenterofwisconsin.com/Presentation/JobSeekers/JobOrderList.aspx?kwords=&onet=29&loctyp=&loc=&dist=&city=&edu=&shft=&ww=&wd=&tbsel=N&STCode=&src=JCW,PARTNERS&MOSCode=&Appr=False&VetsReadyEmployer=
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+  Accept: text/html,*/*;q=0.8
+  Accept-Language: en-US,en;q=0.9
+cookies: none (filter is honored on a direct cookie-less GET; no postback round-trip needed)
+notes:
+  - onet = SOC major group from DropDownList_OccupationalArea: 11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49,51,53,55 (wi/samples/t1_form_inventory_*)
+  - This sample (onet=29 healthcare) is still capped at 500+; onet=45 (farming) narrows to 101 jobs / 6 pager links — the under-cap proof (wi/samples/t1_qsfilter_*)
+  - AND-combination proven per-axis: onet=29&wd=2 -> 52 jobs (wi/samples/t1_onet29_wd2_check.html); onet=53&loctyp=Home -> System-Error-like short page 42,334 B with no grid (wi/samples/t1_qsfilter_*, onet53_home case) — narrow partitions can also break the grid, content-check every response
+  - Bogus onet=99 does NOT error: returns 477 jobs (wi/samples/t1_qsfilter_*) — the server ignores unknown codes silently
+  - SOC filtering is per-order and orders carry multiple SOC codes, so onet partitions overlap: dedupe mandatory (wi/REPORT.md §Enumeration.6)

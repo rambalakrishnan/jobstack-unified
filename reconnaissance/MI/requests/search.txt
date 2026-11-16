@@ -1,0 +1,53 @@
+# MI search request sequence (verbatim shape from mi/scripts/probe_t1_replay.py)
+# Evidence: mi/samples/t1replay_log_20261026T1920Z.txt (all 200/302),
+# mi/samples/t1replay_post_page1_20261026T1920Z.txt (exact 40-line body on disk),
+# mi/samples/t1replay_results_page1_20261026T1920Z.html (179,485 B, 25 cards, total 61152)
+
+# ---- R1: prime (obtain ASP.NET_SessionId + __VIEWSTATE; 41-field form) ----
+step_1:
+  method: GET
+  url: https://jobs.mitalent.org/job-search/
+  http_version: 1.1 (httpx ran http2=False; curl HTTP/2 also 200)
+  follow_redirects: false
+  timeout_s: 30
+  headers:
+    User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+  cookies_sent: none (first request works cookieless)
+  response: 200, 125,989 B, text/html; sets ASP.NET_SessionId + BIGipServer~TED~... + __cf_bm
+  parse: hidden_fields() in mi/scripts/probe_t1_replay.py — every <input> name/value in
+    document order (skip submit/button/image; unchecked checkboxes dropped) + every <select>
+    name/selected-or-first <option> value. __VIEWSTATE len=6280, __VIEWSTATEGENERATOR len=8.
+
+# ---- R2: execute search (unfiltered = whole feed) ----
+step_2:
+  method: POST
+  url: https://jobs.mitalent.org/job-search/   # form action="./"
+  encoding: application/x-www-form-urlencoded
+  headers:
+    Content-Type: application/x-www-form-urlencoded
+    Referer: https://jobs.mitalent.org/job-search/
+    Origin: https://jobs.mitalent.org
+  cookies: full jar from R1 (ASP.NET_SessionId required; F5/__cf_bm carried, necessity unisolated)
+  body: all R1 fields verbatim, plus overrides:
+    ctl00$ctl00$MainContent$MainContentSub$job_keywords: ""        # empty = no keyword filter
+    ctl00$ctl00$MainContent$MainContentSub$submitBtn2: "Search"
+    # defaults observed in the winning body: job_time_range=30, job_radius=0,
+    # job_rate_time=Hourly, PayRange$ddlPayRangeCategories=0, UcONetOccp$Occupations=radmil (!)
+    # NOTE: __RequestVerificationToken is NOT sent (issued as cookie, never required back)
+  response: 302, Location: /job-seeker/jobsearch-results/ (~126 KB stub body)
+
+# ---- R3: read page 1 ----
+step_3:
+  method: GET
+  url: https://jobs.mitalent.org/job-seeker/jobsearch-results/   # trailing slash required
+  params: none — query strings ignored; criteria live server-side in the session
+  cookies: same jar
+  response: 200, 174-183 KB text/html; 25 cards + <p id="txtJobCount"> + pager + fresh __VIEWSTATE
+
+notes:
+  - spacing: 1.5 s sleeps between steps in all mi/scripts/probe_*.py; no throttling observed
+  - fresh-session GET of the results URL without R2 → 302 to /job-search/ (probes 6-7 in the log)
+  - UcONetOccp$Occupations=radmil is a verbatim default from the served form, not a user filter
+    (mi/samples/t1replay_post_page1_20261026T1920Z.txt)

@@ -1,0 +1,28 @@
+# MI facet analog (MI HAS NO facet/count endpoint — narrowing happens in the R2 search form)
+# Evidence: mi/REPORT.md §Request Contract (filter table), mi/samples/t0_index_20261026T190805Z.html
+# (form <option> lists), mi/scripts/probe_pagesize.py + mi/samples/t1replay_pagesize_top100_20261026T1935Z.html
+# (the captured variant-postback, kept as responses/facet_sample.html + fixtures/MI/facet.html)
+
+# There is no /facets, /counts, or sidebar-count JSON/HTML anywhere in recon: the t3 netlog
+# (mi/samples/t3_netlog_20261026T191204Z.jsonl) shows zero data XHRs, and the results grid carries
+# only the single total <p id="txtJobCount">. To narrow a crawl you re-run R2 with filter fields
+# (see endpoints.md "R2 filter fields"); the production hook is job_time_range ∈ {1,7,14,30} days
+# (posted-within; UNEXERCISED — [uncertain: posted-vs-modified semantics untested]).
+
+# ---- Closest captured analog: a results-page variant postback (PageSize probe) ----
+method: POST
+url: https://jobs.mitalent.org/job-seeker/jobsearch-results/
+encoding: application/x-www-form-urlencoded
+headers:
+  Referer: https://jobs.mitalent.org/job-seeker/jobsearch-results/
+  Origin: https://jobs.mitalent.org
+cookies: same session jar as the R3 response the hidden fields came from
+body: every hidden field from the previous results response, plus overrides:
+  __EVENTTARGET: "ctl00$MainContent$PageSizeTop"
+  __EVENTARGUMENT: ""
+  ctl00$MainContent$PageSizeTop: "100"
+response: 200, 179,731 B, 25 cards (cap proven — 50/100 ignored), total 61151
+notes:
+  - sort postback (ctl00$MainContent$PageSortTop ∈ Posted/Title/OrgName/City) is the same shape
+    but was NOT exercised ([uncertain: sort stability effect unknown]).
+  - a time_range-filtered R2 would be the true "facet" (partition key) — no sample captured it.

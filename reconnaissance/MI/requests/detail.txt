@@ -1,0 +1,28 @@
+# MI detail request (reconstructed from samples — NO fetching script exists in mi/scripts/)
+# Evidence: mi/samples/detail_mi_httpx_41456902{1,2,4}_20261026T195917Z.html (~150 KB full pages),
+# mi/samples/detail_mi_net_20261026T195729Z.json (browser GET .../JobCode/389043045 → 200),
+# mi/samples/detail_mi_one_20261026T195230Z.html (4,553 B Cloudflare "Sorry, you have been blocked"),
+# mi/samples/fresh_results_20261026T195827Z.html (19:58Z page 1 whose first codes are 414569021/22/24 —
+#   the exact codes fetched at 19:59Z, i.e. same-session cookie-bootstrapped details)
+method: GET
+url: https://jobs.mitalent.org/job-seeker/job-details/JobCode/{job_code}   # e.g. .../JobCode/414569021
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+  Accept: text/html,*/*;q=0.8
+  Accept-Language: en-US,en;q=0.9
+  Referer: https://jobs.mitalent.org/job-seeker/jobsearch-results/
+cookies: primed jar REQUIRED (ASP.NET_SessionId + F5 + __cf_bm from a prior R1/R2/R3 sequence)
+  # [uncertain: exact minimal cookie set unmeasured — no script isolates it; bare attempts
+  #  correlate with the Cloudflare block page and 3.1 KB head-only DOM dumps
+  #  (mi/samples/detail_mi_{browser,settled,fresh,net}_*.html — </head></html>, no body)]
+response: 200, ~150-155 KB text/html (WebForms page, carries its own __VIEWSTATE)
+title_shape: "Job Opportunity:  {title}  at  {employer} in {city}, {ST} {zip} - Job Code: {id}"
+  # e.g. "Job Opportunity:  ASST STORE MGR in DRYDEN MI S16670  at  DRYDEN MI S16670
+  #        at Direct Employers in Dryden, MI 48428 - Job Code: 414569021"
+notes:
+  - ROBOTS: Disallow: /job-seeker/job-details/ ("Added to block bots from crawling the job
+    details", mi/samples/t0_robots_20261026.txt). mi/REPORT.md claims details were never
+    fetched; the detail_mi_* captures (19:52-19:59Z) postdate that claim. Confirm with counsel
+    before shipping detail fetches.
+  - detail_mi_net_*.html (3,150 B) is head-only; its .json companion records the browser 200.
+  - field selectors: see reconnaissance/MI/extraction.json "detail_page".

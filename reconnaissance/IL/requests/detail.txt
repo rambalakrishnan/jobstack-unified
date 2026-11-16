@@ -1,0 +1,11 @@
+# IL detail request (verbatim shape from il/scripts/t1_params_probe.py detail_job probe)
+# Evidence: il/samples/p1_detail_job_*.html (22,890 B, 200, no cookie sent)
+method: GET
+url: https://ijl.illinois.gov/jobs/{id}   # e.g. /jobs/13816272
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36
+  Accept-Language: en-US,en;q=0.9
+cookies: none required (endpoint not WAF-challenged)
+notes:
+  - Accept: application/json on this path returns 406 (il/samples/p2_json_detail_*.bin, 0 bytes)
+  - Response is server-rendered HTML; full description identical to JSON description field

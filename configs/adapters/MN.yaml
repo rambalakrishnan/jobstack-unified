@@ -1,0 +1,145 @@
+# MN-A adapter declaration (§13.A shape per seam §21.1 field groups).
+# NOTE: no Rust loader consumes this file yet (adapters are config artifacts +
+# the four extensions per §21.1; no per-state loader module exists in
+# subsystems/crawler/modules). Values below are recon-evidenced for Phase 5.
+# Every field: `# from:` cite or `null # [uncertain: ...]`.
+
+identity_axes:
+  adapter_id: MN-A  # from: seam §17.5 target allocations (MN-A/MN-B)
+  adapter_version: null  # [uncertain: no version in recon]
+  target: MN-A  # from: mn/REPORT.md (single feed https://careerforce.mn.gov/job-search)
+  phase_slots: [A, B]  # from: mn/REPORT.md §Module Design Notes (list sweep + detail enrichment)
+  bootstrap_requirement: none_stateless  # from: mn/REPORT.md §Transport (cookie-less first request returns full content)
+  session_requirement: optional_cookie_jar  # from: mn/REPORT.md §Transport (ALB jar for sticky consistency only)
+  truncation_model: per_query_empty_state  # from: mn/samples/t0_depth_p1000_* (byte-identical empty body past 10,000 rows)
+  ordering_model: DeterministicChurnShifted  # from: mn/REPORT.md §Feed Discovery (re-fetch identical; page-0/page-1 overlap observed)
+  state_mutation_surface: none  # from: recon (GET-only crawl path; bookmark modal out of scope)
+  request_estimate_per_crawl: 5000  # from: mn/REPORT.md §Enumeration Strategy (~4,500-5,500 incl. tail pass)
+  byte_estimate_per_crawl: 734003200  # from: mn/REPORT.md §Enumeration Strategy (~700 MB per full crawl)
+  phase_a_sufficient: true  # from: mn/REPORT.md §Response Schema (cards carry id/title/employer/city/summary/urls)
+  phase_b_value: prose_only_no_structured_fields  # from: mn/samples/t0_detail_8eb1059c_* (job-description__full; salary in prose)
+  classification_surface: [drupal_html_feed, loc_facet_partition, prose_salary]  # from: mn/REPORT.md
+
+transport:
+  bootstrap_mode: none  # from: mn/REPORT.md §Transport (stateless-per-request)
+  pagination_mode: offset_page_fixed_10  # from: mn/REPORT.md §Feed Discovery (0-indexed page, fixed size)
+  endpoints:  # from: mn/REPORT.md §Feed Discovery + §Request Contract
+    - {method: GET, path: /job-search, purpose: list_html, params: [page, loc, company, sort, title, location_text, radius]}
+    - {method: GET, path: /job-search, purpose: detail_html, params: [jvid]}
+    - {method: GET, path: /robots.txt, purpose: policy}
+  endpoint_transport_overrides: null  # [uncertain: single transport observed for all endpoints]
+  profile_ref: null  # [uncertain: no named profile in recon]
+  response_schema_ref: reconnaissance/MN/extraction.json  # from: Phase 3.5 extraction
+  render_readiness_predicates: ["status == 200", "cards_present or empty_state_body"]  # from: mn/scripts/probe_filters.py (card count + Showing-string checks)
+  session_lapse_predicates: ["status == 403", "body_bytes < 1024"]  # from: mn/REPORT.md §Module Design Notes (403 + tiny body on UA reject)
+  nav_timeout_ms: 30000  # from: mn/scripts/probe_depth.py (timeout=30 throughout)
+  nav_max_iter: null  # [uncertain: not measured]
+  bootstrap_timeout_ms: null  # [uncertain: no bootstrap exists to time]
+  bootstrap_retry_limit: 0  # from: recon (no bootstrap step; 403 handled by UA fix + backoff, not retry)
+  solver_names: []  # from: recon (no solver needed; T0 wins)
+  other_mechanism: null  # [uncertain: none observed]
+  unsolvable_policy: abort_on_403  # from: mn/REPORT.md §Module Design Notes (BlockedError on 403)
+  max_response_bytes: 169262  # from: mn/MANIFEST.md (largest observed page: t0_f_sort_date_desc_p1)
+  io_buffer_bytes: null  # [uncertain: deployment declaration]
+  max_rows_per_response: 10  # from: mn/REPORT.md (fixed page size; items_per_page ignored)
+
+sessions:
+  shard_topology: none  # from: recon (one host, stateless-per-request; crawler_sessions slot MN-A => TOPOLOGY_NONE)
+  shard_count: 1  # from: recon
+  worker_count: 3  # from: mn/REPORT.md §Module Design Notes (concurrency 2-3)
+  max_inflight_per_session: 1  # from: seam §18 stateful-session rule; recon used sequential probes
+  initial_bootstrap_cost_class: trivial  # from: recon (zero requests to bootstrap; stateless)
+  absolute_lifetime: null  # [uncertain: stateless; no session lifetime applies]
+  idle_lifetime: null  # [uncertain: not measured]
+  rebootstrap_buffer: null  # [uncertain: no bootstrap exists]
+  keepalive_request: null  # from: recon (none needed; stateless)
+  handoff_max_age_seconds: null  # [uncertain: no handoff observed]
+  engine_session_domain: careerforce.mn.gov  # from: mn/scripts/* (single app host)
+  control_reserve_slots: null  # [uncertain: deployment declaration]
+  saturation_grace: null  # [uncertain: no throttling observed to calibrate]
+  resume_watermark: jvid  # from: mn/REPORT.md §Enumeration Strategy (dedupe/keyed resume on jvid)
+  worker_detection_bounds: null  # [uncertain: deployment declaration]
+  worker_restart_bounds: null  # [uncertain: deployment declaration]
+
+warmth:
+  warm_pool_size: 0  # from: seam §18 (HttpClient, warm pool zero)
+  preconnect: true  # from: seam §18 (preconnect enabled)
+  preconnect_origins: ["https://careerforce.mn.gov"]  # from: recon (single app host; no API host exists)
+  max_connections_per_slot: null  # [uncertain: deployment declaration]
+  connection_idle_timeout: null  # [uncertain: not measured]
+  page_reset_timeout: null  # [uncertain: not measured]
+
+coverage:
+  partition_keys: [loc, company]  # from: mn/REPORT.md §Enumeration Strategy (city partition + company tail pass)
+  domain_extractor: loc_select_option_counts  # from: mn/samples/t0_feed_page0_* (select[name=loc] true counts in labels)
+  split_limit: null  # [uncertain: 2 passes demonstrated; sub-slicing beyond company unmeasured]
+  total_source: facet_option_label_sum  # from: mn/REPORT.md (city-facet sum 44,971; header label is cosmetic)
+  total_extractor: sum(select[name=loc] option count labels)  # from: mn/REPORT.md §Feed Discovery
+  total_unit: postings_lower_bound_44971  # from: mn/REPORT.md (facet sum is a lower bound; multi-city none observed)
+  floor_flag: true  # from: recon (10,000 per-query cap forces partitioning)
+  session_minimum: null  # [uncertain: single-session evidence only]
+  row_cap: 10000  # from: mn/samples/t0_unfiltered_p999_* + t0_depth_p1000_* (per-query ceiling proofs)
+  page_size: 10  # from: mn/REPORT.md (fixed; items_per_page ignored)
+  saturation_patterns: ["0 data-jvid cards AND no Showing header", "byte-identical ~63KB empty body"]  # from: mn/REPORT.md §Enumeration Strategy end detection
+  tail_threshold: 10000  # from: recon (per-query edge)
+  noop_threshold: null  # [uncertain: MN empties, no no-op signal distinct from end-of-slice]
+  overflow_banners: ["Showing 500 jobs"]  # from: mn/samples/t0_feed_page0_* (cosmetic min(true_count,500), NOT a total)
+  posted_date_extractor: first_span_starting_Posted  # from: mn/scripts/extract_probe.py (relative text only; no absolute date exists)
+  coverage_capability: proven_partitioned_walk  # from: mn/REPORT.md §Enumeration Strategy (Minneapolis 7,114 fully walked)
+
+ordering_dedup:
+  cursor_kind: positional_offset  # from: recon (page; NOT a continuation)
+  cursor_status: uncertified_churn_shifted  # from: mn/REPORT.md §Feed Discovery (page-0/page-1 overlap on live feed)
+  coverage_scope: per_run  # from: seam §17.5
+  duplicate_baseline: 0.05  # from: mn/data/probe.sqlite (1 duplicate in 20 cards across pages 0-1)
+  overfetch_factors: null  # [uncertain: not measured]
+  reconciliation_limit: null  # [uncertain: deployment declaration]
+  dedupe_location: jvid  # from: mn/REPORT.md §Enumeration Strategy
+  reset_policy: null  # [uncertain: not evidenced]
+  excluded_headers: null  # [uncertain: none observed]
+  representation_headers: []  # from: recon (HTML only; no representation switching exists)
+  volatile_selectors: []  # from: recon (stable card DOM observed; theme-coupled so pin fixture test)
+  replay_capture_mode: none_stateless  # from: recon (no session artifact to replay)
+
+slm:
+  shadow_mode: null  # [uncertain: no SLM in recon]
+  shadow_revision: null  # [uncertain: no SLM in recon]
+  bypass: null  # [uncertain: no SLM in recon]
+  model: null  # [uncertain: no SLM in recon]
+  version: null  # [uncertain: no SLM in recon]
+  artifact: null  # [uncertain: no SLM in recon]
+  digests: null  # [uncertain: no SLM in recon]
+  parameters: null  # [uncertain: no SLM in recon]
+  quantization: null  # [uncertain: no SLM in recon]
+  input_token_limit: null  # [uncertain: no SLM in recon]
+  batch_token_limit: null  # [uncertain: no SLM in recon]
+  item_limit: null  # [uncertain: no SLM in recon]
+  inference_timeout: null  # [uncertain: no SLM in recon]
+  batch_dwell: null  # [uncertain: no SLM in recon]
+  result_ttl: null  # [uncertain: no SLM in recon]
+  load_timeout: null  # [uncertain: no SLM in recon]
+  isolation_reservation: null  # [uncertain: no SLM in recon]
+
+queue_storage:
+  lease_ttl: null  # [uncertain: deployment declaration]
+  lease_overrides: null  # [uncertain: deployment declaration]
+  retry_limit: 0  # from: mn/REPORT.md §Module Design Notes (no retry-storm on 403; fix UA + back off)
+  retry_overrides: null  # [uncertain: deployment declaration]
+  sweeper_interval: null  # [uncertain: deployment declaration]
+  row_capacity: 44971  # from: mn/REPORT.md (city-facet sum lower bound at capture; drifts live)
+  byte_capacity: null  # [uncertain: 105-170KB/page observed; ~700MB/crawl estimated, no capacity declared]
+  staging_budget: null  # [uncertain: deployment declaration]
+  transaction_microbatch_limit: null  # [uncertain: deployment declaration]
+  projection_lag_target: null  # [uncertain: deployment declaration]
+  publication_metadata_bound: null  # [uncertain: deployment declaration]
+
+memory_content_telemetry:
+  memory_targets: null  # [uncertain: deployment declaration (crawler defaults 200MB)]
+  overshoot_percent: null  # [uncertain: deployment declaration]
+  overshoot_amount: null  # [uncertain: deployment declaration]
+  overshoot_justification: null  # [uncertain: deployment declaration]
+  content_declarations: [mn_extractor_v1_shape]  # from: Phase 3.5 extraction (reconnaissance/MN/extraction.json; recon has no extractor versioning)
+  failure_extensions: [ua_403, slice_truncation, offset_drift_dupes, theme_change]  # from: mn/REPORT.md §Module Design Notes failure modes
+  sink_threshold: null  # [uncertain: deployment declaration]
+  telemetry_record_bound: null  # [uncertain: deployment declaration]
+  diagnostic_byte_bound: null  # [uncertain: deployment declaration]

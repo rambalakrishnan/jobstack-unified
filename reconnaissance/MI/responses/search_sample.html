@@ -1,0 +1,2061 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head id="Head1"><meta http-equiv="Content-Security-Policy" content="script-src &#39;self&#39; &#39;unsafe-inline&#39; &#39;unsafe-eval&#39; https://*;" /><meta charset="utf-8" /><title>
+	Job Seeker - Job Search Results
+</title>
+        <!-- == Basic Page Needs  ================================================== -->
+        
+        <meta name="author" content="">
+        <!-- == Mobile Specific Metas  ================================================== -->
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- do not cache on proxy -->
+        <META HTTP-EQUIV=PRAGMA CONTENT=NO-CACHE><META HTTP-EQUIV=CACHE-CONTROL CONTENT=PRIVATE>
+
+
+        <!-- TEMP IP ADDR -->
+        
+
+        <!-- == CSS ======================================================= -->
+
+        <link href="/bundles/styles?v=SIKRitg5umrUf18BzyDq0OIY6PnR2Jx2Q32AdObKGG81" rel="stylesheet" type="text/css" />
+
+        <!-- Fonts account -->
+        
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" integrity="sha256-k2/8zcNbxVIh5mnQ52A0r3a6jAgMGxFJFE2707UxGCk=" crossorigin="anonymous">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,900&display=swap" rel="stylesheet">
+
+        <!-- == Favicons ================================================== -->
+        <link rel="shortcut icon" href="../../images/site_graphics/favicon.ico" />
+        <link rel="apple-touch-icon" href="../../images/site_graphics/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="../../images/site_graphics/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="../../images/site_graphics/apple-touch-icon-114x114.png" />
+
+        <!-- == scripts =============================================================== -->
+
+        <script src="/bundles/scripts?v=ztKWRTjH7UDNhHafp4FgiQaSRn0X75n8Lr6-6lEUSG81" type="text/javascript"></script>
+
+        <script type="text/javascript" src="/Scripts/tinymce/tinymce.min.js"></script>
+        <script type="text/javascript" src="/Scripts/tinymce/jquery.tinymce.min.js"></script>
+    
+    <script type="text/javascript">
+
+        var TI = 465;
+       
+        $(document).ready(function () {
+            
+            var count = '61152 Job(s) that matched your search.';
+            $("#txtJobCount").attr("aria-label", count);
+
+            var list = document.getElementById('MainContent_saveSearchRad');
+            if (list != null) {
+                for (var i = 0; i < list.childElementCount; i++) {
+                    var child = list.children[i];
+                    child.children[0].setAttribute("tabindex", TI.toString());
+                }
+            }
+            enableRadiusbyCityZIP();
+            ShowHidelblPayRange();
+
+            ["chlPositionLevel", "chlEducationLevel"].forEach(function (listIdSuffix) {
+                $("div[id$='" + listIdSuffix + "'] input[type='checkbox']").each(function () {
+                    var $input = $(this);
+                    var labelText = $input.parent('label').text().trim();
+                    $input.attr('aria-label', labelText);
+                });
+            });
+        });
+
+        function ShowHidelblPayRange() {
+            var IsPayRangeCategorySelected2 = null;
+            if (document.querySelector('#MainContent_ddlPayRangeCategories') != null && document.querySelector('#MainContent_ddlPayRangeCategories').value)
+                IsPayRangeCategorySelected2 = document.querySelector('#MainContent_ddlPayRangeCategories').value;
+
+            if (IsPayRangeCategorySelected2 == null || IsPayRangeCategorySelected2 == 0) {
+                document.getElementById("lblPayRange").style.display = 'none';
+            } else {
+                document.getElementById("lblPayRange").style.display = 'block';
+            }
+
+            return true;
+        }
+        function enableRadiusbyCityZIP() {
+            var j_zip = document.getElementById("MainContent_job_zip");
+            var j_city = document.getElementById("MainContent_job_city");
+            var j_radius = document.getElementById("MainContent_job_radius");
+
+            if ((j_zip != null && j_zip.value != "" && j_zip.value.length > 0) || (j_city != null && j_city.value != "" && j_city.value.length > 0)) {
+                j_radius.disabled = false;
+            }
+            else {
+                j_radius.value = "0";
+                j_radius.disabled = true;
+            }
+        }
+
+        function disableMatchAllWords() {
+            var len = document.getElementById("MainContent_job_keywords").value.length;
+
+            if (len == 0) {
+                document.getElementById("MainContent_CheckAll").disabled = true;
+                document.getElementById("MainContent_CheckAll").checked = false;
+
+                document.getElementById("MainContent_CheckPhrase").disabled = true;
+                document.getElementById("MainContent_CheckPhrase").checked = false;
+
+            }
+            else {
+                document.getElementById("MainContent_CheckAll").disabled = false;
+                document.getElementById("MainContent_CheckPhrase").disabled = false;
+            }
+        }
+        function applyPhraseToKeyboard(ctl) {
+            debugger;
+            var lenKeyword = document.getElementById("MainContent_job_keywords");
+
+            if (lenKeyword != null && lenKeyword.value != '' && lenKeyword.value.length > 0) {
+                if (ctl.checked) {
+                    lenKeyword.value = '"' + lenKeyword.value + '"';
+                    seachKeyCheckChange(ctl);
+                }
+                else {
+                    lenKeyword.value = lenKeyword.value.replace(/"/g, '');
+                }
+            }
+            else {
+                ctl.disabled = true;
+                ctl.checked = false;
+            }
+        }
+
+          function seachKeyCheckChange(ctrl) {
+            if (ctrl.checked) {
+                if (ctrl.id == 'MainContent_CheckPhrase') {
+                    document.getElementById("MainContent_CheckAll").checked = false;
+                }
+                else if (ctrl.id == "MainContent_CheckAll") {
+                    document.getElementById('MainContent_CheckPhrase').checked = false;
+                    var lenKeyword = document.getElementById("MainContent_job_keywords");                    
+                    lenKeyword.value = lenKeyword.value.replace(/"/g, '');
+                }
+            }
+        }
+
+        //Bhushan - Added few functions and modified the SaveSearchMesssage logic to support the ticket 125344
+        function hideButtons() {
+            $('#btnYes').hide();
+            $('#btnNo').hide();
+        }
+
+        function showSuccess() {
+            var test1 = document.getElementById("MainContent_success_container");
+            test1.style.display = "block";
+        }
+        function hideSuccess() {
+            var test1 = document.getElementById("MainContent_success_container");
+            test1.style.display = "none";
+        }
+        function showError() {
+            var test1 = document.getElementById("MainContent_error_container");
+            test1.style.display = "block";
+        }
+        function hideError() {
+            var test1 = document.getElementById("MainContent_error_container");
+            test1.style.display = "none";
+        }
+        function closeRedirectModal() {
+            $('#m-redirect-dialog').modal('hide');
+        }
+
+        function SaveSearchMesssage() {
+            //$("#divsearchname").show();
+
+            var srchname = document.getElementById("MainContent_srchname").value;
+
+            $('#m-redirect-dialog').modal('show');
+            document.getElementById('redirectclosebtn').focus();
+
+            //$('#divsearchname').dialog
+            //({
+            //    modal: true,
+            //    title: "<strong><h6><font color='green'>You have an existing search with this name (" + srchname + ")" + ". Would you like to overwrite it?</font></h6></strong>",
+            //    height: 170,
+            //    width: 450,
+            //    overlay: {
+            //        background: '#fff',
+            //        opacity: '0.7'
+            //    },
+            //    buttons:
+            //    [
+            //        {
+            //            text: "Yes",
+            //            click: function () {
+            //                callEventHandler();
+            //            }
+            //        },
+            //        {
+            //            text: "No",
+            //            click: function () {
+            //                window.location = "/Job-Seeker/JobSearchResults.aspx";
+            //            }
+            //        }
+            //    ]
+            //});
+            return false;
+        }
+
+        function callEventHandler() {
+            document.getElementById("MainContent_hdnjquery").value = "Y";
+            __doPostBack('ctl00$MainContent$searchSaveBtn','');
+
+        }
+
+        /* ALL PART OF THE THE SCROLLING CODE SETUP */
+        //$(document).ready(function () {
+        //    var cookies = document.cookie.split(";");
+        //    if (cookies.length < 2)
+        //        cookies = document.cookie.split(",");
+        //    for (var i = 0; i < cookies.length; i++) {
+        //        var t = cookies[i].split("=")[0].trim();
+        //        if (t == 'vendix') {
+        //            var strCook = cookies[i];
+        //            var intS = strCook.indexOf("=");
+        //            var sy = strCook.substring(intS + 1);
+        //            var posy = sy.substring(sy.indexOf('-:') + 2);
+        //            sy = sy.substring(0, sy.indexOf('-:'));
+        //            //$('html, body').animate({
+        //            //    scrollTop: $("#" + sy).offset().top - posy
+        //            //}, 1000);
+        //            $('html, body').animate({
+        //                scrollTop: posy
+        //            }, 1200);
+        //        }
+        //    }
+        //});
+
+        function SetDivPosition() {
+            var x = document.getElementById('gridTop').id;
+            var posy = $(window).scrollTop();
+            var v = "vendix=" + x + "-:" + posy;
+            removeCookies();
+            document.cookie = v;
+        }
+
+        function createCookie(name, value, days) {
+            if (name.indexOf(',') > -1) return;
+            if (name.indexOf(';') > -1) return;
+            if (name != 'vendix') return;
+            var expires = 0;
+            var maxage = 0;
+
+            var date = new Date();
+            date.setTime(date.getTime());
+            expires = date.toGMTString();
+            if (value.trim() == '') {
+                document.cookie = name + "=; max-age=0; expires=" + expires + ";";
+            }
+            else {
+                if (days > 0) {
+                    maxage = 60 * 60 * 24 * days;
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    expires = date.toGMTString();
+                }
+                document.cookie = name + "=" + encodeURIComponent(value) +
+                    "; max-age=" + maxage + "; expires=" + expires + ";";
+            }
+        }
+
+        function removeCookies() {
+            //eraseCookie("vexid");
+            //eraseCookie("vendid");
+            eraseCookie("vendix");
+            //var cookies = document.cookie.split(",");
+            //for (var i = 0; i < cookies.length; i++)
+            //    eraseCookie(cookies[i].split("=")[0]);
+            //cookies = document.cookie.split(";");
+            //for (var i = 0; i < cookies.length; i++)
+            //    eraseCookie(cookies[i].split("=")[0]);
+        }
+
+        function applyChanges() {
+            
+            //Validate Zip code - it must be 5 digit number
+            var zip = $('.zipcode').val().trim();
+
+            if (zip != '' && (zip.length < 5 || isNaN(zip) || zip.length > 5)) {
+                alert("Zip/Postal Code is invalid, it must be a 5 digit number (Example: 12345)");
+                return false;
+            }
+
+            eraseCookie("vendix");
+            return true;
+        }
+
+
+        function eraseCookie(name) {
+            createCookie(name, "", 0);
+        }
+        /* END OF THE SCROLLING CODE SETUP */
+
+        $(function () {             
+            $("[id*=PageSizeTop] option,[id*=PageSortTop] option,[id*=PageSizeBtm] option,[id*=PageSortBtm] option,[id*=job_time_range] option,[id*=job_radius] option").each(function (i) {
+                if (i > 0) {
+                    var title = $(this).text();
+                    $(this).attr("title", title);
+                    $(this).attr("aria-label", "select " + title);
+                }
+            });
+        });
+        
+    </script>
+
+</head>
+<body>
+    <noscript>
+        <iframe src="//www.googletagmanager.com/ns.html?id=GTM-P2TNKG" height="0" width="0" style="display: none; visibility: hidden" title="Google Tag Manager"></iframe>
+    </noscript>
+    <script>
+        (function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+            var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true; j.src = '//www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })
+        (window, document, 'script', 'dataLayer', 'GTM-P2TNKG');
+    </script>
+    <div id="top">
+    </div>
+    <!-- dialog window markup -->
+    <div id="Session-dialog" style="display: none;">
+    </div>
+
+    <div id="divSessionTimeOut" class="modal fade" style="display: none; " data-keyword="false" data-backdrop="static" >
+        <div class="modal-dialog modal-md" style="width: 500px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" style="text-align: center; font-weight: bold">Session Time out</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="dvSessionData">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default talent-solid-btn" onclick="StaySignedIn();" data-dismiss="modal">Stay Signed In</button>
+                    <button type="button" class="btn btn-default talent-solid-btn" onclick="signoutNow();" data-dismiss="modal">Sign Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="Redirect-dialog" style="display: none;">
+    </div>
+    <div id="password1" style="display: none;">
+    </div>
+    <div id="divSavedJobsCount" style="display: none;"></div>
+    <div id="divsearchname" style="display: none;">
+    </div>
+    <div id="divpopupapplynow" style="display: none;"></div>
+
+    <input name="ctl00$hdnUserName" type="hidden" id="hdnUserName" />
+    <input name="ctl00$hiddenUserID" type="hidden" id="hiddenUserID" />
+    <input name="ctl00$hdnmaxjobs" type="hidden" id="hdnmaxjobs" />
+
+    <div style="position: absolute; width: 140px; height: 40px; top: 10px; left: 170px; font-weight: bold; font-family: verdana; color: #990000; font-size: 12px; display: none;">
+        <span id="lblVersion">1.0.0.9</span>
+        &nbsp;/&nbsp;
+        <span id="lblPageNumber">2.2.1</span>
+    </div>
+    
+    <script type="text/javascript">     
+        $(document).ready(function() {
+            var sorUrl = getUrlVars()["sorUrl"];
+            $("#divLogout").hide();
+            if (undefined !== sorUrl && sorUrl.length > 0) {
+                //Local Signout URL's
+                var allAppLogOutInnerHTML = '<img id="imgMiLoginLogOut1" src="https://accessdev.michigan.gov/pkmslogout" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgTIALogOut1" src="http://localhost:63786/SSOLogOut?sor=SWeiaA4TloFXh26Pa20XuQ%3d%3d" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgMiWAMLogOut1" src="https://miwamtest.som.ad.state.mi.us/Testing/ClmMiWAM/ClearSession" alt="logout" style="left: -10000px; position: absolute;">';
+                ////Dev Signout URL's
+                //var allAppLogOutInnerHTML = '<img id="imgMiLoginLogOut1" src="https://accessdev.michigan.gov/pkmslogout" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgTIALogOut1" src="https://dev-dashboard.tia.state.mi.us/SSOLogOut?sor=SWeiaA4TloFXh26Pa20XuQ%3d%3d" alt="logout" style="left: -10000px; position: absolute;">         <img id="imgMiWAMLogOut1" src="https://miwamtest.som.ad.state.mi.us/Testing/ClmMiWAM/ClearSession" alt="logout" style="left: -10000px; position: absolute;">';
+                ////Test Signout URL's
+                //var allAppLogOutInnerHTML = '<img id="imgMiLoginLogOut1" src="https://accessqa.michigan.gov/pkmslogout" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgTIALogOut1" src="https://test-dashboard.tia.state.mi.us/SSOLogOut?sor= OWSLQlfqDCKZQryRnG%2bC3A%3d%3d" alt="logout" style="left: -10000px; position: absolute;">         <img id="imgMiWAMLogOut1" src="https://miwamdr.unemployment.state.mi.us/Staging/ClmMiWAM/ClearSession" alt="logout" style="left: -10000px; position: absolute;">';
+                ////Prod Signout URL's
+                //var allAppLogOutInnerHTML = '<img id="imgMiLoginLogOut1" src="https://accessdev.michigan.gov/pkmslogout" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgTIALogOut1" src="http://localhost:63786/SSOLogOut?sor=SWeiaA4TloFXh26Pa20XuQ%3d%3d" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgMiWAMLogOut1" src="https://miwamtest.som.ad.state.mi.us/Testing/ClmMiWAM/ClearSession" alt="logout" style="left: -10000px; position: absolute;">';
+                $("#divLogout").html(allAppLogOutInnerHTML);
+                $("#divLogout").show();
+                RemoveQueryString();
+            }
+
+            var interval = setInterval(function () {
+                var form = document.getElementById('goog-gt-votingForm');
+                if (form) {
+                    var inputs = form.querySelectorAll('input[type="text"]');
+                    inputs.forEach(function (input) {
+                        if (!form.querySelector('label[for="' + input.id + '"]')) {
+                            var label = document.createElement('label');
+                            label.setAttribute('for', input.id);
+                            label.className = 'sr-only';
+                            label.innerText = input.name + ' field';
+                            input?.parentNode?.insertBefore(label, input);
+                        }
+                    });
+                    clearInterval(interval);
+                }
+            }, 500);
+
+        });
+
+
+        function RemoveQueryString() {
+            var uri = window.location.toString();
+            if (uri.indexOf("?") > 0) {
+                var clean_uri = uri.substring(0, uri.indexOf("?"));
+                window.history.pushState({}, document.title, clean_uri);
+                window.history.replaceState({}, document.title, clean_uri);
+                //location.reload();
+            }
+        }
+
+        function getUrlVars() {
+            var vars = [], hash;
+            var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+            for (var i = 0; i < hashes.length; i++) {
+                hash = hashes[i].split('=');
+                vars.push(hash[0]);
+                vars[hash[0]] = hash[1];
+            }
+            return vars;
+        }
+
+        function closeModalPopUp() {
+            $('.bs-example-modal-sm').modal('hide');
+        }
+
+        function focusOnClosebtn() {
+            document.getElementById("btnclose").focus();
+        }
+
+        (function(i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function() {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-2548927-11', 'mitalent.org');
+        ga('send', 'pageview');
+
+    </script>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({ pageLanguage: 'en', includedLanguages: 'en,es', layout: google.translate.TranslateElement.InlineLayout.SIMPLE }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+     
+
+    <div id="divLogout" style="left: -10000px; position: absolute; display: none;">
+        
+    </div>
+    <div role="navigation" aria-label="skip">
+        <a class="sr-only sr-only-focusable skip" href="#content" tabindex="105">Skip to main content</a>
+    </div>
+
+    <header class="site-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-8 col-sm-push-4">
+                    <div class="header-functions">
+                        <div class="utility-nav-wrapper">
+                            <span id="Header1_topNavigation"><ul id="utility-nav" class="clearfix"><li><a runat="server" id="a_menuitem_0" href="https://www.mitalent.org/newsletters" tabindex="121">Newsletters</a></li><li><a runat="server" id="a_menuitem_1" href="https://jobs.mitalent.org/CareerEvent.aspx?e=Start" tabindex="124">Career Events</a></li><li><a runat="server" id="a_menuitem_2" href="https://www.mitalent.org/about-us" tabindex="127">About Us</a></li><li><a runat="server" id="a_menuitem_3" href="/contact-us" tabindex="130">Contact Us</a></li><li class="translate-element"><div id="google_translate_element"></div></li></ul></span>
+                        </div>
+                        <div class="account-functions-wrapper" aria-label="account" role="navigation">
+                            <ul class="account-functions clearfix">
+                                <li class="account-functions-button"><button id="account-functions-button-signin" type="button" title="SIGN IN" aria-label="Click to Sign In" value="Sign In" tabindex="130">Sign In <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></button></li><li class="account-functions-button"><button id="account-functions-button-createaccount" type="button" title="CREATE ACCOUNT" aria-label="Click to Create Account" value="Create Account" tabindex="132">Create Account <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></button></li>
+                            </ul>
+
+                            <div id="account-functions-popup-signin-id" class="account-functions-popup">
+                                <div class="account-functions-popup-header">
+                                    Sign In
+                                </div>
+
+                                <div class="account-functions-popup-errors account-functions-popup-signin-errors alert-danger"></div>
+
+                                <div class="account-functions-popup-username">
+                                    <div class="popup-label-username">Email Address Or MILogin User ID</div>
+                                    <div class="popup-input-username">
+                                        <input id="login-username" aria-label="Enter Email Address or Milogin User Id" title="Email Address Or MILogin User ID" class="form-control" type="text">
+                                    </div>
+                                </div>
+
+                                <div class="account-functions-popup-role" hidden>
+                                    <label for="login-role" class="sr-only">Role</label>
+                                    <div class="popup-label-password">Role</div>
+                                    <div class="popup-input-password">
+                                        <select id="login-role" class="form-control"></select>
+                                    </div>
+                                </div>
+
+                                <div class="account-functions-popup-password" hidden>
+                                    <div class="popup-label-password">Password</div>
+                                    <div class="popup-input-password">
+                                        <input id="login-password" title="Password" aria-label="Enter Password" class="form-control" type="password" autocomplete="off" tabindex="131">
+                                        <span class="glyphicon glyphicon-eye-open hidden" id="pw-eye"></span>
+                                    </div>
+                                    <div class="popup-password-forgot">
+                                        <a id="link-forgot-password" role="link" title="Forgot Password" aria-label="Click to Forgot Password" href="#" tabindex="131">Forgot Password?</a>
+                                    </div>
+                                </div>
+
+                                <div class="account-functions-popup-terms" hidden>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                        <input type="checkbox" id="login-terms-checkbox" aria-label="I agree to the Terms and Conditions" />
+                                        <label for="login-terms-checkbox" style="margin: 0;margin-top: 4px;">I acknowledge that I have read, understand, and agree to the <a id="login-terms-link" href="#" target="_blank">Terms &amp; Conditions</a></label>
+                                    </div>
+                                </div>
+                                <div class="account-functions-popup-buttons">
+                                    <button id="account-functions-popup-buttons-next" class="btn btn-default talent-solid-btn" tabindex="131">Next</button>
+
+                                    <div class="account-functions-popup-loading">
+                                        <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="24px" height="30px" viewBox="0 0 24 30" style="stroke: #1c4c81;" xml:space="preserve">
+                                            <rect x="0" y="8.9346" width="4" height="12.1308" fill="#333" opacity="0.2">
+                                                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0s" dur="0.6s" repeatCount="indefinite"></animate>
+                                            </rect>
+                                            <rect x="8" y="6.4346" width="4" height="17.1308" fill="#333" opacity="0.2">
+                                                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.15s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite"></animate>
+                                            </rect>
+                                            <rect x="16" y="6.0654" width="4" height="17.8692" fill="#333" opacity="0.2">
+                                                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.3s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite"></animate>
+                                            </rect>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <script>
+                                    // Get environment and set endpoint URL
+                                    var request_prefix = ''; // change later to default to prod
+                                    var siteurl = '';
+                                    var terms_prefix = 'https://www.mitalent.org';
+
+                                    if (window.location.hostname === 'localhost' || window.location.hostname === 'dev-mitalent-cms.leo.state.mi.us' || window.location.hostname === 'dev-mitalent.leo.state.mi.us') {
+                                        request_prefix = 'https://dev-webapi.leo.state.mi.us';
+                                        siteurl = 'https://dev-mitalent.leo.state.mi.us';
+                                        terms_prefix = 'https://dev-mitalent-cms.leo.state.mi.us';
+                                    }
+                                    else if (window.location.hostname === 'beta.mitalent.org' || window.location.hostname === 'test-jobs.mitalent.org') {
+                                        request_prefix = 'https://test-webapi.mitalent.org';
+                                        siteurl = 'https://test-jobs.mitalent.org';
+                                        terms_prefix = 'https://beta.mitalent.org';
+                                    }
+                                    else if (window.location.hostname === 'mitalent.org' || window.location.hostname === 'jobs.mitalent.org') {
+                                        request_prefix = 'https://webapi.mitalent.org';
+                                        siteurl = 'https://jobs.mitalent.org';
+                                        terms_prefix = 'https://www.mitalent.org';
+                                    }
+
+                                    // Elements used in processes below
+                                    var login_username = document.querySelector('#login-username');
+                                    var login_role = document.querySelector('#login-role');
+                                    var login_password = document.querySelector('#login-password');
+                                    var login_role_section = document.querySelector('.account-functions-popup-role');
+                                    var login_password_section = document.querySelector('.account-functions-popup-password');
+                                    var login_terms_section = document.querySelector('.account-functions-popup-terms');
+                                    var login_terms_checkbox = document.querySelector('#login-terms-checkbox');
+                                    var login_loading = document.querySelector('.account-functions-popup-loading');
+                                    document.querySelector('#login-terms-link').setAttribute('href', terms_prefix + '/terms-and-conditions');
+                                    var login_error = document.querySelector('.account-functions-popup-signin-errors');
+                                    var login_next = document.querySelector('#account-functions-popup-buttons-next');
+                                    var element_login_button = document.querySelector('#account-functions-button-signin');
+                                    var element_login_button_chevron = document.querySelector('#account-functions-button-signin svg');
+                                    var element_login_popup = document.getElementById('account-functions-popup-signin-id');
+
+                                    //for chrome-specific password reveal toggle
+                                    var passwordInput = document.querySelector("#login-password")
+                                    var passwordEye = document.querySelector("#pw-eye")
+
+                                    if (element_login_button) {
+                                        // Initialize sign in popup on window load
+                                        window.addEventListener('load', function() {
+                                            //toggle password/text display on password field
+                                            if (/Chrome/.test(navigator.userAgent) && !/Chromium/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent)) {
+                                                //browser is chrome, show pw eye
+                                                passwordEye.classList.remove('hidden')
+                                            }
+                                            passwordEye.addEventListener('click',function(){
+                                                if(passwordInput.type==='password'){
+                                                    passwordInput.type='text'
+                                                }else{
+                                                    passwordInput.type='password'
+                                                }
+                                                if(passwordEye.classList.contains('glyphicon-eye-open')){
+                                                    passwordEye.classList.remove('glyphicon-eye-open')
+                                                    passwordEye.classList.add('glyphicon-eye-close')
+                                                }else if(passwordEye.classList.contains('glyphicon-eye-close')){
+                                                    passwordEye.classList.remove('glyphicon-eye-close')
+                                                    passwordEye.classList.add('glyphicon-eye-open')
+                                                }
+                                            })
+
+                                            // show Sign In popup on click of Sign In button
+                                            element_login_button.addEventListener('click', function () {
+                                                if (!login_loading.classList.contains('account-functions-popup-loading-show')) {
+                                                    if (element_login_popup.classList.contains('account-functions-popup-show')) {
+                                                        element_login_popup.classList.remove('account-functions-popup-show');
+                                                        element_login_button_chevron.classList.remove('account-functions-popup-svg-open');
+                                                        ClearSignInPopupValues();
+                                                    }
+                                                    else {
+                                                        element_login_popup.classList.add('account-functions-popup-show');
+                                                        element_login_button_chevron.classList.add('account-functions-popup-svg-open');
+                                                    }
+                                                }
+                                            });
+
+                                            // when you press enter on login popup inputs, click next button
+                                            login_username.addEventListener('keypress', function(e) {
+                                                if (e.key === 'Enter') {
+                                                    login_next.click();
+                                                }
+                                            });
+
+                                            login_role.addEventListener('keypress', function(e) {
+                                                if (e.key === 'Enter') {
+                                                    login_next.click();
+                                                }
+                                            });
+
+                                            login_password.addEventListener('keypress', function(e) {
+                                                if (e.key === 'Enter') {
+                                                    login_next.click();
+                                                }
+                                            });
+
+                                            // close Sign In popup on mousedown outside of Sign In popup
+                                            document.addEventListener('mousedown', function(event) {
+                                                if (element_login_popup.classList.contains('account-functions-popup-show')) {
+                                                    contains_login_popup = false;
+                                                    node = event.target;
+
+                                                    // check event.target parents for Sign In popup
+                                                    while (node !== null) {
+                                                        if (node === element_login_popup || node === element_login_button) {
+                                                            contains_login_popup = true;
+                                                        }
+                                                        node = node.parentElement;
+                                                    }
+
+                                                    // if outside of Sign In popup and button, close Sign In popup, flip chevron, and clear internal values
+                                                    if (!contains_login_popup) {
+                                                        element_login_popup.classList.remove('account-functions-popup-show');
+                                                        element_login_button_chevron.classList.remove('account-functions-popup-svg-open');
+
+                                                        ClearSignInPopupValues();
+                                                    }
+                                                }
+                                            });
+
+                                            // redirect to lost password page when clicking forgot password link
+                                            document.querySelector('#link-forgot-password').addEventListener('click', function() {
+                                                //window.location.href = ('/account/logindashboard.aspx?RedirectURL=/account/lost-password/&PasswordResetEmail=' + login_username.value.trim());
+                                                window.location.href = (siteurl +'/Account/ResetPassword.aspx');
+                                            })
+
+                                            function ClearSignInPopupValues() {
+                                                login_username.value = '';
+                                                login_username.removeAttribute('disabled');
+                                                login_role.innerHTML = '';
+                                                login_password.value = '';
+                                                login_role_section.setAttribute('hidden', 'true');
+                                                login_password_section.setAttribute('hidden', 'true');
+                                                login_terms_section.setAttribute('hidden', 'true');
+                                                login_terms_checkbox.checked = false;
+                                                login_loading.classList.remove('account-functions-popup-loading-show');
+                                                login_next.innerHTML = 'Next';
+                                                login_next.title = 'Next';
+                                                login_next.removeAttribute('disabled');
+                                                login_next.setAttribute('aria-label', 'Click on Next');
+                                                ClearSignInError();
+                                            }
+                                        });
+                                    }
+
+                                    // Next button click event listener
+                                    document.querySelector('.account-functions-popup-buttons button').addEventListener('click', function(event) {
+                                        ClearSignInError();
+
+                                        if (login_role.value.trim() === '' || login_role.value.trim() === 'null') {
+                                            if (login_username.value.trim().length === 0) {
+                                                ShowSignInError('MILogin User ID or Email Address is a required field.');
+                                            }
+                                            else if (login_username.value.trim().length < 6) {
+                                                ShowSignInError('MILogin User ID or Email Address. The field should have at least 6 characters.');
+                                            }
+                                            else if (login_username.value.trim().length < 151) {
+                                                FindUserRolesByName(login_username.value.trim());
+                                            }
+                                            else {
+                                                ShowSignInError('MILogin User ID or Email Address is a required field.');
+                                            }
+                                        }
+                                        else if (login_role.value.trim() !== '' && login_password.value === '') {
+                                            if (!login_password_section.hasAttribute('hidden')) {
+                                                ShowSignInError('Password is required.');
+                                            } else {
+                                                SelectUserRole(JSON.parse(login_role.querySelector('[data-role-value="' + login_role.value + '"]').getAttribute('data-role-info')));
+                                                login_role_section.setAttribute('hidden', 'true');
+                                            }
+                                        }
+                                        else if (login_role.value.trim() !== '' && login_password.value !== '') {
+                                            if (!login_terms_checkbox.checked) {
+                                                ShowSignInError('You must accept the Terms & Conditions to continue.');
+                                                return;
+                                            }
+                                            var selected_role = JSON.parse(login_role.querySelector('[data-role-value="' + login_role.value + '"]').getAttribute('data-role-info'));
+                                            ProcessSignIn(selected_role.userName, selected_role.RoleName, login_password.value);
+                                            login_loading.classList.add('account-functions-popup-loading-show');
+                                        }
+                                    });
+
+                                    function FindUserRolesByName(username_or_email) {
+                                        username_or_email = username_or_email.trim();
+                                        let request = new XMLHttpRequest();
+                                        var url = request_prefix + '/CommonLogin/ValidatePMTCLogin?UsernameOrEmail=__SearchVariable__'.replace('__SearchVariable__', username_or_email);
+
+                                        request.onreadystatechange = function() {
+                                            if (this.readyState === 4 && this.status === 200) {
+                                                let response = JSON.parse(this.responseText);
+                                                login_loading.classList.remove('account-functions-popup-loading-show');
+                                                ProcessUserRoles(response);
+                                            }
+                                            else if (this.readyState === 4 && this.status !== 200) {
+                                                login_loading.classList.remove('account-functions-popup-loading-show');
+                                                ShowSignInError('REQUEST FAILED:\tPlease try again later.');
+                                            }
+                                        }
+
+                                        request.open("POST", url, true);
+                                        request.send();
+
+                                        login_loading.classList.add('account-functions-popup-loading-show');
+                                    }
+
+                                    function ProcessUserRoles(roles) {
+                                        login_role.innerHTML = '';
+
+                                        roles.forEach(function(role) {
+                                            var role_select = login_role;
+                                            var role_option = document.createElement("option");
+                                            role_option.text = role.RoleName;
+                                            role_option.setAttribute('data-role-value', role.RoleName);
+                                            role_option.setAttribute('data-role-info', JSON.stringify(role));
+
+                                            role_select.add(role_option);
+                                        });
+
+                                        if (roles.length > 1) {
+                                            login_role_section.removeAttribute('hidden');
+                                        }
+                                        else {
+                                            if (roles != null && roles.length > 0)
+                                                SelectUserRole(roles[0]);
+                                        }
+                                    }
+
+                                    function SelectUserRole(role) {
+                                        if (role.ErrorMessage === null) {
+                                            if (role.RoleName.toLowerCase() === 'jobseeker' && role.RedirectURL != null) {
+                                                window.location.href = role.RedirectURL; //'https://milogin.michigan.gov/eai/login/authenticate';
+                                            }
+                                            else {
+                                                login_username.value = role.userName;
+                                                login_username.setAttribute('disabled', 'true');
+                                                login_role_section.setAttribute('hidden', 'true');
+                                                login_password_section.removeAttribute('hidden');
+                                                login_terms_section.removeAttribute('hidden');
+                                                login_terms_checkbox.checked = false;
+                                                login_next.innerHTML = 'Submit';
+                                                login_next.title = 'Submit';
+                                                login_next.setAttribute('aria-label', 'Click on Submit');
+                                                login_password.focus();
+                                            }
+                                        }
+                                        else {
+                                            login_role.innerHTML = '';
+                                            ShowSignInError(role.ErrorMessage);
+                                        }
+                                    }
+
+                                    function ProcessSignIn(username, role, password) {
+                                        login_next.setAttribute('disabled', 'true');
+                                        let request = new XMLHttpRequest();
+                                        password = encodeURIComponent(password);
+                                        var url = request_prefix + '/CommonLogin/AuthenticatePMTCLogin?UserName=__username__&Password=__password__&RoleName=__role__'.replace('__username__', username).replace('__password__', password).replace('__role__', role);
+
+                                        request.onreadystatechange = function() {
+                                            if (this.readyState === 4 && this.status === 200) {
+                                                let response = JSON.parse(this.responseText);
+                                                
+
+                                                if (response.ErrorMessage === null || response.ErrorMessage === 'Logged In') {
+                                                    var parameters = '?q=' + response.SessionValue + '&SessionId=' + response.SessionId + '&RedirectURL=' + encodeURIComponent(response.RedirectURL);
+                                                    //window.location.href = response.RedirectURL + parameters;
+                                                    window.location.href = "/Account/LoginDashboard.aspx" + parameters;
+                                                }
+                                                else if (response.ErrorMessage.indexOf("This account has been locked") != -1 && response.RedirectURL != null) {
+                                                    var parameters = '?SessionId=' + response.SessionId + '&RedirectURL=' + encodeURIComponent(response.RedirectURL)+'&PasswordResetEmail=' + username.trim();
+                                                    window.location.href = "/Account/LoginDashboard.aspx" + parameters;
+                                                }
+                                                 else if (response.ErrorMessage.indexOf("The Account Password has expired") != -1 && response.RedirectURL != null) {
+                                                    var parameters = '?SessionId=' + response.SessionId + '&RedirectURL=' + encodeURIComponent(response.RedirectURL) + '&PasswordResetEmail=' + username.trim();
+                                                    window.location.href = "/Account/LoginDashboard.aspx" + parameters;
+                                                }
+                                                else {
+                                                    login_loading.classList.remove('account-functions-popup-loading-show');
+                                                    login_next.removeAttribute('disabled');
+                                                    ShowSignInError(response.ErrorMessage);
+                                                }
+                                            }
+                                            else if (this.readyState === 4 && this.status !== 200) {
+                                                login_loading.classList.remove('account-functions-popup-loading-show');
+                                                login_next.removeAttribute('disabled');
+                                                ShowSignInError('REQUEST FAILED:\tPlease try signin again.');
+                                            }
+                                        }
+
+                                        request.open("POST", url, true);
+                                        request.send();
+
+                                        login_loading.classList.add('account-functions-popup-loading-show');
+                                    }
+
+                                    function ShowSignInError(error_message) {
+                                        error_message = error_message.replace('|', '<br>')
+                                        login_error.innerHTML = error_message;
+                                        login_error.classList.add('account-functions-popup-errors-show');
+                                    }
+
+                                    function ClearSignInError() {
+                                        login_error.innerText = '';
+                                        if (login_error.classList.contains('account-functions-popup-errors-show'))
+                                            login_error.classList.remove('account-functions-popup-errors-show');
+                                    }
+                                </script>
+                            </div>
+
+                            <div id="account-functions-popup-createaccount-id" class="account-functions-popup">
+                                <div class="account-functions-popup-header">
+                                    Create Account
+                                </div>
+
+                                <div class="account-functions-popup-errors account-functions-popup-createaccount-errors alert-danger"></div>
+
+                                <div class="account-functions-popup-text">
+                                    <p>Which type of account would you like to create?</p>
+                                    <br>
+                                    <p>I am a/an :</p>
+                                </div>
+
+                                <div class="account-functions-popup-buttons">
+                                    <a id="account-functions-popup-buttons-jobseeker" href="#" class="btn btn-default talent-solid-btn" tabindex="133">Job Seeker</a>
+                                    <a id="account-functions-popup-buttons-employer" href="#" class="btn btn-default talent-solid-btn" tabindex="133">Employer</a>
+                                    <a id="account-functions-popup-buttons-provider" href="#" class="btn btn-default talent-solid-btn" tabindex="133">Training Provider</a>
+                                </div>
+
+                                <script>
+                                    // Get environment and set endpoint URL
+                                    var create_account_prefix = 'https://jobs.mitalent.org/';
+
+                                    if (window.location.hostname === 'localhost' || window.location.hostname === 'dev-mitalent-cms.leo.state.mi.us' || window.location.hostname === 'dev-mitalent.leo.state.mi.us') {
+                                        create_account_prefix = 'https://dev-mitalent.leo.state.mi.us/';
+                                    }
+                                    else if (window.location.hostname === 'beta.mitalent.org' || window.location.hostname === 'test-jobs.mitalent.org') {
+                                        create_account_prefix = 'https://test-jobs.mitalent.org/';
+                                    }
+                                    else if (window.location.hostname === 'mitalent.org' || window.location.hostname === 'jobs.mitalent.org') {
+                                        create_account_prefix = 'https://jobs.mitalent.org/';
+                                    }
+
+                                    // Setup link href values based on current environment
+                                    window.addEventListener('load', function() {
+                                        document.querySelector('#account-functions-popup-buttons-jobseeker').setAttribute('href', create_account_prefix + 'SAML/CreateSSOJobSeeker/');
+                                        document.querySelector('#account-functions-popup-buttons-employer').setAttribute('href', create_account_prefix + 'employer-create-account/');
+                                        document.querySelector('#account-functions-popup-buttons-provider').setAttribute('href', create_account_prefix + 'MITC/Admin/License/Apply');
+                                    });
+
+                                    // Elements used in processes below
+                                    var element_create_account_button = document.querySelector('#account-functions-button-createaccount');
+                                    var element_create_account_button_chevron = document.querySelector('#account-functions-button-createaccount svg');
+                                    var element_create_account_popup = document.getElementById('account-functions-popup-createaccount-id');
+
+                                    if (element_create_account_button) {
+                                        // Initialize Create Account popup on window load
+                                        window.addEventListener('load', function() {
+                                            // show Create Account popup on click of Create Account button
+                                            element_create_account_button.addEventListener('click', function() {
+                                                if (element_create_account_popup.classList.contains('account-functions-popup-show')) {
+                                                    element_create_account_popup.classList.remove('account-functions-popup-show');
+                                                    element_create_account_button_chevron.classList.remove('account-functions-popup-svg-open');
+                                                }
+                                                else {
+                                                    element_create_account_popup.classList.add('account-functions-popup-show');
+                                                    element_create_account_button_chevron.classList.add('account-functions-popup-svg-open');
+                                                }
+                                            });
+
+                                            // close Create Account popup on mousedown outside of Create Account popup
+                                            document.addEventListener('mousedown', function(event) {
+                                                if (element_create_account_popup.classList.contains('account-functions-popup-show')) {
+                                                    contains_create_account_popup = false;
+                                                    node = event.target;
+
+                                                    // check event.target parents for Create Account popup
+                                                    while (node !== null) {
+                                                        if (node === element_create_account_popup || node === element_create_account_button) {
+                                                            contains_create_account_popup = true;
+                                                        }
+                                                        node = node.parentElement;
+                                                    }
+
+                                                    // if outside of Create Account popup and button, close Create Account popup, flip chevron, and clear internal values
+                                                    if (!contains_create_account_popup) {
+                                                        element_create_account_popup.classList.remove('account-functions-popup-show');
+                                                        element_create_account_button_chevron.classList.remove('account-functions-popup-svg-open');
+                                                    }
+                                                }
+                                            });
+                                        });
+                                    }
+                                </script>
+                            </div>
+                        </div>
+                        
+                        <div class="search-wrapper">
+                            <ul id="search-box">
+                                <li>
+                                    <form method="get" role="search" enctype="multipart/form-data" action="https://jobs.mitalent.org/search-results">
+                                        <label id="search-text-label"><span class="sr-only">Search</span></label>
+                                        <input id="search-text" name="q" placeholder="SEARCH" type="text" class="form-control" title="Search the Site" aria-label="Search the Site" tabindex="136" aria-labelledby="search-text-label" />
+                                        <input type="hidden" id="search_url" value="https://jobs.mitalent.org/search-results">
+                                        <button id="search-button-gsa" type="submit" class="btn btn-success" aria-label="Submit Search" tabindex="138"><span class="glyphicon glyphicon-search" aria-hidden="true"></span><span class="sr-only">Search</span></button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-sm-pull-8">
+                    <div class="brand-wrapper">
+                        <div class="brand-logo">
+                            <a href="https://jobs.mitalent.org" role="link" aria-label="Pure Michigan Talent Connect Home" tabindex="109">
+                                <img id="Header1_imgSiteLogo" tabindex="110" src="../../images/site_graphics/pure-michigan-talent-connect-logo.png" alt="PMTC Logo" />
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-8 col-sm-push-4">
+                </div>
+            </div>
+        </div>
+         <div>
+            <input name="ctl00$Header1$lblSession" type="hidden" id="lblSession" value="Header.ascx" />
+            <br />
+            <input name="ctl00$Header1$lblSecconds" type="hidden" id="lblSecconds" value="0" /><input name="ctl00$Header1$IsAdmin" type="hidden" id="IsAdmin" /><input name="ctl00$Header1$IdleTimeForUser" type="hidden" id="IdleTimeForUser" />
+        </div>
+
+        <div class="row">
+            <div class="job-seeker">
+                <div class="modal fade bs-example-modal-sm">
+                    <div class="modal-dialog modal-sm">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" id="btnclose" title="close" class="close" data-dismiss="modal" aria-label="Close create account pop up"><span aria-hidden="true">&times;</span> </button>
+                                <span class="modal-title" title="CREATE ACCOUNT" aria-label="Click to Create Account"><strong>Create an Account</strong></span>
+                            </div>
+                            <div class="modal-body">
+
+                                <div class="input-group" aria-label="Which type of account would you like to create?">
+                                    <label aria-label="Which type of account would you like to create?">Which type of account would you like to create?</label>
+                                    <p></p>
+                                    <label>I am a/an:</label>
+                                    <p></p>
+                                    <div class="col-md-12">
+                                        <button type="button" class="btn btn-default talent-solid-btn" data-dismiss="modal" title="JOB SEEKER" aria-label="Click to Create Job Seeker Account" onclick="window.location.href = '/SAML/CreateSSOJobSeeker/'">Job Seeker</button>
+                                        <button type="button" class="btn btn-default talent-solid-btn btn-add-margin-left" title="EMPLOYER" data-dismiss="modal" aria-label="Click to Create Employer Account" onclick="window.location.href = '/employer-create-account/'" onblur="closeModalPopUp();">Employer</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="navbar navbar-default" role="navigation" aria-label="primary">
+        <div class="container">
+            <div class="row">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle mitalent-custom" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <div class="nav-toggle-wrapper">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </div>
+                        <div class="nav-toggle-label">Menu</div>
+                    </button>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div id="navbar-collapse" class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav admin-signed-in" role="menu" aria-haspopup="true" aria-label="MainMenu">
+                        <li class="home" role="menuitem">
+                            <a href="https://www.mitalent.org" id="Header1_homeA" tabindex="140">Home</a>
+                        </li>
+                        <li class="job-seeker" role="menuitem"><a href="https://www.mitalent.org/job-seeker" class="dropdown-toggle" data-toggle="dropdown" tabindex="141" >Job Seeker <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a href="https://www.mitalent.org/job-seeker" tabindex="142">Job Seeker Home</a><ul></ul></li><li><a href="/job-search" tabindex="143">Advanced Job Search</a><ul></ul></li><li><a href="https://jobs.mitalent.org/SAML/CreateSSOJobSeeker/" tabindex="144">Create<span class="sr-only"> Job Seeker</span> Account</a><ul></ul></li><li><a href="https://www.mitalent.org/just-for-you" tabindex="145">Just for you</a><ul></ul></li><li><a href="https://www.mitalent.org/agriculture" tabindex="146">Agriculture Services</a><ul></ul></li><li><a href="https://www.mitalent.org/job-seeker-other-resources" tabindex="147">Other<span class="sr-only"> Job Seeker</span> Resources</a><ul></ul></li><li><a href="https://www.mitalent.org/unemployed" tabindex="148">Unemployment Information</a><ul></ul></li><li><a href="https://www.mitalent.org/tutorials" tabindex="149">Tutorials</a><ul></ul></li></ul>
+</li><li class="employer" role="menuitem"><a href="https://www.mitalent.org/employer" class="dropdown-toggle" data-toggle="dropdown" tabindex="150" >Employer <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a href="https://www.mitalent.org/Employer" tabindex="151">Employer Home</a><ul></ul></li><li><a href="/employer-create-account" tabindex="152">Create<span class="sr-only"> Employer</span> Account</a><ul></ul></li><li><a href="https://www.mitalent.org/Agriculture" tabindex="153">Agriculture Services</a><ul></ul></li><li><a target="_blank" rel="noopener noreferrer" href="https://miwam.unemployment.state.mi.us/EmpMiWAM/_/#1" tabindex="154">Report Refusal of Work<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li><li><a href="https://www.mitalent.org/employer-other-resources" tabindex="155">Other<span class="sr-only"> Employer</span> Resources</a><ul></ul></li><li><a href="https://www.mitalent.org/tutorials" tabindex="156">Tutorials</a><ul></ul></li></ul>
+</li><li class="career-exploration" role="menuitem"><a href="https://www.mitalent.org/career-exploration" class="dropdown-toggle" data-toggle="dropdown" tabindex="157" >Career Exploration <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a href="https://www.mitalent.org/career-exploration" tabindex="158">Career Exploration Home</a><ul></ul></li><li><a target="_blank" rel="noopener noreferrer" href="https://pathfinder.mitalent.org" tabindex="159">Pathfinder<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li><li><a target="_blank" rel="noopener noreferrer" href="https://mat2apprenticeships.com/" tabindex="160">MAT2 Program<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li><li><a href="https://www.mitalent.org/mitc" tabindex="161">Michigan Training Connect</a><ul></ul></li></ul>
+</li><li class="veteran" role="menuitem"><a href="https://www.mitalent.org/veteran" class="dropdown-toggle" data-toggle="dropdown" tabindex="162" >Veteran <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a target="_blank" rel="noopener noreferrer" href="https://www.michigan.gov/leo/0,5863,7-336-94422_95539_98962---,00.html" tabindex="163">Veteran Home<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li></ul>
+</li><li class="skilled-trades" role="menuitem"><a href="https://www.mitalent.org/skilled-trades" class="dropdown-toggle" data-toggle="dropdown" tabindex="164" >Skilled Trades <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a href="https://www.mitalent.org/skilled-trades" tabindex="165">Skilled Trades Home</a><ul></ul></li><li><a target="_blank" rel="noopener noreferrer" href="https://www.michigan.gov/leo/bureaus-agencies/wd/apprenticeships" tabindex="166">Registered Apprenticeships<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li><li><a href="https://www.mitalent.org/skilled-trades-post-secondary-education-opportunities" tabindex="167">Post-Secondary Education Opportunities</a><ul></ul></li><li><a href="https://www.mitalent.org/skilled-trades-students-parents-educators" tabindex="168">Students, Parents & Educators</a><ul></ul></li></ul>
+</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    
+
+    
+
+    
+    
+    <div class="job-seeker container">
+        <div id="content" role="main">
+            <form method="post" action="./" onkeypress="javascript:return WebForm_FireDefaultButton(event, 'MainContent_applyBtn')" id="JobSearchResults" role="form" class="form-job">
+<div class="aspNetHidden">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['JobSearchResults'];
+if (!theForm) {
+    theForm = document.JobSearchResults;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=pynGkmcFUV13He1Qd6_TZG62mmmySu9bJzY61PLGn_HdqKh30NOR7tOjDD9fUcfvfqnpIw2&amp;t=639190689332169432" type="text/javascript"></script>
+
+
+<script src="/ScriptResource.axd?d=NJmAwtEo3Ipnlaxl6CMhvk1GqZzlyB-UYCgjBSLn7QwRUkH8mJm69OZsaL2VJVLUOsI5Y7t8OZwSVswTf8LIqXe0AKCDpDuV-bEvOFTu9Rui9T_ie9QHdxdwQPQ6J1n6u5bVIw405dKfy09qof9NgZlFy4c1&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=dwY9oWetJoJoVpgL6Zq8OGBh7qMy8YOZkimk_1PQvMWpKnZRiVsORgOa-vgpH4MnqY6YFWI2LM1Q4Qufgv7skzwrz0clzRUs1SVYTPLFb-Q05G5lSJox-_q6Ex_pqUlZLZR4Qz8lR_y607hfLFoOzynw9tE1&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script src="/WebResource.axd?d=JoBkLzP19aTuxbWOhHobYtOrPv46LaT_cSPr-9676NPZvqv0ahmJOavFgwzZ_T85DZGewQ2&amp;t=639190689332169432" type="text/javascript"></script>
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="BA9CC697" />
+</div>
+                <input type="hidden" name="ctl00$MainContent$hdMiTalentViewType" id="MainContent_hdMiTalentViewType" value="JOBSEEKERSEARCHJOB" />
+                <div class="row">
+                    <div class="col-md-8 col-sm-8">
+                        <h1>Job Search Results</h1>
+                        <a id="MainContent_LinkButton1" tabindex="205" class="sidebar_link" title="Return to Job Search" aria-label="Click to Return to Job Search" href="javascript:__doPostBack(&#39;ctl00$MainContent$LinkButton1&#39;,&#39;&#39;)">
+                                < Return to Job Search
+                        </a>
+
+                        <div id="MainContent_error_container" style="display: none" class="alert alert-danger" role="alert">
+                            <p>There were errors in your form submission. Correct the following fields:</p>
+                            <br />
+                            <ul></ul>
+                        </div>
+                        <div id="MainContent_success_container" style="display: none" class="alert alert-success" role="alert">
+                        </div>
+                        <p id="txtJobCount">61152 Job(s) that matched your search.</p>
+                        <div id="MainContent_displayTop" aria-label="pagination top">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="search-filtering">
+                                        <form action="" method="post" role="search" aria-label="search-filtering" enctype="multipart/form-data" class="form-job">
+                                            <div class="col-sm-6 col-md-4">
+                                                <label id="MainContent_pagesTop">Pages</label>
+                                                <ul class="pagination">
+                                                    <li>
+                                                        <a onclick="removeCookies();" id="MainContent_pageTop1" tabindex="210" class="aspNetDisabled" aria-label="Previous Pages Top" style="color:#747474;">1</a></li>
+                                                    <li>
+                                                        <a onclick="removeCookies();" id="MainContent_pageTop2" tabindex="210" aria-label="Previous Pages Top" href="javascript:__doPostBack(&#39;ctl00$MainContent$pageTop2&#39;,&#39;&#39;)" style="color:#1B829D;">2</a></li>
+                                                    <li>
+                                                        <a onclick="removeCookies();" id="MainContent_pageTop3" tabindex="210" aria-label="Previous Pages Top" href="javascript:__doPostBack(&#39;ctl00$MainContent$pageTop3&#39;,&#39;&#39;)" style="color:#1B829D;">3</a></li>
+                                                    <li>
+                                                        <a onclick="removeCookies();" id="MainContent_pageTop4" tabindex="210" aria-label="Previous Pages Top" href="javascript:__doPostBack(&#39;ctl00$MainContent$pageTop4&#39;,&#39;&#39;)" style="color:#1B829D;">4</a></li>
+                                                    <li>
+                                                        <a onclick="removeCookies();" id="MainContent_pageTop5" tabindex="210" class="fa fa-angle-double-right" aria-label="Previous Pages Top" href="javascript:__doPostBack(&#39;ctl00$MainContent$pageTop5&#39;,&#39;&#39;)" style="color:#1B829D;"></a></li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-sm-6 col-md-2">
+                                                <div class="form-group">
+                                                    <label>Display</label>
+                                                    <select name="ctl00$MainContent$PageSizeTop" id="MainContent_PageSizeTop" tabindex="215" aria-label="Page Size Top" title="Display" class="form-control">
+	<option selected="selected" value="25">25</option>
+	<option value="50">50</option>
+	<option value="100">100</option>
+
+</select>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-3">
+                                                <div class="form-group">
+                                                    <label>Sort By</label>
+                                                    <select name="ctl00$MainContent$PageSortTop" id="MainContent_PageSortTop" tabindex="220" class="sort_by form-control" aria-label="Page Sort Top" title="Sort By">
+	<option value="Rel">Relevance</option>
+	<option value="Posted">Posted Date</option>
+	<option value="Title">Title</option>
+	<option value="OrgName">Organization Name</option>
+	<option value="City">City</option>
+
+</select>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12 col-md-3">
+                                                <input type="submit" name="ctl00$MainContent$UpdateViewTop" value="Update Results" onclick="removeCookies();" id="MainContent_UpdateViewTop" tabindex="225" class="cancel btn btn-default talent-solid-btn btn-block color-btn" title="UPDATE RESULTS" aria-label="Click to Update Results" />
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                        <input type="hidden" name="ctl00$MainContent$startIndexNum" id="MainContent_startIndexNum" value="1" />
+
+                        <div id="gridTop"></div>
+                        
+                                
+                                <div id='417418550' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_0" tabindex="230" title="SAA Coordinator of Academic Integrity" aria-label="SAA Coordinator of Academic Integrity" name="417418550" href="../job-details/JobCode/417418550">SAA Coordinator of Academic Integrity</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;21-1012.00 Educational, Guidance, and Career Counselors and Advisors</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    NOTE:  A cover letter is required for consideration for this position and should be attached as the first page of your resume in a single document to be uploaded in the online application.  The cover ...
+                                </p>
+                            
+                                <div id='417418552' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_1" tabindex="230" title="Manager of Instructional Computing &amp; Hardware Lifecycle" aria-label="Manager of Instructional Computing &amp; Hardware Lifecycle" name="417418552" href="../job-details/JobCode/417418552">Manager of Instructional Computing & Hardware Lifecycle</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;15-1232.00 Computer User Support Specialists</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    A cover letter is required for consideration for this position and should be attached as the first page of your resume. The cover letter should address your specific interest in the position and outli...
+                                </p>
+                            
+                                <div id='417418554' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_2" tabindex="230" title="LEO Lecturer III" aria-label="LEO Lecturer III" name="417418554" href="../job-details/JobCode/417418554">LEO Lecturer III</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;25-1121.00 Art, Drama, and Music Teachers, Postsecondary</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Submit letter of application, curriculum vitae, a statement of teaching philosophy and experience, and evidence of teaching excellence through E-Recruit. References will be requested from finalists.Th...
+                                </p>
+                            
+                                <div id='417418555' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_3" tabindex="230" title="Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)" aria-label="Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)" name="417418555" href="../job-details/JobCode/417418555">Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;29-1141.03 Critical Care Nurses</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    The Brandon NICU is expanding, offering an exciting opportunity to join our growing and dynamic team. As a regional referral center with expertise in Level IV NICU care, we provide the highest level o...
+                                </p>
+                            
+                                <div id='417418557' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_4" tabindex="230" title="Physician Assistant (PA) Neonatal Intensive Care Unit (NICU)" aria-label="Physician Assistant (PA) Neonatal Intensive Care Unit (NICU)" name="417418557" href="../job-details/JobCode/417418557">Physician Assistant (PA) Neonatal Intensive Care Unit (NICU)</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;29-1141.03 Critical Care Nurses</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    We are seeking a motivated and dedicated Physician Assistant (PA) to join our Neonatal Intensive Care Unit (NICU) team. This position is designed for individuals who demonstrate a strong clinical foun...
+                                </p>
+                            
+                                <div id='417418559' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_5" tabindex="230" title="REGISTERED NURSE - Neonatal Nurse Practitioner NNP Internship - Neonatal Intensive Care Unit (NICU)" aria-label="REGISTERED NURSE - Neonatal Nurse Practitioner NNP Internship - Neonatal Intensive Care Unit (NICU)" name="417418559" href="../job-details/JobCode/417418559">REGISTERED NURSE - Neonatal Nurse Practitioner NNP Internship - Neonatal Intensive Care Unit (NICU)</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;29-1141.00 Registered Nurses</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Qualified RN applicants will be considered who will extend their NNP education in an intern position with Von Voigtlander Women's Hospital (VVWH) 9 East and 9 West Birthing Center as well as neonatal ...
+                                </p>
+                            
+                                <div id='417418561' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_6" tabindex="230" title="Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)" aria-label="Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)" name="417418561" href="../job-details/JobCode/417418561">Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;29-1141.03 Critical Care Nurses</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    The Brandon NICU is expanding, offering an exciting opportunity to join our growing and dynamic team. As a regional referral center with expertise in Level IV NICU care, we provide the highest level o...
+                                </p>
+                            
+                                <div id='417418563' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_7" tabindex="230" title="Advanced Practice Professional (NNP) Neonatal Intensive Care Unit (NICU)" aria-label="Advanced Practice Professional (NNP) Neonatal Intensive Care Unit (NICU)" name="417418563" href="../job-details/JobCode/417418563">Advanced Practice Professional (NNP) Neonatal Intensive Care Unit (NICU)</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;29-1141.03 Critical Care Nurses</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    The Brandon NICU is expanding, offering an exciting opportunity to join our growing and dynamic team. As a regional referral center with expertise in Level IV NICU care, we provide the highest level o...
+                                </p>
+                            
+                                <div id='417418565' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_8" tabindex="230" title="Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)" aria-label="Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)" name="417418565" href="../job-details/JobCode/417418565">Neonatal Nurse Practitioner (NNP) Neonatal Intensive Care Unit (NICU)</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;29-1141.03 Critical Care Nurses</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    The Brandon NICU is expanding, offering an exciting opportunity to join our growing and dynamic team. As a regional referral center with expertise in Level IV NICU care, we provide the highest level o...
+                                </p>
+                            
+                                <div id='417418567' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_9" tabindex="230" title="LEO Intermittent Lecturer - LSA New England Literature Program (Spring 2027)" aria-label="LEO Intermittent Lecturer - LSA New England Literature Program (Spring 2027)" name="417418567" href="../job-details/JobCode/417418567">LEO Intermittent Lecturer - LSA New England Literature Program (Spring 2027)</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;25-1123.00 English Language and Literature Teachers, Postsecondary</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Application materials should consist of:1. An application letter explaining your qualifications and teaching philosophy2. A current CV3. Evidence of teaching excellence, which ideally will include for...
+                                </p>
+                            
+                                <div id='417418569' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_10" tabindex="230" title="Shared Ground Project Manager" aria-label="Shared Ground Project Manager" name="417418569" href="../job-details/JobCode/417418569">Shared Ground Project Manager</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;11-9199.00 Managers, All Other</b></br>
+                                        The University of Michigan
+                                    -
+                                    Ann Arbor,
+                                    MI,
+                                    48109
+                                    - Posted
+                                    10/23/2026</span>
+                                </div>
+                                
+                                <p>
+                                    A cover letter is required for consideration for this position and should be attached as the first page of your resume. The cover letter should address your specific interest in the position and outli...
+                                </p>
+                            
+                                <div id='417419420' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_11" tabindex="230" title="Dietary Aide" aria-label="Dietary Aide" name="417419420" href="../job-details/JobCode/417419420">Dietary Aide</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;35-2021.00 Food Preparation Workers</b></br>
+                                        Trilogy Health Services
+                                    -
+                                    Okemos,
+                                    Michigan,
+                                    48864
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    JOIN TEAM TRILOGY
+At Trilogy, you'll experience a caring, supportive community that values each team member. We prioritize meaningful relationships, genuine teamwork, and continuous growth. With the ...
+                                </p>
+                            
+                                <div id='417419602' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_12" tabindex="230" title="Identity Analyst IT Internship" aria-label="Identity Analyst IT Internship" name="417419602" href="../job-details/JobCode/417419602">Identity Analyst IT Internship</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;15-1212.00 Information Security Analysts</b></br>
+                                        Gordon Food Service
+                                    -
+                                    Wyoming,
+                                    Michigan,
+                                    49509
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Welcome to Gordon Food Service! We are excited that you are thinking about opportunities with us, and we have an amazing story to share. See below for a quick glance of who we are and the impact you c...
+                                </p>
+                            
+                                <div id='417419713' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_13" tabindex="230" title="Restaurant Team Member" aria-label="Restaurant Team Member" name="417419713" href="../job-details/JobCode/417419713">Restaurant Team Member</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;35-3023.00 Fast Food and Counter Workers</b></br>
+                                        Panera Bread
+                                    -
+                                    Southgate,
+                                    Michigan,
+                                    48195
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    At Panera Bread, we believe every guest deserves our best. As a Restaurant Team Member, you'll be the heart of hospitality- bringing warmth, care, and joy to every interaction. Restaurant Team Members...
+                                </p>
+                            
+                                <div id='417420104' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_14" tabindex="230" title="Caregiver noncertified" aria-label="Caregiver noncertified" name="417420104" href="../job-details/JobCode/417420104">Caregiver noncertified</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;31-1122.00 Personal Care Aides</b></br>
+                                        Trilogy Health Services
+                                    -
+                                    Byron Center,
+                                    Michigan,
+                                    49315
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    JOIN TEAM TRILOGY
+At Trilogy, you'll experience a caring, supportive community that values each team member. We prioritize meaningful relationships, genuine teamwork, and continuous growth. With the ...
+                                </p>
+                            
+                                <div id='417420459' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_15" tabindex="230" title="Restaurant Team Member" aria-label="Restaurant Team Member" name="417420459" href="../job-details/JobCode/417420459">Restaurant Team Member</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;35-3023.00 Fast Food and Counter Workers</b></br>
+                                        Panera Bread
+                                    -
+                                    Saginaw,
+                                    Michigan,
+                                    48604
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    At Panera Bread, we believe every guest deserves our best. As a Restaurant Team Member, you'll be the heart of hospitality- bringing warmth, care, and joy to every interaction. Restaurant Team Members...
+                                </p>
+                            
+                                <div id='417420713' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_16" tabindex="230" title="Sales Development Executive" aria-label="Sales Development Executive" name="417420713" href="../job-details/JobCode/417420713">Sales Development Executive</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;41-3091.00 Sales Representatives of Services, Except Advertising, Insurance, Financial Services, and Travel</b></br>
+                                        RR Donnelley  Sons
+                                    -
+                                    Madison Heights,
+                                    Michigan,
+                                    48071
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Company DescriptionRRD is a leading global provider of marketing, packaging, print, and supply chain solutions that elevate engagement across the complete customer journey. The company offers the indu...
+                                </p>
+                            
+                                <div id='417420716' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_17" tabindex="230" title="Senior Business Development Manager, Valves" aria-label="Senior Business Development Manager, Valves" name="417420716" href="../job-details/JobCode/417420716">Senior Business Development Manager, Valves</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;11-2021.00 Marketing Managers</b></br>
+                                        Gentherm
+                                    -
+                                    Novi,
+                                    Michigan,
+                                    48375
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Your Career. Your Impact. Your Future.At Gentherm, we believe the next big breakthrough begins with you. As a global leader in thermal management and pneumatic comfort technologies, we develop advance...
+                                </p>
+                            
+                                <div id='417420820' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_18" tabindex="230" title="Assistant Director of Food Services" aria-label="Assistant Director of Food Services" name="417420820" href="../job-details/JobCode/417420820">Assistant Director of Food Services</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;11-9051.00 Food Service Managers</b></br>
+                                        Trilogy Health Services
+                                    -
+                                    Romeo,
+                                    Michigan,
+                                    48065
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    JOIN TEAM TRILOGY
+At Trilogy, you'll experience a caring, supportive community that values each team member. We prioritize meaningful relationships, genuine teamwork, and continuous growth. With the ...
+                                </p>
+                            
+                                <div id='417421227' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_19" tabindex="230" title="Retail Sales Merchandiser" aria-label="Retail Sales Merchandiser" name="417421227" href="../job-details/JobCode/417421227">Retail Sales Merchandiser</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;27-1026.00 Merchandise Displayers and Window Trimmers</b></br>
+                                        Advantage Solutions
+                                    -
+                                    Cedar Springs,
+                                    Michigan,
+                                    49319
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    We want you to help us shape the future of shopping experiences and deliver on our purpose of connecting people with the products and experiences that enrich their lives. Joining Advantage Solutions m...
+                                </p>
+                            
+                                <div id='417421291' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_20" tabindex="230" title="Industrial Metrology / Survey Project Manager" aria-label="Industrial Metrology / Survey Project Manager" name="417421291" href="../job-details/JobCode/417421291">Industrial Metrology / Survey Project Manager</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;17-2112.00 Industrial Engineers</b></br>
+                                        DLZ Corporation
+                                    -
+                                    Detroit,
+                                    Michigan,
+                                    48226
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Shape the Future with DLZ!
+At DLZ Corporation, we don't just design infrastructure-we create solutions that improve communities and empower careers. As a nationally recognized, award-winning multidis...
+                                </p>
+                            
+                                <div id='417421392' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_21" tabindex="230" title="Electronic Systems Development ESD Director" aria-label="Electronic Systems Development ESD Director" name="417421392" href="../job-details/JobCode/417421392">Electronic Systems Development ESD Director</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;15-1252.00 Software Developers</b></br>
+                                        Hyundai America Technical Center Inc
+                                    -
+                                    Ann Arbor,
+                                    Michigan,
+                                    48103
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Electronic Systems Development (ESD) Director
+Hyundai America Technical Center, Inc. (HATCI) is seeking an Electronic Systems Development Director to lead advanced vehicle system design across electr...
+                                </p>
+                            
+                                <div id='417421451' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_22" tabindex="230" title="Extruder Operator" aria-label="Extruder Operator" name="417421451" href="../job-details/JobCode/417421451">Extruder Operator</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;51-1011.00 First-Line Supervisors of Production and Operating Workers</b></br>
+                                        HB Fuller
+                                    -
+                                    Michigan Center,
+                                    Michigan,
+                                    49254
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    As the largest pureplay adhesives company in the world, H.B. Fuller's (NYSE: FUL) innovative, functional coatings, adhesives and sealants enhance the quality, safety and performance of products people...
+                                </p>
+                            
+                                <div id='417421561' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_23" tabindex="230" title="Sales Development Executive McKay" aria-label="Sales Development Executive McKay" name="417421561" href="../job-details/JobCode/417421561">Sales Development Executive McKay</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;41-3091.00 Sales Representatives of Services, Except Advertising, Insurance, Financial Services, and Travel</b></br>
+                                        RR Donnelley  Sons
+                                    -
+                                    Midland,
+                                    Michigan,
+                                    48642
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    Company DescriptionRRD is a leading global provider of marketing, packaging, print, and supply chain solutions that elevate engagement across the complete customer journey. The company offers the indu...
+                                </p>
+                            
+                                <div id='417421564' onclick="SetDivPosition();" class="result-title">
+                                    <a id="MainContent_JobListView_job_title_link_24" tabindex="230" title="Tax Manager Energy and Excise" aria-label="Tax Manager Energy and Excise" name="417421564" href="../job-details/JobCode/417421564">Tax Manager Energy and Excise</a>
+                                    
+                                </div>
+                                <div class="result-place">
+                                    <span class="search_results_employer"><b> O*Net Code:&nbsp;&nbsp;13-2011.00 Accountants and Auditors</b></br>
+                                        RSM US LLP
+                                    -
+                                    Detroit,
+                                    Michigan,
+                                    48226
+                                    - Posted
+                                    10/24/2026</span>
+                                </div>
+                                
+                                <p>
+                                    We are the leading provider of professional services to the middle market globally, our purpose is to instill confidence in a world of change, empowering our clients and people to realize their full p...
+                                </p>
+                            
+                            
+
+                        <div id="MainContent_displayBottom" aria-label="pagination bottom">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="search-filtering">
+                                        
+                                        <div class="col-sm-6 col-md-4">
+                                            <label id="MainContent_pagesBtm">Pages</label>
+                                            <ul class="pagination">
+                                                <li>
+                                                    <a onclick="removeCookies();" id="MainContent_pageBtm1" tabindex="240" class="aspNetDisabled" aria-label="Advance Pages Bottom" style="color:#747474;">1</a></li>
+                                                <li>
+                                                    <a onclick="removeCookies();" id="MainContent_pageBtm2" tabindex="240" aria-label="Advance Pages Bottom" href="javascript:__doPostBack(&#39;ctl00$MainContent$pageBtm2&#39;,&#39;&#39;)" style="color:#1B829D;">2</a></li>
+                                                <li>
+                                                    <a onclick="removeCookies();" id="MainContent_pageBtm3" tabindex="240" aria-label="Advance Pages Bottom" href="javascript:__doPostBack(&#39;ctl00$MainContent$pageBtm3&#39;,&#39;&#39;)" style="color:#1B829D;">3</a></li>
+                                                <li>
+                                                    <a onclick="removeCookies();" id="MainContent_pageBtm4" tabindex="240" aria-label="Advance Pages Bottom" href="javascript:__doPostBack(&#39;ctl00$MainContent$pageBtm4&#39;,&#39;&#39;)" style="color:#1B829D;">4</a></li>
+                                                <li>
+                                                    <a onclick="removeCookies();" id="MainContent_pageBtm5" tabindex="240" class="fa fa-angle-double-right" aria-label="Advance Pages Bottom" href="javascript:__doPostBack(&#39;ctl00$MainContent$pageBtm5&#39;,&#39;&#39;)" style="color:#1B829D;"></a></li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-sm-6 col-md-2">
+                                            <div class="form-group">
+                                                <label>Display</label>
+                                                <select name="ctl00$MainContent$PageSizeBtm" id="MainContent_PageSizeBtm" tabindex="245" aria-label="Page Size Bottom" title="Display" class="form-control">
+	<option value="25">25</option>
+	<option value="50">50</option>
+	<option value="100">100</option>
+
+</select>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6 col-md-3">
+                                            <div class="form-group">
+                                                <label>Sort By</label>
+                                                <select name="ctl00$MainContent$PageSortBtm" id="MainContent_PageSortBtm" tabindex="250" class="sort_by form-control" aria-label="Page Sort Bottom" title="Sort By">
+	<option value="Rel">Relevance</option>
+	<option value="Posted">Posted Date</option>
+	<option value="Title">Title</option>
+	<option value="OrgName">Organization Name</option>
+	<option value="City">City</option>
+
+</select>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12 col-md-3">
+                                            <input type="submit" name="ctl00$MainContent$UpdateViewBtm" value="Update Results" onclick="removeCookies();" id="MainContent_UpdateViewBtm" tabindex="255" class="cancel btn btn-default talent-solid-btn btn-block color-btn" title="UPDATE RESULTS" aria-label="Click to Update Results" />
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 col-sm-4">
+
+                        <div class="job-search" tabindex="260">
+
+                            <label class="sr-only">Refine Search</label>
+                            <a id="MainContent_searchrefine" data-trigger="focus" aria-label="Get Help for Refine Search" class="popover-help" tabindex="265" data-content="&lt;p>&lt;strong>Job Title&lt;/strong>: Enter any job title you wish to search for.&lt;/p>
+&lt;p>&lt;strong>Keywords&lt;/strong>: Enter the keyword(s) you wish to search for. Use quotations to group words together. Example: project manager - returns results with project and/or manager in the title; &quot;project manager&quot; - returns results with the phrase &quot;project manager&quot; in the title.&lt;br />&lt;br />Career Category: Choose the highest level Career Category in which you are interested in finding positions. Career Categories allow you to narrow down your search to find more specific career types that reflect your interests and experience. &lt;br />&lt;br />Career Type: You may choose up to 5 relevant Career Types. Your selections will result in more effective matching to employer postings that meet your skills, interests and experience.&lt;br />&lt;br />Select from the listed characteristics to streamline your search.&lt;/p>" data-placement="bottom" data-html="true" role="button" data-original-title="Help for Refine Search" data-toggle="popover"><span class="glyphicon glyphicon-question-sign pull-right"></span></a>
+                            <h2>Refine Search</h2>
+
+                            <div class="form-group">
+                                <label>Posted Within</label>
+                                <select name="ctl00$MainContent$job_time_range" id="MainContent_job_time_range" tabindex="270" class="form-control" aria-label="Select Time Period" title="A Time period must be selected">
+	<option value="1">1 Day</option>
+	<option value="7">1 Week</option>
+	<option value="14">2 Weeks</option>
+	<option selected="selected" value="30">1 Month</option>
+
+</select>
+                            </div>
+                            <div class="form-group">
+                                <label>Keywords</label>
+                                <input name="ctl00$MainContent$job_keywords" maxlength="100" id="MainContent_job_keywords" tabindex="275" type="text" title="Keywords" aria-label="Enter Search Keywords" class="form-control" placeholder="Enter Keywords" onKeyUp="disableMatchAllWords();" onblur="return ValidateForspecialChar(this)" />
+                                <label class="checkbox-inline">
+                                    <span title="Match All Words" aria-label="Checkbox to Match all Words" Key="YesNo"><input id="MainContent_CheckAll" type="checkbox" name="ctl00$MainContent$CheckAll" onclick="seachKeyCheckChange(this);" tabindex="280" /></span>
+                                    Match ALL words
+                                </label>
+                                <div>
+                                    <label class="checkbox-inline">
+                                        <span title="Match Phrase" aria-label="Checkbox to Match whole Word" Key="YesNo"><input id="MainContent_CheckPhrase" type="checkbox" name="ctl00$MainContent$CheckPhrase" onclick="applyPhraseToKeyboard(this);" tabindex="281" /></span>
+                                        Match Phrase
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="checkbox-inline">
+                                        <span title="Include StateWide Jobs" aria-label="Check to Search State Wide Jobs"><input id="MainContent_IncludeStateWideJobs" type="checkbox" name="ctl00$MainContent$IncludeStateWideJobs" onclick="" tabindex="275" /></span>
+                                        Include StateWide Jobs
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Job Title</label>
+                                <input name="ctl00$MainContent$job_title" maxlength="150" id="MainContent_job_title" tabindex="282" type="text" title="Job Title" aria-label="Enter Job Title" class="form-control" placeholder="Enter any Job Title" onblur="return ValidateForspecialChar(this)" />
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-xs-6 col-sm-6">
+                                    <label>City</label>
+                                    <input name="ctl00$MainContent$job_city" maxlength="150" id="MainContent_job_city" tabindex="284" onchange="return enableRadiusbyCityZIP();" title="City" type="text" aria-label="Enter Location" class="form-control" placeholder="Enter City" onblur="return ValidateForspecialChar(this)" />
+                                </div>
+                                <div class="form-group col-xs-2 col-sm-2">
+                                    <div class="job-search-or">or</div>
+                                </div>
+                                <div class="form-group col-xs-4 col-sm-4">
+                                    <label>Zip Code</label>
+                                    <input name="ctl00$MainContent$job_zip" maxlength="5" id="MainContent_job_zip" tabindex="286" onchange="return enableRadiusbyCityZIP();" title="Zip Code" aria-label="Enter Zip Code" onkeypress="return checkIsItNumber(event);" type="text" class="form-control zipcode" onblur="return ValidateForspecialChar(this)" placeholder="Enter Zip" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>State/Province/Region</label>
+                                <input name="ctl00$MainContent$job_state" maxlength="150" id="MainContent_job_state" tabindex="288" type="text" aria-label="Enter State/Province/Region" title="State/Province/Region" onblur="return ValidateForspecialChar(this)" class="form-control" placeholder="Enter State/Province/Region" />
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-xs-7">
+                                    <label>Radius</label>
+                                    <select name="ctl00$MainContent$job_radius" id="MainContent_job_radius" class="form-control" tabindex="290" disabled="disabled" title="Radius" aria-label="Select Radius from  Zip/Postal Code">
+	<option selected="selected" value="0">-- Select a Radius --</option>
+	<option value="5">5 Miles</option>
+	<option value="10">10 Miles</option>
+	<option value="15">15 Miles</option>
+	<option value="25">25 Miles</option>
+	<option value="50">50 Miles</option>
+	<option value="100">100 Miles</option>
+</select>
+                                </div>
+                            </div>
+                            
+<script type="text/javascript">
+
+    function TrimSpacesInCommonJs(evt) {
+
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if ((charCode > 64 && charCode < 91) || (charCode > 96 && charCode < 123) || charCode == 8) { // Allow alphabetice characters
+            document.getElementById('txtOccupations').value = document.getElementById('txtOccupations').value.replace(/^\s+/, "");
+        }
+        else if (!(charCode > 31 && (charCode < 48 || charCode > 57))) { //Allow Numeric values
+            document.getElementById('txtOccupations').value = document.getElementById('txtOccupations').value.replace(/^\s+/, "");
+        }
+        else if (charCode == 45 || charCode == 46 || charCode == 47) { //Allow special characters -/, (- 45. 46 / 47)
+
+            document.getElementById('txtOccupations').value = document.getElementById('txtOccupations').value.replace(/^\s+/, "");
+        }
+        else if (charCode == 32) { //Allow space only if they are alphanumeric characters already entered in the txtOccupations
+            document.getElementById('txtOccupations').value = document.getElementById('txtOccupations').value.replace(/^\s+/, "");
+            if (document.getElementById('txtOccupations').value.trim().length > 0)
+                return true;
+            else
+                return false;
+        }
+        else
+            return false;
+    }
+
+</script>
+<div class="well clearfix">
+    <div class="row">
+        <div class="form-group col-xs-12">
+            <label id="MainContent_UcONetOccp_lblOccupationRelatedToSkills" class="control-label">O*Net Online Occupations</label>
+            <a id="MainContent_UcONetOccp_onethelp" data-trigger="focus" data-placement="bottom" class="popover-help" tabindex="470" aria-label="Get Help with selecting ONET occupations" data-toggle="popover" data-html="true" role="button" data-content="&lt;p>You can select the O*NET code that best relates to your job description, by typing the first two letters or numbers of the O*NET code. A drop down menu will appear and you can select the appropriate code from the list provided.&lt;/p>
+&lt;p>&lt;br />OR&lt;/p>
+&lt;p>&lt;br />You can leave the field blank and the system will Auto Code the O*NET code for your job posting.&lt;/p>" data-original-title="O*NET Occupation Help">
+                <span style="left: 8px;" class="glyphicon glyphicon-question-sign pull-right"></span></a>
+        </div>
+        <div class="form-group col-xs-12">
+            <div class="form-group col-xs-6">
+                <span class="radocc"><input id="MainContent_UcONetOccp_radocc" type="radio" name="ctl00$MainContent$UcONetOccp$Occupations" value="radocc" checked="checked" tabindex="471" /><label for="MainContent_UcONetOccp_radocc">Standard Occupation</label></span>
+            </div>
+            <div class="form-group col-xs-6">
+                <span class="radmil"><input id="MainContent_UcONetOccp_radmil" type="radio" name="ctl00$MainContent$UcONetOccp$Occupations" value="radmil" tabindex="472" /><label for="MainContent_UcONetOccp_radmil">Military Occupation</label></span>
+            </div>
+            <input name="ctl00$MainContent$UcONetOccp$hdnOccupType" type="hidden" id="MainContent_UcONetOccp_hdnOccupType" class="hdnOccupType" value="ONET" />
+            <input name="ctl00$MainContent$UcONetOccp$hdnOccpLimit" type="hidden" id="MainContent_UcONetOccp_hdnOccpLimit" class="hdnOccpLimit" value="5" />
+            <input name="ctl00$MainContent$UcONetOccp$hdnPopOccList" type="hidden" id="MainContent_UcONetOccp_hdnPopOccList" class="hdnPopOccList" value="No" />
+            <input name="ctl00$MainContent$UcONetOccp$hdnJSUserId" type="hidden" id="MainContent_UcONetOccp_hdnJSUserId" class="hdnJSUserId" />
+            <input name="ctl00$MainContent$UcONetOccp$hdnPageType" type="hidden" id="MainContent_UcONetOccp_hdnPageType" class="hdnPageType" />
+            <input name="ctl00$MainContent$UcONetOccp$hdnUserRoleName" type="hidden" id="MainContent_UcONetOccp_hdnUserRoleName" class="hdnUserRoleName" />
+        </div>
+        <div class="form-group col-xs-12">
+            <label class="control-label">Search by Keyword or O*NET Code(XX-XXXX)</label>
+        </div>
+    </div>
+    <div id="occcontainer" class="col-md-12 col-sm-12">
+        <div class="row">
+            <div class="form-group col-xs-12">
+                <div class="form-group col-xs-6">
+                    <label for="txtOccupations" class="control-label occlabel-count"></label>
+                </div>
+                <div class="form-group col-xs-3">
+                    <a href="https://www.onetonline.org/" id="MainContent_UcONetOccp_lnkONetCodes" aria-label="Learn more about ONET Codes" title="O*NET Codes" target="_blank" rel="noopener noreferrer nofollow" class="" tabindex="473">O*NET Codes</a>
+                </div>
+                <div class="form-group col-xs-3">
+                    <a href="https://www.onetonline.org/crosswalk/MOC/" id="MainContent_UcONetOccp_lnkMilitaryCrosswalk" aria-label="Learn more about Military Crosswalk" title="Military Crosswalk" target="_blank" rel="noopener noreferrer nofollow" class="" tabindex="474">Military Crosswalk</a>
+                </div>
+
+                <input name="ctl00$MainContent$UcONetOccp$txtOccupations" type="text" maxlength="200" id="txtOccupations" tabindex="475" class="form-control occcodes" onkeypress="return TrimSpacesInCommonJs(event)" aria-label="(0 of 5 selected)" title="Occupations" data-error="Please complete this field" />
+            </div>
+            <div id="occselections">
+                <ul id="MainContent_UcONetOccp_OccpListControl" class="onet-moc-list"></ul>
+                <div id="occvalues">
+                </div>
+            </div>
+            <div id="occchecks" class="form-group col-xs-12">
+                <div id="MainContent_UcONetOccp_Agr_Container" class="form-group col-xs-6 agr-container hidden">
+                    <span Class="onet-check AGR"><input id="MainContent_UcONetOccp_Chk_AgriculturalOrders" type="checkbox" name="ctl00$MainContent$UcONetOccp$Chk_AgriculturalOrders" onclick="return false;" tabindex="476" /></span>
+                    <label for="MainContent_UcONetOccp_Chk_AgriculturalOrders" class="control-label">Agricultural Orders</label>
+                </div>
+                <div id="MainContent_UcONetOccp_Isj_Container" class="form-group col-xs-6 isj-container hidden">
+                    <span Class="onet-check ISJ"><input id="MainContent_UcONetOccp_Chk_InterstateJob" type="checkbox" name="ctl00$MainContent$UcONetOccp$Chk_InterstateJob" tabindex="477" /></span>
+                    <label for="MainContent_UcONetOccp_Chk_InterstateJob" class="control-label">Interstate Job</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+                            <div class="form-group">
+                                <label>Education Required (select all that apply)</label>
+                                <div class="AspNet-CheckBoxList" id="MainContent_chlEducationLevel">
+		<label class="AspNet-CheckBoxList-RepeatDirection-Vertical" class="AspNet-CheckBoxList-Item"><input id="MainContent_chlEducationLevel_0" type="checkbox" name="ctl00$MainContent$chlEducationLevel$0" value="1" tabindex="480" />None</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlEducationLevel_1" type="checkbox" name="ctl00$MainContent$chlEducationLevel$1" value="2" tabindex="480" />High School Diploma/Equivalency</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlEducationLevel_2" type="checkbox" name="ctl00$MainContent$chlEducationLevel$2" value="3" tabindex="480" />Some College</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlEducationLevel_3" type="checkbox" name="ctl00$MainContent$chlEducationLevel$3" value="4" tabindex="480" />Associates Degree</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlEducationLevel_4" type="checkbox" name="ctl00$MainContent$chlEducationLevel$4" value="5" tabindex="480" />Bachelors Degree</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlEducationLevel_5" type="checkbox" name="ctl00$MainContent$chlEducationLevel$5" value="6" tabindex="480" />Masters Degree or above</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlEducationLevel_6" type="checkbox" name="ctl00$MainContent$chlEducationLevel$6" value="7" tabindex="480" />Industry Recognized Credential</label>
+
+</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Job Level of the Position You are Looking For</label>
+                                <div class="AspNet-CheckBoxList" id="MainContent_chlPositionLevel">
+		<label class="AspNet-CheckBoxList-RepeatDirection-Vertical" class="AspNet-CheckBoxList-Item"><input id="MainContent_chlPositionLevel_0" type="checkbox" name="ctl00$MainContent$chlPositionLevel$0" value="1" tabindex="485" />Internship</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlPositionLevel_1" type="checkbox" name="ctl00$MainContent$chlPositionLevel$1" value="2" tabindex="485" />Entry Level</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlPositionLevel_2" type="checkbox" name="ctl00$MainContent$chlPositionLevel$2" value="3" tabindex="485" />Experienced (Non-Manager)</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlPositionLevel_3" type="checkbox" name="ctl00$MainContent$chlPositionLevel$3" value="4" tabindex="485" />Manager/Supervisor</label>
+		<label class="AspNet-CheckBoxList-Item"><input id="MainContent_chlPositionLevel_4" type="checkbox" name="ctl00$MainContent$chlPositionLevel$4" value="6" tabindex="485" />Registered Apprenticeship</label>
+
+</div>
+                                <p class="text-center">
+                                    <a id="MainContent_LinkButton2" tabindex="490" title="Refine Search" aria-label="Click to Refine Search" href="javascript:__doPostBack(&#39;ctl00$MainContent$LinkButton2&#39;,&#39;&#39;)">Refine Search</a>
+                                </p>
+                            </div>
+                            <div class="form-group">
+                                <label id="lblPayRangeType" class="control-label">Pay Type</label>
+                                <select name="ctl00$MainContent$ddlPayRangeCategories" onchange="javascript:setTimeout(&#39;__doPostBack(\&#39;ctl00$MainContent$ddlPayRangeCategories\&#39;,\&#39;\&#39;)&#39;, 0)" id="MainContent_ddlPayRangeCategories" title="Pay Range Types" class="form-control" aria-labelledby="lblPayRange" data-error="Pay Range is a required field." OnClientClick="return ShowHidelblPayRange();">
+	<option selected="selected" value="0">-- Select Pay Type --</option>
+	<option value="1">Hourly</option>
+	<option value="2">Salary</option>
+
+</select>
+                                <br/>
+                                <label id="lblPayRange" class="control-label">Pay Range</label>
+                                
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-7 col-md-12">
+                                    <input type="submit" name="ctl00$MainContent$applyBtn" value="Apply Changes" onclick="return applyChanges();" id="MainContent_applyBtn" tabindex="495" class="cancel btn btn-default talent-solid-btn btn-block color-btn" title="Apply Changes" aria-label="Click to Apply Changes in Job Search" />
+
+                                    
+
+                                    <input type="submit" name="ctl00$MainContent$newSearchBtn" value="New Search" onclick="removeCookies();" id="MainContent_newSearchBtn" tabindex="500" class="cancel btn btn-default talent-solid-btn btn-block color-btn" title="New Search" aria-label="Click to New Search" />
+                                </div>
+                            </div>
+                            
+
+                            <input type="hidden" name="job_category" value="" />
+                            <input name="ctl00$MainContent$srchname" type="hidden" id="MainContent_srchname" />
+                            <input name="ctl00$MainContent$hdnjquery" type="hidden" id="MainContent_hdnjquery" />
+                            
+                            <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$MainContent$ScriptManager1', 'JobSearchResults', ['tctl00$MainContent$UpdatePanel1','MainContent_UpdatePanel1'], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+                            <div id="MainContent_UpdatePanel1">
+	
+                                    
+                                
+</div>
+                        </div>
+                        <div class="row">
+                            <div id="m-redirect-dialog" class="modal fade">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" id="redirectclosebtn" tabindex="202" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span> </button>
+                                            <h4 class="modal-title">Confirmation!</h4>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>
+                                                <span id="MainContent_lblMissingInfo"></span>
+                                            </p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" id="btnYes" style="width: 100px; float: left; margin-right: 10px;" class="btn btn-default color-btn" tabindex="202" data-dismiss="modal" onclick="callEventHandler();">Yes</button>
+                                            <button type="button" id="btnNo" style="width: 100px;" class="btn btn-default color-btn" tabindex="202" data-dismiss="modal" onclick="closeRedirectModal();">No</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+<div class="feedback">
+<a id="MainContent_Feedback1_hyp_Feedback" tabindex="520" title="Provide feedback about this page" aria-label="Click to Provide feedback about this page" role="link" href="../../Feedback/">+ Feedback about this page?</a>
+</div>
+
+                    </div>
+                </div>
+            
+
+<script type="text/javascript">
+//<![CDATA[
+hideSuccess();hideError();WebForm_AutoFocus('applyBtn');//]]>
+</script>
+</form>
+        </div>
+    </div>
+
+
+    
+
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="footer-social-media clearfix">
+                        <div class="social-media-icon">
+                            <a href="https://www.facebook.com/MichTalent" class="facebook" role="link" aria-label="Pure Michigan Talent Connect on Facebook" tabindex="1000" target="_blank" rel="noopener noreferrer nofollow"></a>
+                        </div>
+                        <div class="social-media-icon">
+                            <a href="http://www.linkedin.com/showcase/michigantalent" class="linkedin" role="link" aria-label="Pure Michigan Talent Connect on LinkedIn" tabindex="1005" target="_blank" rel="noopener noreferrer nofollow"></a>
+                        </div>
+                        <div class="social-media-icon">
+                            <a href="https://www.twitter.com/MichiganTalent" class="twitter" role="link" aria-label="Pure Michigan Talent Connect on Twitter" tabindex="1010" target="_blank" rel="noopener noreferrer nofollow"></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row footer-links">
+                <div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.mitalent.org/job-seeker" title="Job Seeker" tabindex="1025" >Job Seeker</a></div><ul><li><a href="/job-search" title="Advanced Job Search" tabindex="1026" >Advanced Job Search</a></li><li><a href="https://jobs.mitalent.org/SAML/CreateSSOJobSeeker/" title="Create Job Seeker Account" tabindex="1027" >Create<span class="sr-only"> Job Seeker</span> Account</a></li><li><a href="https://www.mitalent.org/just-for-you" title="Just for You" tabindex="1028" >Just for You</a></li><li><a href="https://www.mitalent.org/agriculture" title="Agriculture Employment" tabindex="1029" >Agriculture Employment</a></li><li><a href="https://www.mitalent.org/job-seeker-other-resources" title="Other Job Seeker Resources" tabindex="1030" >Other<span class="sr-only"> Job Seeker</span> Resources</a></li><li><a href="https://www.mitalent.org/unemployed" title="Unemployment Information" tabindex="1031" >Unemployment Information</a></li><li><a href="https://www.mitalent.org/tutorials" title="Tutorials" tabindex="1032" >Tutorials</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.mitalent.org/Employer" title="Employer" tabindex="1033" >Employer</a></div><ul><li><a href="/employer-create-account/" title="Create Employer Account" tabindex="1034" >Create<span class="sr-only"> Employer</span> Account</a></li><li><a href="https://www.mitalent.org/agriculture" title="Agriculture Services" tabindex="1035" >Agriculture Services</a></li><li><a href="https://miwam.unemployment.state.mi.us/EmpMiWAM/_/#1" title="Report Refusal of Work" tabindex="1036" >Report Refusal of Work</a></li><li><a href="https://www.mitalent.org/employer-other-resources" title="Other Employer Resources" tabindex="1037" >Other<span class="sr-only"> Employer</span> Resources</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.mitalent.org/career-exploration" title="Career Exploration" tabindex="1038" >Career Exploration</a></div><ul><li><a href="https://pathfinder.mitalent.org" title="Pathfinder" tabindex="1039" >Pathfinder</a></li><li><a href="https://mat2apprenticeships.com/" title="MAT2 Program" tabindex="1040" >MAT2 Program</a></li><li><a href="https://www.mitalent.org/mitc" title="Michigan Training Connect" tabindex="1041" >Michigan Training Connect</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.michigan.gov/leo/0,5863,7-336-94422_95539_98962---,00.html" title="Veteran" tabindex="1042" >Veteran</a></div><ul><li><a href="https://www.michigan.gov/leo/0,5863,7-336-94422_95539_98962---,00.html" title="Veteran Home" tabindex="1043" >Veteran Home</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.going-pro.com" title="Skilled Trades" tabindex="1044" >Skilled Trades</a></div><ul><li><a href="https://www.michigan.gov/Apprenticeship" title="Registered Apprenticeships" tabindex="1045" >Registered Apprenticeships</a></li><li><a href="https://www.mitalent.org/skilled-trades-post-secondary-education-opportunities" title="Post-Secondary Education Opportunities" tabindex="1046" >Post-Secondary Education Opportunities</a></li><li><a href="https://www.mitalent.org/skilled-trades-students-parents-educators" title="Students, Parents & Educators" tabindex="1047" >Students, Parents & Educators</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.mitalent.org/about-us" title="About Us" tabindex="1048" >About Us</a></div><ul><li><a href="https://www.mitalent.org/Media/Default/Files/Tutorials/FAQ.pdf" title="FAQs" tabindex="1049" >FAQs</a></li><li><a href="https://www.mitalent.org/tutorials" title="Tutorials" tabindex="1050" >Tutorials</a></li><li><a href="https://twitter.com/MichiganTalent" title="Social Media" tabindex="1051" >Social Media</a></li><li><a href="https://www.mitalent.org/online-job-search-safety" title="Online Job Search Safety" tabindex="1052" >Online Job Search Safety</a></li><li><a href="https://www.mitalent.org/terms-and-conditions" title="Terms and Conditions" tabindex="1053" >Terms and Conditions</a></li></ul>
+</div>
+
+            </div>
+            <div class="row">
+                <ul id="Footer1_utility_nav" class="footer-utility-nav"><li><a href="https://www.mitalent.org/sitemap" class="utility_nav" tabindex="1054">Site Map</a></li><li><a href="https://www.mitalent.org/terms-and-conditions" class="utility_nav" tabindex="1055">Terms and Conditions</a></li><li><a href="https://www.mitalent.org/newsletters" class="utility_nav" tabindex="1056">Newsletters</a></li><li><a href="https://jobs.mitalent.org/CareerEvent.aspx?e=Start" class="utility_nav" tabindex="1057">Career Events</a></li><li><a href="https://www.mitalent.org/about-us" class="utility_nav" tabindex="1058">About Us</a></li></ul>
+            </div>
+            <div class="row">
+                <div class="copyright">
+                    <span id="Footer1_rightCopy"><p>&copy; Copyright, 2026 The Michigan Department of Labor &amp; Economic Opportunity - Workforce Development</p><p>P.O. Box 30805, Lansing, MI 48909</p><p>1-833-727-3495</p></span>
+                </div>
+            </div>
+
+
+        </div>
+    </footer>
+
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            var hostname = window.location.hostname;
+            var bannerText = "";
+
+            switch (hostname) {
+                case "localhost":
+                case "dev-mitalent.lara.state.mi.us":
+                case "mitalent.wda.state.mi.us":
+                case "dev-mitalent.leo.state.mi.us":
+                    bannerText = "DEV";
+                    break;
+                //case "beta.mitalent.org":
+                case "test-jobs.mitalent.org":
+                    bannerText = "TEST";
+                    //    bannerText = "";
+                    break;
+                case "training.mitalent.org":
+                case "training-jobs.mitalent.org":
+                    bannerText = "TRAINING";
+                    break;
+
+            }
+
+            if (bannerText != "") {
+                $('.brand-logo').append(
+                    $('<div />', {
+                        "class": 'banner-overlay',
+                        text: bannerText
+                    })
+                )
+                    ;
+            }
+        });
+    </script>
+
+
+
+
+    <div role="region" aria-label="scripts">
+        
+    </div>
+</body>
+</html>

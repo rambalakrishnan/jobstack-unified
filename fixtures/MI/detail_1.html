@@ -1,0 +1,2008 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head id="Head1"><meta http-equiv="Content-Security-Policy" content="script-src &#39;self&#39; &#39;unsafe-inline&#39; &#39;unsafe-eval&#39; https://*;" /><meta charset="utf-8" /><title>
+	Job Opportunity:  ASST STORE MGR in DRYDEN MI S16670  at  DRYDEN MI S16670 at Direct Employers in Dryden, MI 48428 - Job Code: 414569021
+</title>
+        <!-- == Basic Page Needs  ================================================== -->
+        
+        <meta name="author" content="">
+        <!-- == Mobile Specific Metas  ================================================== -->
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- do not cache on proxy -->
+        <META HTTP-EQUIV=PRAGMA CONTENT=NO-CACHE><META HTTP-EQUIV=CACHE-CONTROL CONTENT=PRIVATE><META NAME="ROBOTS" CONTENT="INDEX, NOFOLLOW">
+
+
+        <!-- TEMP IP ADDR -->
+        
+
+        <!-- == CSS ======================================================= -->
+
+        <link href="/bundles/styles?v=SIKRitg5umrUf18BzyDq0OIY6PnR2Jx2Q32AdObKGG81" rel="stylesheet" type="text/css" />
+
+        <!-- Fonts account -->
+        
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" integrity="sha256-k2/8zcNbxVIh5mnQ52A0r3a6jAgMGxFJFE2707UxGCk=" crossorigin="anonymous">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,900&display=swap" rel="stylesheet">
+
+        <!-- == Favicons ================================================== -->
+        <link rel="shortcut icon" href="../../../images/site_graphics/favicon.ico" />
+        <link rel="apple-touch-icon" href="../../../images/site_graphics/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="../../../images/site_graphics/apple-touch-icon-72x72.png">
+        <link rel="apple-touch-icon" sizes="114x114" href="../../../images/site_graphics/apple-touch-icon-114x114.png" />
+
+        <!-- == scripts =============================================================== -->
+
+        <script src="/bundles/scripts?v=ztKWRTjH7UDNhHafp4FgiQaSRn0X75n8Lr6-6lEUSG81" type="text/javascript"></script>
+
+        <script type="text/javascript" src="/Scripts/tinymce/tinymce.min.js"></script>
+        <script type="text/javascript" src="/Scripts/tinymce/jquery.tinymce.min.js"></script>
+    
+
+
+    <script src="https://s7.addthis.com/js/250/addthis_widget.js#pubid=ra-503760e2422a7dbe"></script>
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            var org = document.getElementById('MainContent_lblCompanyName');
+            if (org != null) {
+                var orgName = org.innerHTML;
+                $("#lnkaboutorg").attr("aria-label", "Click about " + orgName);
+                $("#lnkaboutorg").attr("title", "About " + orgName);
+            }           
+            
+            //var jobcodenum = document.getElementById("MainContent_hdJobCodeNumber").value;
+            var jobId = document.getElementById("MainContent_hdJobId").value;
+            var idUser = document.getElementById("MainContent_hdUserId").value;
+            $.ajax({
+                type: "POST",
+                url: "/Job-Seeker/JobDetails.aspx/IncreaseViewCount",
+                data: "{ JobId: " + jobId + " ,UserId: " + idUser + "}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (msg) {
+                },
+                error: function (data) {
+                }
+            });
+
+
+            $("#btnApplynow").click(function () {
+                var p2 = document.getElementById("MainContent_pnlJobDelete");
+                //alert("p" + p2);
+                if (p2 != null) {
+                    var p1 = document.getElementById("MainContent_lnkBtnDelete");
+                    //alert(p1);
+                    p2.style.visibility = "visible";
+                    p1.style.visibility = "visible";
+                }
+                if (document.getElementById("MainContent_hdnisPrimaryResumeAttached").value == "No") {
+                    $(function () {
+                        $('#ShowNoResumePopup').modal('show')
+
+                        //$('div#divpopupapplynow').dialog({
+                        //    modal: true,
+                        //    title: "<strong><h6><font color='red'>Warning:</font> <br/> <br/><font color='green'>" +
+                        //        "There is no resume associated with your account.  Are you sure you wish to apply?</font></strong>",
+                        //    height: 170,
+                        //    width: 375,
+
+                        //    overlay: {
+                        //        background: '#fff',
+                        //        opacity: '0.7'
+                        //    },
+
+                        //    buttons:
+                        //    [
+                        //        {
+                        //            text: "Yes",
+                        //            click: function () {
+                        //                $('div#showdetailspopup').dialog({
+                        //                    modal: true,
+                        //                    title: "",
+                        //                    height: 675,
+                        //                    width: 900,
+                        //                    overlay: {
+                        //                        background: '#508a12',
+                        //                        opacity: '0.7'
+                        //                    },
+                        //                    buttons:
+                        //                    {
+                        //                        "Send": function () {
+                        //                            saveAppliedJob();
+                        //                        },
+                        //                        "Cancel": function () {
+                        //                            //window.location = "/workspace/";
+                        //                            $('#showdetailspopup').dialog("close");
+                        //                        }
+                        //                    }
+                        //                });
+
+                        //                $('#divpopupapplynow').dialog("close");
+
+                        //            }
+                        //        },
+                        //        {
+                        //            text: "No",
+                        //            click: function () {
+                        //                $('#divpopupapplynow').dialog("close");
+                        //            }
+                        //        }
+                        //    ]
+                        //});
+                    });
+                    //return false;
+                }
+                else {
+                    $('#showdetailspopup').modal('show');
+                }
+            });
+            $("#btnYesShow").click(function () {
+                $('#ShowNoResumePopup').modal('hide');
+                setTimeout(function () {
+                    $('#showdetailspopup').modal('show');
+                }, 500);
+            });
+
+
+            var applyInfoDiv = document.getElementById('MainContent_ApplyInfo');
+
+            var infoLink = applyInfoDiv.querySelectorAll("a");
+            if (infoLink != null && infoLink.length > 0) {
+                //infoLink.forEach(setClassAttr);
+                Array.from(infoLink).forEach(setClassAttr);
+                Array.from(infoLink).forEach(VerifyURL);
+            }
+
+            function setClassAttr(item, index) {
+                infoLink[index].setAttribute("class", "infowebsitelink");
+            }
+
+            function VerifyURL(item, index) {
+                var hrefval = item.getAttribute("href");
+                if (hrefval != '') {
+                    var hrefNewVal = '';
+                    var doesContainHttp = String(hrefval).toLowerCase().includes('http');                    
+                    if (!doesContainHttp) {
+                        hrefNewVal = 'https://' + String(hrefval);
+                        infoLink[index].removeAttribute("href");
+                        infoLink[index].setAttribute("href", hrefNewVal);
+                    }                   
+                }
+            }
+
+            $('.infowebsitelink').click(function () {
+                var userResponse = confirm("You are being redirected to an employer site to proceed with their application process. Do you want to continue?");
+                return userResponse;
+            });
+
+
+
+
+        });
+
+
+        function saveAppliedJob() {
+            if (document.getElementById("MainContent_txtEmailBody").value == '') {
+                $("#divbodyerrormsg").toggle('slow');
+                return false;
+            }
+
+            var jobId = parseInt(document.getElementById("MainContent_hdnJobid").value, 0);
+            var email = document.getElementById("MainContent_hdnEmailId").value;
+            var USERId = document.getElementById("MainContent_hdUserId").value;
+            //var jobcodenumber = document.getElementById("MainContent_hdnJobCodeNumber").value;
+            var jobtitle = document.getElementById("MainContent_lblJobTitle").title;
+            jobtitle = jobtitle.replace("'", '"');
+            var primaryresumeid = 0;
+
+            if (document.getElementById("MainContent_resumes_chkunselectresume").value == "off"
+                || document.getElementById("MainContent_resumes_chkunselectresume").checked == false)
+                primaryresumeid = parseInt(document.getElementById("MainContent_resumes_hdnchkid").value);
+
+            var docids = "";
+            if (document.getElementById("MainContent_documents_hdndocids").value) {
+                docids = document.getElementById("MainContent_documents_hdndocids").value;
+            }
+
+            var isExternalJob = false;
+            var status = document.getElementById("MainContent_resumes_hdnStatus").value;
+            var origin = document.URL;
+            var body = document.getElementById("MainContent_txtEmailBody").value + ";replytowithheader";
+            body = body.replace("'", '"');
+
+            $.ajax({
+                type: "POST",
+                url: "/Job-Seeker/JobDetails.aspx/CreateAppliedJobByUserId",
+                data: "{ 'Email': '" + email + "' ,UserId: '" + USERId + "' ,Jobid: '" + jobId + "' ,JobTitle: '" + jobtitle + "' ,isExternal: '" + isExternalJob + "' ,SelectedPrimaryResumeId: '" + primaryresumeid + "' ,Status: '" + status + "' ,Origin: '" + origin + "' ,Body: '" + body + "' ,DocIds: '" + docids + "'}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (msg) {
+
+                    $("#divshowsuccess").text(msg.d);
+                    document.getElementById("divshowsuccess").style.display = "inline";
+                    $("#divshowsuccess").text = msg.d;
+
+                    $("#divshowsuccess").show();
+
+                    $("#divshowsuccess").text(msg.d + ".");
+
+                    $("#divApplyNow").hide();
+                    document.getElementById("MainContent_ApplyInfo").style.display = "inline";
+                    var sv = document.getElementById("MainContent_pnlJobSave");
+                    if (sv) {
+                        document.getElementById("MainContent_pnlJobSave").style.display = "none";
+                    }
+                },
+                error: function (data) {
+                    //alert(data.d);
+                    //window.location = "/workspace/";
+                }
+            });
+            $('#showdetailspopup').modal('hide');
+            //__doPostBack('MainContent_UpdatePanel2', '');                 
+        }
+
+        function DeleteJob() {
+            if (!window.confirm("Are you sure you want to delete this job from your Workspace?")) {
+                return false;
+            }
+
+            document.getElementById("MainContent_ApplyInfo").style.display = "none";
+            document.getElementById("divApplyNow").style.display = 'none';
+            $("#divshowsuccess").hide();
+            return true;
+        }
+
+        function OpenTab() {
+            $('.nav-tabs a[href="#tab2"]').tab('show');
+            return false;
+        }
+
+        function ValidateEmail() {
+            var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            var email = document.getElementById("MainContent_txtEmailTo").value;
+            if (email.length < 5) {
+                document.getElementById("MainContent_lblError").innerHTML = "Email Address should have at least 5 characters."
+                return false;
+            }
+            if (!email.match(re)) {
+                document.getElementById("MainContent_lblError").innerHTML = "Invalid Email Address"
+                return false;
+            }
+        }
+        function PrintDetails() {
+            console.log('testing print');
+            var newstr = document.getElementById('content_tabs-0').innerHTML;
+            var jobsummary = document.getElementById('job_summary_div').innerHTML;
+            var newWindow = "toolbar=no, addressbar=no, directories=no,location=no, status=yes, menubar=no, scrollbars=yes, resizable=yes, width=1000 , height=500, left=50, top=50";
+            var printWindow = window.open('', 'jobDetails', newWindow);
+            printWindow.document.write('<html><body onload="window.focus();window.print()">');
+            printWindow.document.write(newstr + jobsummary);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.close();
+            return false;
+        }
+
+        function showErrorMessage() {
+            //debugger;
+            var max = '30'
+            var savedjobs = document.getElementById("MainContent_hdnsavedjobs").value;
+            alert(max);
+            alert(savedjobs);
+
+            max = parseInt(max);
+            savedjobs = parseInt(savedjobs);
+            document.getElementById("divApplyNow").style.display = 'none';
+            document.getElementById("MainContent_ApplyInfo").style.display = 'none';
+
+            if (document.getElementById("MainContent_Firstname").value != "") {
+                var firstname = document.getElementById("MainContent_Firstname").value;
+                var lastname = document.getElementById("MainContent_Lastname").value;
+            }
+
+            if (savedjobs >= max) {
+                var errorMsg = "<strong><h6><font color='green'>Dear " + firstname + " " + lastname + ", <br/> <br/>" + "You already have " + max + " jobs saved to your list. To save this job to your list, delete any one of the saved jobs from your Workspace.</font></h6></strong>";
+
+                $('#MainContent_MainContentSub_error_container').css('display', 'block');
+                document.getElementById("MainContent_MainContentSub_error_container").innerHTML = errorMsg;
+            }
+            else {
+                var email = document.getElementById("MainContent_hdnEmailId").value;
+                var USERId = document.getElementById("MainContent_hdUserId").value;
+                var jobId = document.getElementById("MainContent_hdnJobCodeNumber").value;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Job-Seeker/JobDetails.aspx/JobAlreadyAppliedBythisUserByUserId",
+                    data: "{ 'UserId': '" + USERId + "' ,JobId: '" + jobId + "'}",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (msg) {
+                        document.getElementById("MainContent_hdisappliedalready").value = msg.d;
+                        if (msg.d != '') {
+                            i = "true";
+                            $('#MainContent_MainContentSub_error_container').css('display', 'block');
+                            document.getElementById("MainContent_MainContentSub_error_container").innerHTML = "Cannot save. You already applied for this job on " + msg.d + ".";
+                            $("#divpopupapplynow").hide();
+                        }
+                    },
+                    error: function (data) {
+                    }
+                });
+            }
+        }
+
+
+        function ShowHidePanel(p) {
+            //debugger;
+            var p = document.getElementById(p);
+            var email = document.getElementById("MainContent_hdnEmailId").value;
+            var USERId = document.getElementById("MainContent_hdUserId").value;
+
+            var jobId = document.getElementById("MainContent_hdnJobCodeNumber").value;
+
+            var l = document.getElementById('ApplyLabel');
+            var i = "";
+
+            if (p.style.display == "none") {
+                //document.getElementById("MainContent_ApplyInfo").style.display = "inline";
+                // document.getElementById("divApplyNow").style.display = 'inline';
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Job-Seeker/JobDetails.aspx/JobAlreadyAppliedBythisUserByUserId",
+                    data: "{ 'UserId': '" + USERId + "' ,JobId: '" + jobId + "'}",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (msg) {
+                        document.getElementById("MainContent_hdisappliedalready").value = msg.d;
+                        if (msg.d != '') {
+                            i = "true";
+                            $("#divshowsuccess").text(msg.d);
+                            document.getElementById("divshowsuccess").style.display = "inline";
+                            $("#divshowsuccess").text = msg.d;
+                            $("#divpopupapplynow").hide();
+                            //alert(document.getElementById("MainContent_hdnAllowJobseeker").value);
+                            if (msg.d == "This job is saved to your Workspace") {
+                                //$("#divshowsuccess").toggle('slow');
+                                document.getElementById("MainContent_ApplyInfo").style.display = "inline";
+                                if (document.getElementById("MainContent_hdnAllowJobseeker").value != '')
+                                    document.getElementById("divApplyNow").style.display = 'inline';
+                                else
+                                    document.getElementById("divApplyNow").style.display = 'none';
+                            }
+                            else if (msg.d == "Job has expired") {
+                                document.getElementById("MainContent_ApplyInfo").style.display = "inline";
+                                document.getElementById("divApplyNow").style.display = 'none';
+                            }
+                            else if (msg.d.indexOf("Applied for this job") != -1) {
+                                $("#divshowsuccess").show();
+                                $("#divshowsuccess").text(msg.d + ".");
+                                document.getElementById("divApplyNow").style.display = 'none';
+                                document.getElementById("MainContent_ApplyInfo").style.display = "inline";
+
+                                var p2 = document.getElementById("MainContent_pnlJobDelete");
+
+                                if (p2 != null) {
+                                    var p1 = document.getElementById("MainContent_lnkBtnDelete");
+                                    //alert(p1);
+                                    p2.style.visibility = "visible";
+                                    p1.style.visibility = "visible";
+                                }
+                            }
+                            else {
+                                document.getElementById("MainContent_ApplyInfo").style.display = "inline";
+                                document.getElementById("divApplyNow").style.display = 'none';
+                            }
+                        }
+                        else {
+                            //alert("else");
+                            //alert(document.getElementById("MainContent_hdnAllowJobseeker").value);
+                            //alert(document.getElementById("MainContent_hdnusertype").value);
+                            i = "false";
+                            $("#divshowsuccess").text("");
+                            $("#divshowsuccess").hide();
+                            if (document.getElementById("hdnUserName").value != "") {
+                                if (i == '' || i == "false") {
+                                    if (document.getElementById("MainContent_hdnAllowJobseeker").value != ''
+                                        && (document.getElementById("MainContent_hdnusertype").value == "JOBSEEKER")) {
+                                        document.getElementById("divApplyNow").style.display = 'inline';
+                                        document.getElementById("MainContent_ApplyInfo").style.display = "inline";
+                                    }
+                                    else
+                                        document.getElementById("MainContent_ApplyInfo").style.display = "block";
+
+                                    return false;
+                                }
+                            }
+                            else {
+                                document.getElementById("MainContent_ApplyInfo").style.display = "block";
+                                return false;
+                            }
+                        }
+                    },
+                    error: function (data) {
+                    }
+                });
+            }
+            else {
+                p.style.display = "none";
+                l.style.display = "none";
+                document.getElementById("MainContent_ApplyInfo").style.display = "none";
+                $("#divshowsuccess").hide();
+            }
+
+            //var jobcodenumber = document.getElementById("MainContent_hdJobCodeNumber").value;
+            var jobId = document.getElementById("MainContent_hdJobId").value;
+            var userid = document.getElementById("MainContent_hdUserId").value;
+
+            $.ajax({
+                type: "POST",
+                url: "/Job-Seeker/JobDetails.aspx/IncreaseContactCount",
+                data: "{ JobId: " + jobId + " ,UserId: " + userid + "}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (msg) {
+                },
+                error: function (data) {
+                }
+            });
+        }
+
+        var addthis_share = addthis_share || {}
+        addthis_share = {
+            passthrough: {
+                twitter: {
+                    via: "MiTalentOrg",
+                    url: document.URL
+                }
+            }
+        }
+
+        function gobacktoemailtome() {
+            $('#EmailPopupModal').modal('hide');
+            document.getElementById('lnkBtnEmail').focus();
+        }
+
+        function closeshowdetailspopup() {
+            $('#showdetailspopup').modal('hide');
+            document.getElementById('btnApplynow').focus();
+        }
+
+
+
+    </script>
+    <script type="text/javascript"> var addthis_config = { services_exclude: 'googleplus' } </script>
+    <script src="https://s7.addthis.com/js/250/addthis_widget.js#pubid=ra-503760e2422a7dbe"></script>
+<meta id="JobDetails" name="description" content="Apply to work as a ASST STORE MGR in DRYDEN MI S16670 at Direct Employers in Dryden, MI 48428 - Job Code: 414569021" property="og:description" /></head>
+<body>
+    <noscript>
+        <iframe src="//www.googletagmanager.com/ns.html?id=GTM-P2TNKG" height="0" width="0" style="display: none; visibility: hidden" title="Google Tag Manager"></iframe>
+    </noscript>
+    <script>
+        (function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+            var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true; j.src = '//www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })
+        (window, document, 'script', 'dataLayer', 'GTM-P2TNKG');
+    </script>
+    <div id="top">
+    </div>
+    <!-- dialog window markup -->
+    <div id="Session-dialog" style="display: none;">
+    </div>
+
+    <div id="divSessionTimeOut" class="modal fade" style="display: none; " data-keyword="false" data-backdrop="static" >
+        <div class="modal-dialog modal-md" style="width: 500px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" style="text-align: center; font-weight: bold">Session Time out</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="dvSessionData">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default talent-solid-btn" onclick="StaySignedIn();" data-dismiss="modal">Stay Signed In</button>
+                    <button type="button" class="btn btn-default talent-solid-btn" onclick="signoutNow();" data-dismiss="modal">Sign Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="Redirect-dialog" style="display: none;">
+    </div>
+    <div id="password1" style="display: none;">
+    </div>
+    <div id="divSavedJobsCount" style="display: none;"></div>
+    <div id="divsearchname" style="display: none;">
+    </div>
+    <div id="divpopupapplynow" style="display: none;"></div>
+
+    <input name="ctl00$hdnUserName" type="hidden" id="hdnUserName" />
+    <input name="ctl00$hiddenUserID" type="hidden" id="hiddenUserID" />
+    <input name="ctl00$hdnmaxjobs" type="hidden" id="hdnmaxjobs" />
+
+    <div style="position: absolute; width: 140px; height: 40px; top: 10px; left: 170px; font-weight: bold; font-family: verdana; color: #990000; font-size: 12px; display: none;">
+        <span id="lblVersion">1.0.0.9</span>
+        &nbsp;/&nbsp;
+        <span id="lblPageNumber">2.2.2</span>
+    </div>
+    
+    <script type="text/javascript">     
+        $(document).ready(function() {
+            var sorUrl = getUrlVars()["sorUrl"];
+            $("#divLogout").hide();
+            if (undefined !== sorUrl && sorUrl.length > 0) {
+                //Local Signout URL's
+                var allAppLogOutInnerHTML = '<img id="imgMiLoginLogOut1" src="https://accessdev.michigan.gov/pkmslogout" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgTIALogOut1" src="http://localhost:63786/SSOLogOut?sor=SWeiaA4TloFXh26Pa20XuQ%3d%3d" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgMiWAMLogOut1" src="https://miwamtest.som.ad.state.mi.us/Testing/ClmMiWAM/ClearSession" alt="logout" style="left: -10000px; position: absolute;">';
+                ////Dev Signout URL's
+                //var allAppLogOutInnerHTML = '<img id="imgMiLoginLogOut1" src="https://accessdev.michigan.gov/pkmslogout" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgTIALogOut1" src="https://dev-dashboard.tia.state.mi.us/SSOLogOut?sor=SWeiaA4TloFXh26Pa20XuQ%3d%3d" alt="logout" style="left: -10000px; position: absolute;">         <img id="imgMiWAMLogOut1" src="https://miwamtest.som.ad.state.mi.us/Testing/ClmMiWAM/ClearSession" alt="logout" style="left: -10000px; position: absolute;">';
+                ////Test Signout URL's
+                //var allAppLogOutInnerHTML = '<img id="imgMiLoginLogOut1" src="https://accessqa.michigan.gov/pkmslogout" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgTIALogOut1" src="https://test-dashboard.tia.state.mi.us/SSOLogOut?sor= OWSLQlfqDCKZQryRnG%2bC3A%3d%3d" alt="logout" style="left: -10000px; position: absolute;">         <img id="imgMiWAMLogOut1" src="https://miwamdr.unemployment.state.mi.us/Staging/ClmMiWAM/ClearSession" alt="logout" style="left: -10000px; position: absolute;">';
+                ////Prod Signout URL's
+                //var allAppLogOutInnerHTML = '<img id="imgMiLoginLogOut1" src="https://accessdev.michigan.gov/pkmslogout" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgTIALogOut1" src="http://localhost:63786/SSOLogOut?sor=SWeiaA4TloFXh26Pa20XuQ%3d%3d" alt="logout" style="left: -10000px; position: absolute;">        <img id="imgMiWAMLogOut1" src="https://miwamtest.som.ad.state.mi.us/Testing/ClmMiWAM/ClearSession" alt="logout" style="left: -10000px; position: absolute;">';
+                $("#divLogout").html(allAppLogOutInnerHTML);
+                $("#divLogout").show();
+                RemoveQueryString();
+            }
+
+            var interval = setInterval(function () {
+                var form = document.getElementById('goog-gt-votingForm');
+                if (form) {
+                    var inputs = form.querySelectorAll('input[type="text"]');
+                    inputs.forEach(function (input) {
+                        if (!form.querySelector('label[for="' + input.id + '"]')) {
+                            var label = document.createElement('label');
+                            label.setAttribute('for', input.id);
+                            label.className = 'sr-only';
+                            label.innerText = input.name + ' field';
+                            input?.parentNode?.insertBefore(label, input);
+                        }
+                    });
+                    clearInterval(interval);
+                }
+            }, 500);
+
+        });
+
+
+        function RemoveQueryString() {
+            var uri = window.location.toString();
+            if (uri.indexOf("?") > 0) {
+                var clean_uri = uri.substring(0, uri.indexOf("?"));
+                window.history.pushState({}, document.title, clean_uri);
+                window.history.replaceState({}, document.title, clean_uri);
+                //location.reload();
+            }
+        }
+
+        function getUrlVars() {
+            var vars = [], hash;
+            var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+            for (var i = 0; i < hashes.length; i++) {
+                hash = hashes[i].split('=');
+                vars.push(hash[0]);
+                vars[hash[0]] = hash[1];
+            }
+            return vars;
+        }
+
+        function closeModalPopUp() {
+            $('.bs-example-modal-sm').modal('hide');
+        }
+
+        function focusOnClosebtn() {
+            document.getElementById("btnclose").focus();
+        }
+
+        (function(i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function() {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-2548927-11', 'mitalent.org');
+        ga('send', 'pageview');
+
+    </script>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({ pageLanguage: 'en', includedLanguages: 'en,es', layout: google.translate.TranslateElement.InlineLayout.SIMPLE }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+     
+
+    <div id="divLogout" style="left: -10000px; position: absolute; display: none;">
+        
+    </div>
+    <div role="navigation" aria-label="skip">
+        <a class="sr-only sr-only-focusable skip" href="#content" tabindex="105">Skip to main content</a>
+    </div>
+
+    <header class="site-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-8 col-sm-push-4">
+                    <div class="header-functions">
+                        <div class="utility-nav-wrapper">
+                            <span id="Header1_topNavigation"><ul id="utility-nav" class="clearfix"><li><a runat="server" id="a_menuitem_0" href="https://www.mitalent.org/newsletters" tabindex="121">Newsletters</a></li><li><a runat="server" id="a_menuitem_1" href="https://jobs.mitalent.org/CareerEvent.aspx?e=Start" tabindex="124">Career Events</a></li><li><a runat="server" id="a_menuitem_2" href="https://www.mitalent.org/about-us" tabindex="127">About Us</a></li><li><a runat="server" id="a_menuitem_3" href="/contact-us" tabindex="130">Contact Us</a></li><li class="translate-element"><div id="google_translate_element"></div></li></ul></span>
+                        </div>
+                        <div class="account-functions-wrapper" aria-label="account" role="navigation">
+                            <ul class="account-functions clearfix">
+                                <li class="account-functions-button"><button id="account-functions-button-signin" type="button" title="SIGN IN" aria-label="Click to Sign In" value="Sign In" tabindex="130">Sign In <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></button></li><li class="account-functions-button"><button id="account-functions-button-createaccount" type="button" title="CREATE ACCOUNT" aria-label="Click to Create Account" value="Create Account" tabindex="132">Create Account <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></button></li>
+                            </ul>
+
+                            <div id="account-functions-popup-signin-id" class="account-functions-popup">
+                                <div class="account-functions-popup-header">
+                                    Sign In
+                                </div>
+
+                                <div class="account-functions-popup-errors account-functions-popup-signin-errors alert-danger"></div>
+
+                                <div class="account-functions-popup-username">
+                                    <div class="popup-label-username">Email Address Or MILogin User ID</div>
+                                    <div class="popup-input-username">
+                                        <input id="login-username" aria-label="Enter Email Address or Milogin User Id" title="Email Address Or MILogin User ID" class="form-control" type="text">
+                                    </div>
+                                </div>
+
+                                <div class="account-functions-popup-role" hidden>
+                                    <label for="login-role" class="sr-only">Role</label>
+                                    <div class="popup-label-password">Role</div>
+                                    <div class="popup-input-password">
+                                        <select id="login-role" class="form-control"></select>
+                                    </div>
+                                </div>
+
+                                <div class="account-functions-popup-password" hidden>
+                                    <div class="popup-label-password">Password</div>
+                                    <div class="popup-input-password">
+                                        <input id="login-password" title="Password" aria-label="Enter Password" class="form-control" type="password" autocomplete="off" tabindex="131">
+                                        <span class="glyphicon glyphicon-eye-open hidden" id="pw-eye"></span>
+                                    </div>
+                                    <div class="popup-password-forgot">
+                                        <a id="link-forgot-password" role="link" title="Forgot Password" aria-label="Click to Forgot Password" href="#" tabindex="131">Forgot Password?</a>
+                                    </div>
+                                </div>
+
+                                <div class="account-functions-popup-terms" hidden>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                        <input type="checkbox" id="login-terms-checkbox" aria-label="I agree to the Terms and Conditions" />
+                                        <label for="login-terms-checkbox" style="margin: 0;margin-top: 4px;">I acknowledge that I have read, understand, and agree to the <a id="login-terms-link" href="#" target="_blank">Terms &amp; Conditions</a></label>
+                                    </div>
+                                </div>
+                                <div class="account-functions-popup-buttons">
+                                    <button id="account-functions-popup-buttons-next" class="btn btn-default talent-solid-btn" tabindex="131">Next</button>
+
+                                    <div class="account-functions-popup-loading">
+                                        <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="24px" height="30px" viewBox="0 0 24 30" style="stroke: #1c4c81;" xml:space="preserve">
+                                            <rect x="0" y="8.9346" width="4" height="12.1308" fill="#333" opacity="0.2">
+                                                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0s" dur="0.6s" repeatCount="indefinite"></animate>
+                                            </rect>
+                                            <rect x="8" y="6.4346" width="4" height="17.1308" fill="#333" opacity="0.2">
+                                                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.15s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite"></animate>
+                                            </rect>
+                                            <rect x="16" y="6.0654" width="4" height="17.8692" fill="#333" opacity="0.2">
+                                                <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.3s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite"></animate>
+                                                <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite"></animate>
+                                            </rect>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <script>
+                                    // Get environment and set endpoint URL
+                                    var request_prefix = ''; // change later to default to prod
+                                    var siteurl = '';
+                                    var terms_prefix = 'https://www.mitalent.org';
+
+                                    if (window.location.hostname === 'localhost' || window.location.hostname === 'dev-mitalent-cms.leo.state.mi.us' || window.location.hostname === 'dev-mitalent.leo.state.mi.us') {
+                                        request_prefix = 'https://dev-webapi.leo.state.mi.us';
+                                        siteurl = 'https://dev-mitalent.leo.state.mi.us';
+                                        terms_prefix = 'https://dev-mitalent-cms.leo.state.mi.us';
+                                    }
+                                    else if (window.location.hostname === 'beta.mitalent.org' || window.location.hostname === 'test-jobs.mitalent.org') {
+                                        request_prefix = 'https://test-webapi.mitalent.org';
+                                        siteurl = 'https://test-jobs.mitalent.org';
+                                        terms_prefix = 'https://beta.mitalent.org';
+                                    }
+                                    else if (window.location.hostname === 'mitalent.org' || window.location.hostname === 'jobs.mitalent.org') {
+                                        request_prefix = 'https://webapi.mitalent.org';
+                                        siteurl = 'https://jobs.mitalent.org';
+                                        terms_prefix = 'https://www.mitalent.org';
+                                    }
+
+                                    // Elements used in processes below
+                                    var login_username = document.querySelector('#login-username');
+                                    var login_role = document.querySelector('#login-role');
+                                    var login_password = document.querySelector('#login-password');
+                                    var login_role_section = document.querySelector('.account-functions-popup-role');
+                                    var login_password_section = document.querySelector('.account-functions-popup-password');
+                                    var login_terms_section = document.querySelector('.account-functions-popup-terms');
+                                    var login_terms_checkbox = document.querySelector('#login-terms-checkbox');
+                                    var login_loading = document.querySelector('.account-functions-popup-loading');
+                                    document.querySelector('#login-terms-link').setAttribute('href', terms_prefix + '/terms-and-conditions');
+                                    var login_error = document.querySelector('.account-functions-popup-signin-errors');
+                                    var login_next = document.querySelector('#account-functions-popup-buttons-next');
+                                    var element_login_button = document.querySelector('#account-functions-button-signin');
+                                    var element_login_button_chevron = document.querySelector('#account-functions-button-signin svg');
+                                    var element_login_popup = document.getElementById('account-functions-popup-signin-id');
+
+                                    //for chrome-specific password reveal toggle
+                                    var passwordInput = document.querySelector("#login-password")
+                                    var passwordEye = document.querySelector("#pw-eye")
+
+                                    if (element_login_button) {
+                                        // Initialize sign in popup on window load
+                                        window.addEventListener('load', function() {
+                                            //toggle password/text display on password field
+                                            if (/Chrome/.test(navigator.userAgent) && !/Chromium/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent)) {
+                                                //browser is chrome, show pw eye
+                                                passwordEye.classList.remove('hidden')
+                                            }
+                                            passwordEye.addEventListener('click',function(){
+                                                if(passwordInput.type==='password'){
+                                                    passwordInput.type='text'
+                                                }else{
+                                                    passwordInput.type='password'
+                                                }
+                                                if(passwordEye.classList.contains('glyphicon-eye-open')){
+                                                    passwordEye.classList.remove('glyphicon-eye-open')
+                                                    passwordEye.classList.add('glyphicon-eye-close')
+                                                }else if(passwordEye.classList.contains('glyphicon-eye-close')){
+                                                    passwordEye.classList.remove('glyphicon-eye-close')
+                                                    passwordEye.classList.add('glyphicon-eye-open')
+                                                }
+                                            })
+
+                                            // show Sign In popup on click of Sign In button
+                                            element_login_button.addEventListener('click', function () {
+                                                if (!login_loading.classList.contains('account-functions-popup-loading-show')) {
+                                                    if (element_login_popup.classList.contains('account-functions-popup-show')) {
+                                                        element_login_popup.classList.remove('account-functions-popup-show');
+                                                        element_login_button_chevron.classList.remove('account-functions-popup-svg-open');
+                                                        ClearSignInPopupValues();
+                                                    }
+                                                    else {
+                                                        element_login_popup.classList.add('account-functions-popup-show');
+                                                        element_login_button_chevron.classList.add('account-functions-popup-svg-open');
+                                                    }
+                                                }
+                                            });
+
+                                            // when you press enter on login popup inputs, click next button
+                                            login_username.addEventListener('keypress', function(e) {
+                                                if (e.key === 'Enter') {
+                                                    login_next.click();
+                                                }
+                                            });
+
+                                            login_role.addEventListener('keypress', function(e) {
+                                                if (e.key === 'Enter') {
+                                                    login_next.click();
+                                                }
+                                            });
+
+                                            login_password.addEventListener('keypress', function(e) {
+                                                if (e.key === 'Enter') {
+                                                    login_next.click();
+                                                }
+                                            });
+
+                                            // close Sign In popup on mousedown outside of Sign In popup
+                                            document.addEventListener('mousedown', function(event) {
+                                                if (element_login_popup.classList.contains('account-functions-popup-show')) {
+                                                    contains_login_popup = false;
+                                                    node = event.target;
+
+                                                    // check event.target parents for Sign In popup
+                                                    while (node !== null) {
+                                                        if (node === element_login_popup || node === element_login_button) {
+                                                            contains_login_popup = true;
+                                                        }
+                                                        node = node.parentElement;
+                                                    }
+
+                                                    // if outside of Sign In popup and button, close Sign In popup, flip chevron, and clear internal values
+                                                    if (!contains_login_popup) {
+                                                        element_login_popup.classList.remove('account-functions-popup-show');
+                                                        element_login_button_chevron.classList.remove('account-functions-popup-svg-open');
+
+                                                        ClearSignInPopupValues();
+                                                    }
+                                                }
+                                            });
+
+                                            // redirect to lost password page when clicking forgot password link
+                                            document.querySelector('#link-forgot-password').addEventListener('click', function() {
+                                                //window.location.href = ('/account/logindashboard.aspx?RedirectURL=/account/lost-password/&PasswordResetEmail=' + login_username.value.trim());
+                                                window.location.href = (siteurl +'/Account/ResetPassword.aspx');
+                                            })
+
+                                            function ClearSignInPopupValues() {
+                                                login_username.value = '';
+                                                login_username.removeAttribute('disabled');
+                                                login_role.innerHTML = '';
+                                                login_password.value = '';
+                                                login_role_section.setAttribute('hidden', 'true');
+                                                login_password_section.setAttribute('hidden', 'true');
+                                                login_terms_section.setAttribute('hidden', 'true');
+                                                login_terms_checkbox.checked = false;
+                                                login_loading.classList.remove('account-functions-popup-loading-show');
+                                                login_next.innerHTML = 'Next';
+                                                login_next.title = 'Next';
+                                                login_next.removeAttribute('disabled');
+                                                login_next.setAttribute('aria-label', 'Click on Next');
+                                                ClearSignInError();
+                                            }
+                                        });
+                                    }
+
+                                    // Next button click event listener
+                                    document.querySelector('.account-functions-popup-buttons button').addEventListener('click', function(event) {
+                                        ClearSignInError();
+
+                                        if (login_role.value.trim() === '' || login_role.value.trim() === 'null') {
+                                            if (login_username.value.trim().length === 0) {
+                                                ShowSignInError('MILogin User ID or Email Address is a required field.');
+                                            }
+                                            else if (login_username.value.trim().length < 6) {
+                                                ShowSignInError('MILogin User ID or Email Address. The field should have at least 6 characters.');
+                                            }
+                                            else if (login_username.value.trim().length < 151) {
+                                                FindUserRolesByName(login_username.value.trim());
+                                            }
+                                            else {
+                                                ShowSignInError('MILogin User ID or Email Address is a required field.');
+                                            }
+                                        }
+                                        else if (login_role.value.trim() !== '' && login_password.value === '') {
+                                            if (!login_password_section.hasAttribute('hidden')) {
+                                                ShowSignInError('Password is required.');
+                                            } else {
+                                                SelectUserRole(JSON.parse(login_role.querySelector('[data-role-value="' + login_role.value + '"]').getAttribute('data-role-info')));
+                                                login_role_section.setAttribute('hidden', 'true');
+                                            }
+                                        }
+                                        else if (login_role.value.trim() !== '' && login_password.value !== '') {
+                                            if (!login_terms_checkbox.checked) {
+                                                ShowSignInError('You must accept the Terms & Conditions to continue.');
+                                                return;
+                                            }
+                                            var selected_role = JSON.parse(login_role.querySelector('[data-role-value="' + login_role.value + '"]').getAttribute('data-role-info'));
+                                            ProcessSignIn(selected_role.userName, selected_role.RoleName, login_password.value);
+                                            login_loading.classList.add('account-functions-popup-loading-show');
+                                        }
+                                    });
+
+                                    function FindUserRolesByName(username_or_email) {
+                                        username_or_email = username_or_email.trim();
+                                        let request = new XMLHttpRequest();
+                                        var url = request_prefix + '/CommonLogin/ValidatePMTCLogin?UsernameOrEmail=__SearchVariable__'.replace('__SearchVariable__', username_or_email);
+
+                                        request.onreadystatechange = function() {
+                                            if (this.readyState === 4 && this.status === 200) {
+                                                let response = JSON.parse(this.responseText);
+                                                login_loading.classList.remove('account-functions-popup-loading-show');
+                                                ProcessUserRoles(response);
+                                            }
+                                            else if (this.readyState === 4 && this.status !== 200) {
+                                                login_loading.classList.remove('account-functions-popup-loading-show');
+                                                ShowSignInError('REQUEST FAILED:\tPlease try again later.');
+                                            }
+                                        }
+
+                                        request.open("POST", url, true);
+                                        request.send();
+
+                                        login_loading.classList.add('account-functions-popup-loading-show');
+                                    }
+
+                                    function ProcessUserRoles(roles) {
+                                        login_role.innerHTML = '';
+
+                                        roles.forEach(function(role) {
+                                            var role_select = login_role;
+                                            var role_option = document.createElement("option");
+                                            role_option.text = role.RoleName;
+                                            role_option.setAttribute('data-role-value', role.RoleName);
+                                            role_option.setAttribute('data-role-info', JSON.stringify(role));
+
+                                            role_select.add(role_option);
+                                        });
+
+                                        if (roles.length > 1) {
+                                            login_role_section.removeAttribute('hidden');
+                                        }
+                                        else {
+                                            if (roles != null && roles.length > 0)
+                                                SelectUserRole(roles[0]);
+                                        }
+                                    }
+
+                                    function SelectUserRole(role) {
+                                        if (role.ErrorMessage === null) {
+                                            if (role.RoleName.toLowerCase() === 'jobseeker' && role.RedirectURL != null) {
+                                                window.location.href = role.RedirectURL; //'https://milogin.michigan.gov/eai/login/authenticate';
+                                            }
+                                            else {
+                                                login_username.value = role.userName;
+                                                login_username.setAttribute('disabled', 'true');
+                                                login_role_section.setAttribute('hidden', 'true');
+                                                login_password_section.removeAttribute('hidden');
+                                                login_terms_section.removeAttribute('hidden');
+                                                login_terms_checkbox.checked = false;
+                                                login_next.innerHTML = 'Submit';
+                                                login_next.title = 'Submit';
+                                                login_next.setAttribute('aria-label', 'Click on Submit');
+                                                login_password.focus();
+                                            }
+                                        }
+                                        else {
+                                            login_role.innerHTML = '';
+                                            ShowSignInError(role.ErrorMessage);
+                                        }
+                                    }
+
+                                    function ProcessSignIn(username, role, password) {
+                                        login_next.setAttribute('disabled', 'true');
+                                        let request = new XMLHttpRequest();
+                                        password = encodeURIComponent(password);
+                                        var url = request_prefix + '/CommonLogin/AuthenticatePMTCLogin?UserName=__username__&Password=__password__&RoleName=__role__'.replace('__username__', username).replace('__password__', password).replace('__role__', role);
+
+                                        request.onreadystatechange = function() {
+                                            if (this.readyState === 4 && this.status === 200) {
+                                                let response = JSON.parse(this.responseText);
+                                                
+
+                                                if (response.ErrorMessage === null || response.ErrorMessage === 'Logged In') {
+                                                    var parameters = '?q=' + response.SessionValue + '&SessionId=' + response.SessionId + '&RedirectURL=' + encodeURIComponent(response.RedirectURL);
+                                                    //window.location.href = response.RedirectURL + parameters;
+                                                    window.location.href = "/Account/LoginDashboard.aspx" + parameters;
+                                                }
+                                                else if (response.ErrorMessage.indexOf("This account has been locked") != -1 && response.RedirectURL != null) {
+                                                    var parameters = '?SessionId=' + response.SessionId + '&RedirectURL=' + encodeURIComponent(response.RedirectURL)+'&PasswordResetEmail=' + username.trim();
+                                                    window.location.href = "/Account/LoginDashboard.aspx" + parameters;
+                                                }
+                                                 else if (response.ErrorMessage.indexOf("The Account Password has expired") != -1 && response.RedirectURL != null) {
+                                                    var parameters = '?SessionId=' + response.SessionId + '&RedirectURL=' + encodeURIComponent(response.RedirectURL) + '&PasswordResetEmail=' + username.trim();
+                                                    window.location.href = "/Account/LoginDashboard.aspx" + parameters;
+                                                }
+                                                else {
+                                                    login_loading.classList.remove('account-functions-popup-loading-show');
+                                                    login_next.removeAttribute('disabled');
+                                                    ShowSignInError(response.ErrorMessage);
+                                                }
+                                            }
+                                            else if (this.readyState === 4 && this.status !== 200) {
+                                                login_loading.classList.remove('account-functions-popup-loading-show');
+                                                login_next.removeAttribute('disabled');
+                                                ShowSignInError('REQUEST FAILED:\tPlease try signin again.');
+                                            }
+                                        }
+
+                                        request.open("POST", url, true);
+                                        request.send();
+
+                                        login_loading.classList.add('account-functions-popup-loading-show');
+                                    }
+
+                                    function ShowSignInError(error_message) {
+                                        error_message = error_message.replace('|', '<br>')
+                                        login_error.innerHTML = error_message;
+                                        login_error.classList.add('account-functions-popup-errors-show');
+                                    }
+
+                                    function ClearSignInError() {
+                                        login_error.innerText = '';
+                                        if (login_error.classList.contains('account-functions-popup-errors-show'))
+                                            login_error.classList.remove('account-functions-popup-errors-show');
+                                    }
+                                </script>
+                            </div>
+
+                            <div id="account-functions-popup-createaccount-id" class="account-functions-popup">
+                                <div class="account-functions-popup-header">
+                                    Create Account
+                                </div>
+
+                                <div class="account-functions-popup-errors account-functions-popup-createaccount-errors alert-danger"></div>
+
+                                <div class="account-functions-popup-text">
+                                    <p>Which type of account would you like to create?</p>
+                                    <br>
+                                    <p>I am a/an :</p>
+                                </div>
+
+                                <div class="account-functions-popup-buttons">
+                                    <a id="account-functions-popup-buttons-jobseeker" href="#" class="btn btn-default talent-solid-btn" tabindex="133">Job Seeker</a>
+                                    <a id="account-functions-popup-buttons-employer" href="#" class="btn btn-default talent-solid-btn" tabindex="133">Employer</a>
+                                    <a id="account-functions-popup-buttons-provider" href="#" class="btn btn-default talent-solid-btn" tabindex="133">Training Provider</a>
+                                </div>
+
+                                <script>
+                                    // Get environment and set endpoint URL
+                                    var create_account_prefix = 'https://jobs.mitalent.org/';
+
+                                    if (window.location.hostname === 'localhost' || window.location.hostname === 'dev-mitalent-cms.leo.state.mi.us' || window.location.hostname === 'dev-mitalent.leo.state.mi.us') {
+                                        create_account_prefix = 'https://dev-mitalent.leo.state.mi.us/';
+                                    }
+                                    else if (window.location.hostname === 'beta.mitalent.org' || window.location.hostname === 'test-jobs.mitalent.org') {
+                                        create_account_prefix = 'https://test-jobs.mitalent.org/';
+                                    }
+                                    else if (window.location.hostname === 'mitalent.org' || window.location.hostname === 'jobs.mitalent.org') {
+                                        create_account_prefix = 'https://jobs.mitalent.org/';
+                                    }
+
+                                    // Setup link href values based on current environment
+                                    window.addEventListener('load', function() {
+                                        document.querySelector('#account-functions-popup-buttons-jobseeker').setAttribute('href', create_account_prefix + 'SAML/CreateSSOJobSeeker/');
+                                        document.querySelector('#account-functions-popup-buttons-employer').setAttribute('href', create_account_prefix + 'employer-create-account/');
+                                        document.querySelector('#account-functions-popup-buttons-provider').setAttribute('href', create_account_prefix + 'MITC/Admin/License/Apply');
+                                    });
+
+                                    // Elements used in processes below
+                                    var element_create_account_button = document.querySelector('#account-functions-button-createaccount');
+                                    var element_create_account_button_chevron = document.querySelector('#account-functions-button-createaccount svg');
+                                    var element_create_account_popup = document.getElementById('account-functions-popup-createaccount-id');
+
+                                    if (element_create_account_button) {
+                                        // Initialize Create Account popup on window load
+                                        window.addEventListener('load', function() {
+                                            // show Create Account popup on click of Create Account button
+                                            element_create_account_button.addEventListener('click', function() {
+                                                if (element_create_account_popup.classList.contains('account-functions-popup-show')) {
+                                                    element_create_account_popup.classList.remove('account-functions-popup-show');
+                                                    element_create_account_button_chevron.classList.remove('account-functions-popup-svg-open');
+                                                }
+                                                else {
+                                                    element_create_account_popup.classList.add('account-functions-popup-show');
+                                                    element_create_account_button_chevron.classList.add('account-functions-popup-svg-open');
+                                                }
+                                            });
+
+                                            // close Create Account popup on mousedown outside of Create Account popup
+                                            document.addEventListener('mousedown', function(event) {
+                                                if (element_create_account_popup.classList.contains('account-functions-popup-show')) {
+                                                    contains_create_account_popup = false;
+                                                    node = event.target;
+
+                                                    // check event.target parents for Create Account popup
+                                                    while (node !== null) {
+                                                        if (node === element_create_account_popup || node === element_create_account_button) {
+                                                            contains_create_account_popup = true;
+                                                        }
+                                                        node = node.parentElement;
+                                                    }
+
+                                                    // if outside of Create Account popup and button, close Create Account popup, flip chevron, and clear internal values
+                                                    if (!contains_create_account_popup) {
+                                                        element_create_account_popup.classList.remove('account-functions-popup-show');
+                                                        element_create_account_button_chevron.classList.remove('account-functions-popup-svg-open');
+                                                    }
+                                                }
+                                            });
+                                        });
+                                    }
+                                </script>
+                            </div>
+                        </div>
+                        
+                        <div class="search-wrapper">
+                            <ul id="search-box">
+                                <li>
+                                    <form method="get" role="search" enctype="multipart/form-data" action="https://jobs.mitalent.org/search-results">
+                                        <label id="search-text-label"><span class="sr-only">Search</span></label>
+                                        <input id="search-text" name="q" placeholder="SEARCH" type="text" class="form-control" title="Search the Site" aria-label="Search the Site" tabindex="136" aria-labelledby="search-text-label" />
+                                        <input type="hidden" id="search_url" value="https://jobs.mitalent.org/search-results">
+                                        <button id="search-button-gsa" type="submit" class="btn btn-success" aria-label="Submit Search" tabindex="138"><span class="glyphicon glyphicon-search" aria-hidden="true"></span><span class="sr-only">Search</span></button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-sm-pull-8">
+                    <div class="brand-wrapper">
+                        <div class="brand-logo">
+                            <a href="https://jobs.mitalent.org" role="link" aria-label="Pure Michigan Talent Connect Home" tabindex="109">
+                                <img id="Header1_imgSiteLogo" tabindex="110" src="../../../images/site_graphics/pure-michigan-talent-connect-logo.png" alt="PMTC Logo" />
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-8 col-sm-push-4">
+                </div>
+            </div>
+        </div>
+         <div>
+            <input name="ctl00$Header1$lblSession" type="hidden" id="lblSession" value="Header.ascx" />
+            <br />
+            <input name="ctl00$Header1$lblSecconds" type="hidden" id="lblSecconds" value="0" /><input name="ctl00$Header1$IsAdmin" type="hidden" id="IsAdmin" /><input name="ctl00$Header1$IdleTimeForUser" type="hidden" id="IdleTimeForUser" />
+        </div>
+
+        <div class="row">
+            <div class="job-seeker">
+                <div class="modal fade bs-example-modal-sm">
+                    <div class="modal-dialog modal-sm">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" id="btnclose" title="close" class="close" data-dismiss="modal" aria-label="Close create account pop up"><span aria-hidden="true">&times;</span> </button>
+                                <span class="modal-title" title="CREATE ACCOUNT" aria-label="Click to Create Account"><strong>Create an Account</strong></span>
+                            </div>
+                            <div class="modal-body">
+
+                                <div class="input-group" aria-label="Which type of account would you like to create?">
+                                    <label aria-label="Which type of account would you like to create?">Which type of account would you like to create?</label>
+                                    <p></p>
+                                    <label>I am a/an:</label>
+                                    <p></p>
+                                    <div class="col-md-12">
+                                        <button type="button" class="btn btn-default talent-solid-btn" data-dismiss="modal" title="JOB SEEKER" aria-label="Click to Create Job Seeker Account" onclick="window.location.href = '/SAML/CreateSSOJobSeeker/'">Job Seeker</button>
+                                        <button type="button" class="btn btn-default talent-solid-btn btn-add-margin-left" title="EMPLOYER" data-dismiss="modal" aria-label="Click to Create Employer Account" onclick="window.location.href = '/employer-create-account/'" onblur="closeModalPopUp();">Employer</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="navbar navbar-default" role="navigation" aria-label="primary">
+        <div class="container">
+            <div class="row">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle mitalent-custom" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <div class="nav-toggle-wrapper">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </div>
+                        <div class="nav-toggle-label">Menu</div>
+                    </button>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div id="navbar-collapse" class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav admin-signed-in" role="menu" aria-haspopup="true" aria-label="MainMenu">
+                        <li class="home" role="menuitem">
+                            <a href="https://www.mitalent.org" id="Header1_homeA" tabindex="140">Home</a>
+                        </li>
+                        <li class="job-seeker" role="menuitem"><a href="https://www.mitalent.org/job-seeker" class="dropdown-toggle" data-toggle="dropdown" tabindex="141" >Job Seeker <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a href="https://www.mitalent.org/job-seeker" tabindex="142">Job Seeker Home</a><ul></ul></li><li><a href="/job-search" tabindex="143">Advanced Job Search</a><ul></ul></li><li><a href="https://jobs.mitalent.org/SAML/CreateSSOJobSeeker/" tabindex="144">Create<span class="sr-only"> Job Seeker</span> Account</a><ul></ul></li><li><a href="https://www.mitalent.org/just-for-you" tabindex="145">Just for you</a><ul></ul></li><li><a href="https://www.mitalent.org/agriculture" tabindex="146">Agriculture Services</a><ul></ul></li><li><a href="https://www.mitalent.org/job-seeker-other-resources" tabindex="147">Other<span class="sr-only"> Job Seeker</span> Resources</a><ul></ul></li><li><a href="https://www.mitalent.org/unemployed" tabindex="148">Unemployment Information</a><ul></ul></li><li><a href="https://www.mitalent.org/tutorials" tabindex="149">Tutorials</a><ul></ul></li></ul>
+</li><li class="employer" role="menuitem"><a href="https://www.mitalent.org/employer" class="dropdown-toggle" data-toggle="dropdown" tabindex="150" >Employer <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a href="https://www.mitalent.org/Employer" tabindex="151">Employer Home</a><ul></ul></li><li><a href="/employer-create-account" tabindex="152">Create<span class="sr-only"> Employer</span> Account</a><ul></ul></li><li><a href="https://www.mitalent.org/Agriculture" tabindex="153">Agriculture Services</a><ul></ul></li><li><a target="_blank" rel="noopener noreferrer" href="https://miwam.unemployment.state.mi.us/EmpMiWAM/_/#1" tabindex="154">Report Refusal of Work<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li><li><a href="https://www.mitalent.org/employer-other-resources" tabindex="155">Other<span class="sr-only"> Employer</span> Resources</a><ul></ul></li><li><a href="https://www.mitalent.org/tutorials" tabindex="156">Tutorials</a><ul></ul></li></ul>
+</li><li class="career-exploration" role="menuitem"><a href="https://www.mitalent.org/career-exploration" class="dropdown-toggle" data-toggle="dropdown" tabindex="157" >Career Exploration <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a href="https://www.mitalent.org/career-exploration" tabindex="158">Career Exploration Home</a><ul></ul></li><li><a target="_blank" rel="noopener noreferrer" href="https://pathfinder.mitalent.org" tabindex="159">Pathfinder<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li><li><a target="_blank" rel="noopener noreferrer" href="https://mat2apprenticeships.com/" tabindex="160">MAT2 Program<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li><li><a href="https://www.mitalent.org/mitc" tabindex="161">Michigan Training Connect</a><ul></ul></li></ul>
+</li><li class="veteran" role="menuitem"><a href="https://www.mitalent.org/veteran" class="dropdown-toggle" data-toggle="dropdown" tabindex="162" >Veteran <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a target="_blank" rel="noopener noreferrer" href="https://www.michigan.gov/leo/0,5863,7-336-94422_95539_98962---,00.html" tabindex="163">Veteran Home<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li></ul>
+</li><li class="skilled-trades" role="menuitem"><a href="https://www.mitalent.org/skilled-trades" class="dropdown-toggle" data-toggle="dropdown" tabindex="164" >Skilled Trades <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></a><ul class="dropdown-menu multi-level" role="menuitem">
+<li><a href="https://www.mitalent.org/skilled-trades" tabindex="165">Skilled Trades Home</a><ul></ul></li><li><a target="_blank" rel="noopener noreferrer" href="https://www.michigan.gov/leo/bureaus-agencies/wd/apprenticeships" tabindex="166">Registered Apprenticeships<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a><ul></ul></li><li><a href="https://www.mitalent.org/skilled-trades-post-secondary-education-opportunities" tabindex="167">Post-Secondary Education Opportunities</a><ul></ul></li><li><a href="https://www.mitalent.org/skilled-trades-students-parents-educators" tabindex="168">Students, Parents & Educators</a><ul></ul></li></ul>
+</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    
+
+    
+
+    
+
+    <div class="job-seeker account container">
+        <div id="content" role="main">
+            <form method="post" action="./414569021" id="JobDetails" role="form" class="input_form">
+<div class="aspNetHidden">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['JobDetails'];
+if (!theForm) {
+    theForm = document.JobDetails;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=pynGkmcFUV13He1Qd6_TZG62mmmySu9bJzY61PLGn_HdqKh30NOR7tOjDD9fUcfvfqnpIw2&amp;t=639190689332169432" type="text/javascript"></script>
+
+
+<script src="/ScriptResource.axd?d=NJmAwtEo3Ipnlaxl6CMhvk1GqZzlyB-UYCgjBSLn7QwRUkH8mJm69OZsaL2VJVLUOsI5Y7t8OZwSVswTf8LIqXe0AKCDpDuV-bEvOFTu9Rui9T_ie9QHdxdwQPQ6J1n6u5bVIw405dKfy09qof9NgZlFy4c1&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=dwY9oWetJoJoVpgL6Zq8OGBh7qMy8YOZkimk_1PQvMWpKnZRiVsORgOa-vgpH4MnqY6YFWI2LM1Q4Qufgv7skzwrz0clzRUs1SVYTPLFb-Q05G5lSJox-_q6Ex_pqUlZLZR4Qz8lR_y607hfLFoOzynw9tE1&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+var PageMethods = function() {
+PageMethods.initializeBase(this);
+this._timeout = 0;
+this._userContext = null;
+this._succeeded = null;
+this._failed = null;
+}
+PageMethods.prototype = {
+_get_path:function() {
+ var p = this.get_path();
+ if (p) return p;
+ else return PageMethods._staticInstance.get_path();},
+btnHowToApply_Click:function(succeededCallback, failedCallback, userContext) {
+return this._invoke(this._get_path(), 'btnHowToApply_Click',false,{},succeededCallback,failedCallback,userContext); },
+IncreaseContactCount:function(JobId,UserId,succeededCallback, failedCallback, userContext) {
+return this._invoke(this._get_path(), 'IncreaseContactCount',false,{JobId:JobId,UserId:UserId},succeededCallback,failedCallback,userContext); },
+IncreaseViewCount:function(JobId,UserId,succeededCallback, failedCallback, userContext) {
+return this._invoke(this._get_path(), 'IncreaseViewCount',false,{JobId:JobId,UserId:UserId},succeededCallback,failedCallback,userContext); },
+JobAlreadyAppliedBythisUserByUserId:function(UserId,JobId,succeededCallback, failedCallback, userContext) {
+return this._invoke(this._get_path(), 'JobAlreadyAppliedBythisUserByUserId',false,{UserId:UserId,JobId:JobId},succeededCallback,failedCallback,userContext); },
+CreateAppliedJobByUserId:function(Email,UserId,Jobid,JobTitle,isExternal,SelectedPrimaryResumeId,Status,Origin,Body,DocIds,succeededCallback, failedCallback, userContext) {
+return this._invoke(this._get_path(), 'CreateAppliedJobByUserId',false,{Email:Email,UserId:UserId,Jobid:Jobid,JobTitle:JobTitle,isExternal:isExternal,SelectedPrimaryResumeId:SelectedPrimaryResumeId,Status:Status,Origin:Origin,Body:Body,DocIds:DocIds},succeededCallback,failedCallback,userContext); },
+MoveToAppliedByUserId:function(UserId,Jobid,DateApplied,Note,succeededCallback, failedCallback, userContext) {
+return this._invoke(this._get_path(), 'MoveToAppliedByUserId',false,{UserId:UserId,Jobid:Jobid,DateApplied:DateApplied,Note:Note},succeededCallback,failedCallback,userContext); },
+UpdateNote:function(Id,JobId,Note,succeededCallback, failedCallback, userContext) {
+return this._invoke(this._get_path(), 'UpdateNote',false,{Id:Id,JobId:JobId,Note:Note},succeededCallback,failedCallback,userContext); }}
+PageMethods.registerClass('PageMethods',Sys.Net.WebServiceProxy);
+PageMethods._staticInstance = new PageMethods();
+PageMethods.set_path = function(value) { PageMethods._staticInstance.set_path(value); }
+PageMethods.get_path = function() { return PageMethods._staticInstance.get_path(); }
+PageMethods.set_timeout = function(value) { PageMethods._staticInstance.set_timeout(value); }
+PageMethods.get_timeout = function() { return PageMethods._staticInstance.get_timeout(); }
+PageMethods.set_defaultUserContext = function(value) { PageMethods._staticInstance.set_defaultUserContext(value); }
+PageMethods.get_defaultUserContext = function() { return PageMethods._staticInstance.get_defaultUserContext(); }
+PageMethods.set_defaultSucceededCallback = function(value) { PageMethods._staticInstance.set_defaultSucceededCallback(value); }
+PageMethods.get_defaultSucceededCallback = function() { return PageMethods._staticInstance.get_defaultSucceededCallback(); }
+PageMethods.set_defaultFailedCallback = function(value) { PageMethods._staticInstance.set_defaultFailedCallback(value); }
+PageMethods.get_defaultFailedCallback = function() { return PageMethods._staticInstance.get_defaultFailedCallback(); }
+PageMethods.set_enableJsonp = function(value) { PageMethods._staticInstance.set_enableJsonp(value); }
+PageMethods.get_enableJsonp = function() { return PageMethods._staticInstance.get_enableJsonp(); }
+PageMethods.set_jsonpCallbackParameter = function(value) { PageMethods._staticInstance.set_jsonpCallbackParameter(value); }
+PageMethods.get_jsonpCallbackParameter = function() { return PageMethods._staticInstance.get_jsonpCallbackParameter(); }
+PageMethods.set_path("414569021");
+PageMethods.btnHowToApply_Click= function(onSuccess,onFailed,userContext) {PageMethods._staticInstance.btnHowToApply_Click(onSuccess,onFailed,userContext); }
+PageMethods.IncreaseContactCount= function(JobId,UserId,onSuccess,onFailed,userContext) {PageMethods._staticInstance.IncreaseContactCount(JobId,UserId,onSuccess,onFailed,userContext); }
+PageMethods.IncreaseViewCount= function(JobId,UserId,onSuccess,onFailed,userContext) {PageMethods._staticInstance.IncreaseViewCount(JobId,UserId,onSuccess,onFailed,userContext); }
+PageMethods.JobAlreadyAppliedBythisUserByUserId= function(UserId,JobId,onSuccess,onFailed,userContext) {PageMethods._staticInstance.JobAlreadyAppliedBythisUserByUserId(UserId,JobId,onSuccess,onFailed,userContext); }
+PageMethods.CreateAppliedJobByUserId= function(Email,UserId,Jobid,JobTitle,isExternal,SelectedPrimaryResumeId,Status,Origin,Body,DocIds,onSuccess,onFailed,userContext) {PageMethods._staticInstance.CreateAppliedJobByUserId(Email,UserId,Jobid,JobTitle,isExternal,SelectedPrimaryResumeId,Status,Origin,Body,DocIds,onSuccess,onFailed,userContext); }
+PageMethods.MoveToAppliedByUserId= function(UserId,Jobid,DateApplied,Note,onSuccess,onFailed,userContext) {PageMethods._staticInstance.MoveToAppliedByUserId(UserId,Jobid,DateApplied,Note,onSuccess,onFailed,userContext); }
+PageMethods.UpdateNote= function(Id,JobId,Note,onSuccess,onFailed,userContext) {PageMethods._staticInstance.UpdateNote(Id,JobId,Note,onSuccess,onFailed,userContext); }
+//]]>
+</script>
+
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="28390E07" />
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="YsnLXHQunnFQ/rT0PpGam1Ty2mISkPdCx7VOwzWtzsf3yChgk7BzBjSeru25jcLGA+Lx1Nnm8jQd8BZDtawJXSQfuLhKiklgREApm/abeSHc7NiqmoAHN2k/uIhquiPjIwmKWqCxvB07/RI30ebvxEA8PfWX7IpuAJ7eNcHups2hbqD1TUlgDfOtrZSEZyZmtgjW2Oa/CNmOgKah/io/2FmHcNcnQ+RST+uhPTQwI3F39R5cmrmWvF3k3KZXhypwJT2BKw/E4TSEArpUH6rwK6Gu+SNP88Ez/Ulox8uyfgfWpem3XzPSorRtDb8tCimCvjVmIPzh3jj8eOM0QDvC9yWk2j9heNAeKUm7d94eB7gjtfATa/NOSaprJkGv8HuWexIhh20FH+F++X7ElVcV9mqtP9HgJ595kRlF35okiKKxgrazA+l27cHwgzLZMgaL+JTdrh5/OmuP5D9KJjoQXypKk63+Vw2nebvGlbSC1iTLY9LVDZHPv7klLiAbQcA3oB3ODVVowFp0+NR4zJYtrzaHNBGv7cQgusq+ttf3NncWf7ogQYRMw+BMeGsk6sIdd+Ah+8vQAKJ+fViUOQT2J9fqWiC13LDY8bG6YwBBPRry/s6Vsdq//kotEfXokQY5vOtJmLNWNYDPPkYATL8dHeRG4eyRqHB0sWSZKjIPstbBJZ4F6QgKtzjgCYrrsk9V4lOIF5z910mhn27sj0tzZ3PLF8LL+N3XBCBQU5snfX6wyb+46ft0G9IVsJrekY+mQMjkRI/Z52NSn9qyv0hqRtenvgbkRyp6NQeF5pZEYM9/pFcs8coLI3LZNiD2JjomnqseZ0tNTrlkAHB52xJ8BpGBRyM=" />
+</div>
+                <input type="hidden" name="ctl00$MainContent$hdMiTalentViewType" id="MainContent_hdMiTalentViewType" value="JOBSEEKERVIEWJOB" />
+                <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$MainContent$ScriptManager1', 'JobDetails', ['tctl00$MainContent$pnl1','MainContent_pnl1','tctl00$MainContent$documents$updocuments','MainContent_documents_updocuments'], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+
+                <div class="row">
+                    <div class="col-md-8 col-sm-8">
+                        <h1>Job Details</h1>
+                        <p>
+                            <a href="/job-seeker/jobsearch-results/" id="MainContent_lnk_search_result" tabindex="205" class="sidebar_link" onclick="history.go(-1);" title="Return to Job Search Results" aria-label="Click to Return to Job Search Results">< Return to Job Search Results</a>
+                        </p>
+
+                        
+                        
+                        <div class="well">
+                            <ul id="tabs" class="nav nav-tabs" data-tabs="tabs">
+                                <li class="active"><a href="#tab1" tabindex="210" data-toggle="tab" aria-label="Click for Job Details" title="Job Details">Job Details</a> </li>
+                                
+                            </ul>
+
+                            <div class="primary_content" hidden="hidden">
+
+
+                                
+                                <div id="divshowwarning" style="display: none; color: red; font-size: small;">
+                                </div>
+
+                                <p>
+                                    
+                                </p>
+                                <p>
+                                    <span id="MainContent_lblMinQualification"></span>
+                                </p>
+                                <br />
+                                <br />
+
+                            </div>
+
+                            <div id="job-detail-content" class="tab-content">
+                                <div class="tab-pane active" id="tab1">
+
+                                    <h2>
+                                        <span id="MainContent_lblJobTitle" title="ASST STORE MGR in DRYDEN MI S16670">ASST STORE MGR in DRYDEN MI S16670</span></h2>
+
+                                    <p style="font-size: medium;"><strong>Job Code Number</strong></p>
+                                    <span id="MainContent_lblJobCodeNumber">414569021</span>
+                                    <div>
+                                        <br />
+                                        <p style="font-size: medium;"><strong>Job Description</strong></p>
+                                        <div class="create-account-free-text job-details-description">
+                                            <span id="MainContent_lblJobDescription"><p>Job Details General Summary:</p> <p>The Assistant Store Manager helps maintain a clean, well-organized store with a customer-first focus. At the direction and delegation of the Store Manager, the Assistant Store Manager assists with supervision of store employees, management and presentation of merchandise, completion of paperwork, and preparation of deposits. The Assistant Store Manager also performs stocking and cashiering functions, and performs other duties as necessary to maximize profitability and customer satisfaction while protecting company assets and reducing losses.</p> <p>Duties and Essential Job Functions</p> <ul> <li><p>Provide superior customer service leadership; greet and assist customers, and operate cash register and scanner to itemize the customer's purchase.</p></li> <li><p>Open and close the store a minimum of two days per week.</p></li> <li><p>Assist Store Manager with scheduling employees, providing adequate training for employees, conducting safety meetings, and ensuring employee compliance with company policies and procedures.</p></li> <li><p>Follow company work processes to manage merchandise, including receiving, unpacking, stocking, restocking and rotating merchandise on shelves and building merchandise displays.</p></li> <li><p>Assist in maintaining accurate inventory levels by controlling damages, markdowns, scanning, paperwork, and facility controls.</p></li> <li><p>Assist in implementation and maintenance of planograms; ensure merchandise is presented according to established practices and Store Manager direction.</p></li> <li><p>Assist in ensuring financial integrity of the store through strict cashier accountability, key control, adherences to company security practices and cash control procedures; authorize and sign for refunds and overrides, count register tills, and deposit money in bank.</p></li> <li><p>Assist with management of the store in the Store Manager's absence.</p></li> </ul> <p>Job Qualifications</p> <p>Knowledge and Skills</p> <ul> <li><p>Effective interpersonal, written and oral communication skills.</p></li> <li><p>Ability to solve problems and deal with a variety of situations.</p></li> <li><p>Good organization skills with attention to detail.</p></li> <li><p>Ability to read and interpret documents such as diagrams, safety rules, operating and maintenance instructions, and procedures manuals.</p></li> <li><p>Ability to perform mathematical calculations such as addition, subtraction, multiplication, division, and percentages.</p></li> <li><p>Ability to perform cash register functions and generate reports.</p></li> <li><p>Knowledge of cash, facility, and safety control policies and practices.</p></li> <li><p>Knowledge of cash handling procedures including cashier accountability and deposit control.</p></li> <li><p>Ability to drive own vehicle to the bank to deposit money.</p></li> </ul> <p>Work Experience and/or Education</p> <ul> <li><p>High school diploma or equivalent strongly preferred.</p></li> <li><p>One year of experience in a retail environment and six months supervisory experience preferred.</p></li> </ul> <p>Working Conditions</p> <ul> <li><p>Frequent walking and standing</p></li> <li><p>Frequent bending, stooping, and kneeling to run check out station, stock merchandise and unload trucks; which may also require the ability to push and/or pull rolltainers for stocking merchandise</p></li> <li><p>Frequent handling of merchandise and equipment such as handheld scanners, pricing guns, box cutters, merchandise containers, two-wheel dollies, U-boats (six-wheel carts), and rolltainers</p></li> <li><p>Frequent and proper lifting of up to 40 pounds; occasional lifting of up to 55 pounds</p></li> <li><p>Occasional climbing (using step ladder) up to heights of six feet</p></li> <li><p>Fast-paced environment; moderate noise level</p></li> <li><p>Occasional exposure to outside weather conditions</p></li> <li><p>Occasional or regular driving/providing own transportation to make bank deposits, attend management meetings and travel to other Dollar General stores.</p></li> </ul> <p>Dollar General Corporation is an equal opportunity employer.</p> <p><strong>ABOUT US</strong></p> <p>Work Where You Matter</p> <p>At Dollar General, our mission is Serving Others! We value each and every one of our employees. Whether you are looking to launch a new career in one of our many convenient Store locations, Distribution Centers, Store Support Center or with our Private Fleet Team, we are proud to provide a wide range of career opportunities. We are not just a retail company; we are a company that values the unique strengths and perspectives that each individual brings. Your difference truly makes a difference at Dollar General. How would you like to Serve? Join the Dollar General Journey and see how your career can thrive.</p> <p>Company Overview</p> <p>Dollar General Corporation has been delivering value to shoppers for more than 80 years. Dollar General helps shoppers Save time. Save money. Every day.® by offering products that are frequently used and replenished, such as food, snacks, health and beauty aids, cleaning supplies, basic apparel, housewares and seasonal items at everyday low prices in convenient neighborhood locations. Learn more about Dollar General at www.dollargeneral.com/about-us.html.</p> <p><strong>Job Identification:</strong> 77868</p> <p><strong>Job Schedule:</strong> Full time</p> <p><strong>Job Category:</strong> Key Carrier</p> <p><strong>Travel Required:</strong> No</p> <p><strong>Willing to Relocate:</strong> No <script id="detrack" defer src="https://d2e48ltfsb5exy.cloudfront.net/p/t.js?i=0,1" data-g="3adafeb747e74d4e89b0df9d9ee14e16151"></script></p></span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        
+                                        <div class="create-account-free-text">
+                                            
+                                        </div>
+                                    </div>
+                                    <hr />
+                                    <div id="divshowsuccess" style="display: none; color: green; font-size: small;">
+                                    </div>
+                                    <span id="ApplyLabel" style="color: rgb(93,152,29);"></span>
+                                    <div id="MainContent_ApplyInfo" class="applyInfodiv" tabindex="216" onclick="return detectURLs" style="padding: 0 12px 0 20px; display: none;">
+                                        <p>
+                                            <span id="MainContent_lblHowToApply" style="font-size:Small;"><p><a href="
+									https://nlx.jobsyn.org/3adafeb747e74d4e89b0df9d9ee14e16151
+" target="_blank" rel="noopener"> Online: 
+									https://nlx.jobsyn.org/3adafeb747e74d4e89b0df9d9ee14e16151
+</a></p></span>
+                                        </p>
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 col-sm-12">
+                                            <div id="pnlApplyNow">
+                                                <button type="button" id="btnHowToApply" role="button" tabindex="215" onclick="return ShowHidePanel('MainContent_ApplyInfo');" class=" btn btn-default color-btn btn-right buttonspace" title="HOW TO APPLY" aria-label="Click to how to apply">How to Apply</button>
+                                            </div>
+                                            <div id="divApplyNow" style="display: none;">
+                                                <button type="button" id="btnApplynow" role="button" tabindex="220" class="btn btn-default color-btn pull-left buttonspace" title="Apply Now" aria-label="Click to Apply Now">Apply Now</button>
+                                            </div>
+                                            <input type="hidden" name="ctl00$MainContent$hdnAllowJobseeker" id="MainContent_hdnAllowJobseeker" />
+                                            <input type="hidden" name="ctl00$MainContent$hdnapplied" id="MainContent_hdnapplied" value="Applied" />
+                                            <input type="hidden" name="ctl00$MainContent$hdnEmailId" id="MainContent_hdnEmailId" />
+                                            <input type="hidden" name="ctl00$MainContent$hdnJobid" id="MainContent_hdnJobid" value="414569021" />
+                                            <input type="hidden" name="ctl00$MainContent$hdnJobCodeNumber" id="MainContent_hdnJobCodeNumber" value="414569021" />
+                                            <input type="hidden" name="ctl00$MainContent$hdisappliedalready" id="MainContent_hdisappliedalready" />
+                                            <input type="hidden" name="ctl00$MainContent$hdnisPrimaryResumeAttached" id="MainContent_hdnisPrimaryResumeAttached" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane" id="tab2">
+                                    <h2>Organization Profile</h2>
+                                    <div class="form-group">
+                                        <div class="col-md-4 text-right">
+                                            <strong>Employer Name:</strong>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <span id="MainContent_lblEmpProfileName">Direct Employers</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-md-4 text-right">
+                                            <strong>Address:</strong>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <span id="MainContent_lblAddress1">9002 N. Purdue Rd.</span>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4 text-right">
+                                                    <strong>Address Line 2:</strong>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <span id="MainContent_lblAddress2">Suite 100</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-md-4 text-right">
+                                            <strong>City:</strong>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <span id="MainContent_lblCityProfile">Indianapolis</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-md-4 text-right">
+                                            <strong>State/Province/Region:</strong>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <span id="MainContent_lblStateProfile">Indiana</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-md-4 text-right">
+                                            <strong>Zip/Postal Code:</strong>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <span id="MainContent_lblZipCodeProfile">46268</span>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="col-md-4 text-right">
+                                                <strong>Description:</strong>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <span id="MainContent_lblDescription">DirectEmployers Association is a nonprofit HR consortium of leading global employers formed to improve labor market efficiency through the sharing of best practices, research and the development of technology.    In accordance with its Corporate By-Laws, the business and affairs of the Association are managed by a Board of Directors consisting of member company representatives. Daily operations are managed by an Executive Director and operations staff at the direction of the President and Board of Directors.    Officers are elected and goals and objectives are determined by member employers at DirectEmployers Association’s annual meeting scheduled in the fourth quarter of each year.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-4">
+
+                        <h2>Job Summary</h2>
+                        <div class="form-group">
+                            <label id="lbl_Organization"><strong>Organization</strong></label>
+                            <p>
+                                <span id="MainContent_lblEmpName">Dollar General</span>&nbsp;
+                            
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            
+                            <p>
+                                <a id="MainContent_lnkWebSite" title="https://nlx.jobsyn.org/3adafeb747e74d4e89b0df9d9ee14e16151" aria-label="View Website" rel="noopener noreferrer nofollow" href="https://nlx.jobsyn.org/3adafeb747e74d4e89b0df9d9ee14e16151" target="_blank" style="font-size:Small;">Employer Website</a>
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label id="MainContent_titleLoc"><strong>Location</strong></label>
+                            <p>
+                                <span id="MainContent_lblLocation" aria-label="Location">Dryden, MI 48428</span>
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label id="MainContent_titleJobCode"><strong>Job Code Number</strong></label>
+                            <p>
+                                <span id="MainContent_lblJobCode" aria-label="Job Code Number">414569021</span>
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label id="MainContent_titlePosAv"><strong>Positions Available</strong></label>
+                            <p>
+                                <span id="MainContent_lblPositionAvailable" aria-label="Number of positions available">1</span>
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label id="MainContent_titleExpDte"><strong>Expiration Date</strong></label>
+                            <p>
+                                <span id="MainContent_lblExpirationDate" aria-label="Expiration Date">11/14/2026</span>
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label id="MainContent_titleONETCodes"><strong>O*NET Code</strong></label>
+                            <p>
+                                <span id="MainContent_lblONETCodes" aria-label="ONET Code">41-1011.00</span>
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label id="MainContent_ONETOccupationTitle"><strong>O*NET Occupation</strong></label>
+                            <p>
+                                <span id="MainContent_lblONETOccupationTitle" aria-label="ONET Occupation">First-Line Supervisors of Retail Sales Workers</span>
+                            </p>
+                        </div>
+
+                        <div class="form-group" style="display:none">
+                            
+                            <p>
+                                
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label id="MainContent_titleEdLvl"><strong>Education Level</strong></label>
+                            <p>
+                                
+                                        <span id="MainContent_rptEducationLevel_lblPositionAvailable_0">High School Diploma/Equivalency</span><br />
+                                    
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            
+                            <p>
+                                
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label id="MainContent_titleChar"><strong>Job Characteristics</strong></label>
+                            
+                                    <ul>
+                                
+                                    <li>
+                                        <span id="MainContent_rptJobCharacteristics_lblCharacteristicList_0">Seasonal</span>
+                                    </li>
+                                
+                                    </ul>
+                                
+                        </div>
+                         <div class="form-group">
+                            
+                            <p>
+                                
+                            </p>
+                        </div>
+
+
+                        <h2>Job Tools</h2>
+                        <div id="job_tools">
+                            <!-- <ul class="list-unstyled"> -->
+                            
+                            
+                            
+                            <!-- <li class=""> -->
+                            <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>
+                            <a id="lnkBtnEmail" data-toggle="modal" tabindex="370" href="" data-target=".email-job-modal">Email to me</a>
+                            <br />
+                            <!-- </li> -->
+                            
+                            
+                            <!-- <li>-->
+                            <span class="glyphicon glyphicon-flag" aria-hidden="true"></span>
+                            <a id="MainContent_LnkBtnReport" tabindex="375" aria-label="Provide Feedback" role="link" href="javascript:__doPostBack(&#39;ctl00$MainContent$LnkBtnReport&#39;,&#39;&#39;)">Provide Feedback</a>
+                            <br />
+                            <!--</li>
+                            <li>-->
+                            <span class="glyphicon glyphicon-print" aria-hidden="true"></span>
+                            <a id="MainContent_lnkBtnPrint" tabindex="380" aria-label="Print Job" role="link" href="javascript:__doPostBack(&#39;ctl00$MainContent$lnkBtnPrint&#39;,&#39;&#39;)">Print</a>
+                            <br />
+                            <!--</li>
+                            <li>-->
+                            
+                            <!--</li>
+                            </ul>-->
+                        </div>
+
+                        
+
+                        <div class="feedback">
+                            
+<div class="feedback">
+<a id="MainContent_Feedback1_hyp_Feedback" tabindex="395" title="Provide feedback about this page" aria-label="Click to Provide feedback about this page" role="link" href="../../../Feedback/">+ Feedback about this page?</a>
+</div>
+
+                        </div>
+                    </div>
+
+                    <div id="MainContent_pnl1">
+	
+                            
+                        
+</div>
+
+
+                    <div>
+                        <input type="hidden" name="ctl00$MainContent$hdPostedDate" id="MainContent_hdPostedDate" value="10/14/2026" />
+                        <input type="hidden" name="ctl00$MainContent$hdCreatedDate" id="MainContent_hdCreatedDate" value="10/14/2026" />
+                        <input name="ctl00$MainContent$hdnsavedjobs" type="hidden" id="MainContent_hdnsavedjobs" value="0" />
+                        <input name="ctl00$MainContent$Firstname" type="hidden" id="MainContent_Firstname" />
+                        <input name="ctl00$MainContent$Lastname" type="hidden" id="MainContent_Lastname" />
+
+
+                        <div id="EmailPopupModal" class="modal fade email-job-modal" aria-hidden="true" style="display: none;">
+                            <div class="modal-dialog modal-md">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" tabindex="370" data-dismiss="modal" role="button" aria-label="Close"><span aria-hidden="true">×</span> </button>
+                                        <h4 class="modal-title">Email to Me</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="input-group">
+                                            <div class="col-md-12">
+                                                <label id="lbl_txtEmailTo" class="control-label label_required">Email To</label>
+                                                <input name="ctl00$MainContent$txtEmailTo" maxlength="150" id="MainContent_txtEmailTo" tabindex="370" aria-labelledby="lbl_txtEmailTo" type="text" class="form-control" aria-required="true" />
+                                            </div>
+                                            <div class="col-md-12">
+                                                <span id="MainContent_lblError" style="display:inline-block;color:Red;border-style:None;font-size:Small;"></span>
+                                            </div>
+                                            
+                                            <div class="col-md-12" style="text-align: right">
+                                                <a onclick="return ValidateEmail();" id="MainContent_btnEmail" tabindex="370" onblur="gobacktoemailtome();" class="btn btn-default talent-solid-btn" aria-label="Email Job" role="button" href="javascript:__doPostBack(&#39;ctl00$MainContent$btnEmail&#39;,&#39;&#39;)">Email Job</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div id="showdetailspopup" class="modal fade">
+                        <div class="modal-dialog modal-md">
+                            <div class="modal-content">
+                                <div class="modal-body">
+                                    <br />
+                                    <div class="row">
+                                        <div class="col-md-5">
+                                            <div id="divbodyerrormsg" style="display: none; text-align: left; font-weight: bolder; font-size: large; color: red;">
+                                                Body is a required field.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+
+                                            <label id="lbl_Jobcodenumber" class="control-label">Job Code Number </label>
+                                            <input name="ctl00$MainContent$txtjobcodenumber" type="text" value="414569021" id="MainContent_txtjobcodenumber" disabled="disabled" class="aspNetDisabled form-control" aria-labelledby="lbl_Jobcodenumber" />
+
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-8">
+
+                                            <label id="lbl_txtJobtitle" class="control-label">Job Title </label>
+                                            <input name="ctl00$MainContent$txtJobtitle" type="text" value="ASST STORE MGR in DRYDEN MI S16670" id="MainContent_txtJobtitle" disabled="disabled" class="aspNetDisabled form-control" aria-labelledby="lbl_txtJobtitle" />
+
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-10">
+
+                                            <label id="lbl_txtEmailBody" class="control-label label_required">Body  </label>
+
+                                            <textarea name="ctl00$MainContent$txtEmailBody" rows="12" cols="20" id="MainContent_txtEmailBody" tabindex="220" class="field_required form-control" aria-labelledby="lbl_txtEmailBody" aria-required="true" data-error="Body is a required field." title="Body is a required field.">
+Dear Employer,
+
+I am applying for the ASST STORE MGR in DRYDEN MI S16670 (414569021) position you currently have posted on the Pure Michigan Talent Connect website, www.mitalent.org. After reviewing the position description, I would like to submit my information for your review. Please see the attached documents for information on my background, skills and qualifications. I look forward to hearing from you.
+
+Sincerely,
+
+ 
+
+
+
+</textarea>
+                                        </div>
+                                    </div>
+
+                                    <div id="MainContent_Div1" class="job_seeker">
+                                        <div id="tabs_form">
+
+                                            <ul id="steptabs" class="nav nav-tabs" data-tabs="tabs">
+                                                <li id="MainContent_Step1" class="active">
+                                                    <a href="#steptab1" tabindex="220" data-toggle="tab">Resumes</a>
+                                                </li>
+                                                <li id="MainContent_Step2" class="">
+                                                    <a href="#steptab2" tabindex="222" data-toggle="tab">Documents</a>
+                                                </li>
+
+                                            </ul>
+                                            <div id="my-tab-content-steps" class="tab-content">
+                                                <div id="steptab1" class="tab-pane active">
+                                                    
+
+<script type="text/javascript">
+    function GetRadioButtonValue(clicked_id, status, control) {
+        document.getElementById("MainContent_resumes_hdnchkid").value = clicked_id;
+        document.getElementById("MainContent_resumes_hdnStatus").value = status;
+        var CurrentRdbID = control.id;
+
+        var _index = CurrentRdbID.indexOf("rbIsPrimary");
+        var _gvResumes_id = CurrentRdbID.substring(0, _index - 1);
+
+        _gvResumes = document.getElementById(_gvResumes_id);
+
+        var rdoArray = _gvResumes.getElementsByTagName("input");
+
+        for (i = 0; i <= rdoArray.length - 1; i++) {
+            if (rdoArray[i].type == 'radio') {
+                if (rdoArray[i].id != CurrentRdbID) {
+                    rdoArray[i].checked = false;
+                }
+            }
+        }
+
+        var a = document.getElementById("MainContent_resumes_chkunselectresume");
+        a.checked = false;
+    }
+
+    function unselectallresumes() {
+        var rdoArray = document.getElementsByTagName("input");
+        var a = document.getElementById("MainContent_resumes_chkunselectresume");
+
+        if (a.value == "on" || a.checked == true) {
+            for (i = 0; i <= rdoArray.length - 1; i++) {
+                if (rdoArray[i].type == 'radio') {
+                    rdoArray[i].checked = false;
+                }
+            }
+            document.getElementById("MainContent_resumes_hdnchkid").value = 0;
+            a.value = "off";
+        }
+        else {
+            var gv = document.getElementById("MainContent_resumes_gvResumes");
+            var rbs = gv.getElementsByTagName("input");
+
+            for (var j = 0; j < rbs.length; j++) {
+                if (rbs[j] != null) {
+                    if (rbs[j].type == "radio") {
+                        var cellvalue = rbs[j].outerHTML;
+                        if (cellvalue.indexOf(document.getElementById("MainContent_resumes_hdnPrimaryId").value) != -1) {
+                            rbs[j].checked = true;
+                            document.getElementById("MainContent_resumes_hdnchkid").value =
+                                document.getElementById("MainContent_resumes_hdnPrimaryId").value;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            a.value = "on";
+        }
+    }
+
+</script>
+
+<label>
+    <span aria-label="Unselect all resumes"><input id="MainContent_resumes_chkunselectresume" type="checkbox" name="ctl00$MainContent$resumes$chkunselectresume" onclick="unselectallresumes();" tabindex="221" /></span><strong>&nbsp;Do not attach resume</strong></label>
+ <fieldset>
+                        <legend id="resumes-legend" class="sr-only">Resumes</legend>
+<div>
+	<table cellspacing="0" cellpadding="0" rules="all" border="1" id="MainContent_resumes_gvResumes" style="border-collapse:collapse;">
+		<tr style="text-align:center;font-weight:bold;">
+			<td colspan="2">You do not have any resumes</td><td>
+                <span id="MainContent_resumes_gvResumes_lbResumeTitle_0"></span>
+
+            </td><td>&nbsp;</td><td>
+                <span id="MainContent_resumes_gvResumes_lblStatus_0"></span>
+            </td>
+		</tr>
+	</table>
+</div>
+     </fieldset>
+
+<table class="table_form">
+    <input type="hidden" name="ctl00$MainContent$resumes$hdnchkid" id="MainContent_resumes_hdnchkid" />
+    <input type="hidden" name="ctl00$MainContent$resumes$hdnStatus" id="MainContent_resumes_hdnStatus" />
+    <input type="hidden" name="ctl00$MainContent$resumes$hdnPrimaryId" id="MainContent_resumes_hdnPrimaryId" />
+</table>
+<script type="text/javascript">
+
+    function UpdatePrimary(_Chk) {
+
+        var CurrentRdbID = _Chk.id;
+
+        var _index = CurrentRdbID.indexOf("rbIsPrimary");
+        var _gvResumes_id = CurrentRdbID.substring(0, _index - 1);
+
+        _gvResumes = document.getElementById(_gvResumes_id);
+        //alert(_gvResumes_id.value);
+
+        var rdoArray = _gvResumes.getElementsByTagName("input");
+
+        for (i = 0; i <= rdoArray.length - 1; i++) {
+
+            if (rdoArray[i].type == 'radio') {
+                alert(rdoArray[i].id);
+                if (rdoArray[i].id != CurrentRdbID) {
+
+                    rdoArray[i].checked = false;
+
+                }
+
+            }
+
+        }
+
+    }
+
+</script>
+
+                                                </div>
+                                                <div id="steptab2" class="tab-pane">
+                                                    
+<script type="text/javascript">
+    function GetCheckboxButtonValue(clicked_id) {
+        document.getElementById("MainContent_documents_hdndocids").value =
+             clicked_id + ',' + document.getElementById("MainContent_documents_hdndocids").value;
+    }
+
+</script>
+<div id="MainContent_documents_updocuments">
+	
+        
+<div>
+		<table cellspacing="0" cellpadding="0" rules="all" border="1" id="MainContent_documents_gvDocuments" style="border-collapse:collapse;">
+			<tr style="text-align:center;font-weight:bold;">
+				<td colspan="2">You do not have any documents</td><td>
+                <span></span>
+            </td><td>&nbsp;</td><td>
+                <span id="MainContent_documents_gvDocuments_lblStatus_0"></span>
+            </td>
+			</tr>
+		</table>
+	</div>
+        
+</div>
+<input type="hidden" name="ctl00$MainContent$documents$hdndocids" id="MainContent_documents_hdndocids" />
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" role="button" tabindex="223" aria-label="Cancel" onblur="closeshowdetailspopup();" class="btn btn-default color-btn  buttonspace btn-right" data-dismiss="modal">Cancel</button>
+                                    <button type="button" role="link" tabindex="222" id="btnsend" aria-label="Send" class="btn btn-default color-btn btn-right buttonspace" onclick=" saveAppliedJob();">Send</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="ctl00$MainContent$hdnusertype" id="MainContent_hdnusertype" />
+                <input type="hidden" name="ctl00$MainContent$hdJobCodeNumber" id="MainContent_hdJobCodeNumber" value="414569021" />
+                <input type="hidden" name="ctl00$MainContent$hdUserId" id="MainContent_hdUserId" value="0" />
+                <input type="hidden" name="ctl00$MainContent$hdJobId" id="MainContent_hdJobId" value="414569021" />
+
+                <div class="row">
+                    <div id="ShowNoResumePopup" class="modal fade">
+                        <div class="modal-dialog modal-md">
+                            <div class="modal-content">
+                                <div class="Modal body">
+                                    <br />
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div id="divWarnmessage" style="text-align: center; font-weight: bolder; font-size: 20px; color: red;">
+                                                Warning:
+                                            </div>
+                                            <div id="divmessage" style="text-align: center; font-weight: normal; font-size: large; color: #4f7a1e;">
+                                                There is no resume associated with your account.  Are you sure you wish to apply?
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" role="button" id="btnYesShow" tabindex="225" aria-label="Yes" data-dismiss="modal" class="btn btn-default color-btn  buttonspace btn-left">Yes</button>
+                                        <button type="button" role="button" tabindex="227" id="btno" aria-label="No" data-dismiss="modal" class="btn btn-default color-btn btn-right buttonspace" onclick=" divpopupapplynow;">No</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+
+    
+
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="footer-social-media clearfix">
+                        <div class="social-media-icon">
+                            <a href="https://www.facebook.com/MichTalent" class="facebook" role="link" aria-label="Pure Michigan Talent Connect on Facebook" tabindex="1000" target="_blank" rel="noopener noreferrer nofollow"></a>
+                        </div>
+                        <div class="social-media-icon">
+                            <a href="http://www.linkedin.com/showcase/michigantalent" class="linkedin" role="link" aria-label="Pure Michigan Talent Connect on LinkedIn" tabindex="1005" target="_blank" rel="noopener noreferrer nofollow"></a>
+                        </div>
+                        <div class="social-media-icon">
+                            <a href="https://www.twitter.com/MichiganTalent" class="twitter" role="link" aria-label="Pure Michigan Talent Connect on Twitter" tabindex="1010" target="_blank" rel="noopener noreferrer nofollow"></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row footer-links">
+                <div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.mitalent.org/job-seeker" title="Job Seeker" tabindex="1025" >Job Seeker</a></div><ul><li><a href="/job-search" title="Advanced Job Search" tabindex="1026" >Advanced Job Search</a></li><li><a href="https://jobs.mitalent.org/SAML/CreateSSOJobSeeker/" title="Create Job Seeker Account" tabindex="1027" >Create<span class="sr-only"> Job Seeker</span> Account</a></li><li><a href="https://www.mitalent.org/just-for-you" title="Just for You" tabindex="1028" >Just for You</a></li><li><a href="https://www.mitalent.org/agriculture" title="Agriculture Employment" tabindex="1029" >Agriculture Employment</a></li><li><a href="https://www.mitalent.org/job-seeker-other-resources" title="Other Job Seeker Resources" tabindex="1030" >Other<span class="sr-only"> Job Seeker</span> Resources</a></li><li><a href="https://www.mitalent.org/unemployed" title="Unemployment Information" tabindex="1031" >Unemployment Information</a></li><li><a href="https://www.mitalent.org/tutorials" title="Tutorials" tabindex="1032" >Tutorials</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.mitalent.org/Employer" title="Employer" tabindex="1033" >Employer</a></div><ul><li><a href="/employer-create-account/" title="Create Employer Account" tabindex="1034" >Create<span class="sr-only"> Employer</span> Account</a></li><li><a href="https://www.mitalent.org/agriculture" title="Agriculture Services" tabindex="1035" >Agriculture Services</a></li><li><a href="https://miwam.unemployment.state.mi.us/EmpMiWAM/_/#1" title="Report Refusal of Work" tabindex="1036" >Report Refusal of Work</a></li><li><a href="https://www.mitalent.org/employer-other-resources" title="Other Employer Resources" tabindex="1037" >Other<span class="sr-only"> Employer</span> Resources</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.mitalent.org/career-exploration" title="Career Exploration" tabindex="1038" >Career Exploration</a></div><ul><li><a href="https://pathfinder.mitalent.org" title="Pathfinder" tabindex="1039" >Pathfinder</a></li><li><a href="https://mat2apprenticeships.com/" title="MAT2 Program" tabindex="1040" >MAT2 Program</a></li><li><a href="https://www.mitalent.org/mitc" title="Michigan Training Connect" tabindex="1041" >Michigan Training Connect</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.michigan.gov/leo/0,5863,7-336-94422_95539_98962---,00.html" title="Veteran" tabindex="1042" >Veteran</a></div><ul><li><a href="https://www.michigan.gov/leo/0,5863,7-336-94422_95539_98962---,00.html" title="Veteran Home" tabindex="1043" >Veteran Home</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.going-pro.com" title="Skilled Trades" tabindex="1044" >Skilled Trades</a></div><ul><li><a href="https://www.michigan.gov/Apprenticeship" title="Registered Apprenticeships" tabindex="1045" >Registered Apprenticeships</a></li><li><a href="https://www.mitalent.org/skilled-trades-post-secondary-education-opportunities" title="Post-Secondary Education Opportunities" tabindex="1046" >Post-Secondary Education Opportunities</a></li><li><a href="https://www.mitalent.org/skilled-trades-students-parents-educators" title="Students, Parents & Educators" tabindex="1047" >Students, Parents & Educators</a></li></ul>
+</div>
+<div class='col-sm-4 col-md-2'><div class="footer-title"><a href="https://www.mitalent.org/about-us" title="About Us" tabindex="1048" >About Us</a></div><ul><li><a href="https://www.mitalent.org/Media/Default/Files/Tutorials/FAQ.pdf" title="FAQs" tabindex="1049" >FAQs</a></li><li><a href="https://www.mitalent.org/tutorials" title="Tutorials" tabindex="1050" >Tutorials</a></li><li><a href="https://twitter.com/MichiganTalent" title="Social Media" tabindex="1051" >Social Media</a></li><li><a href="https://www.mitalent.org/online-job-search-safety" title="Online Job Search Safety" tabindex="1052" >Online Job Search Safety</a></li><li><a href="https://www.mitalent.org/terms-and-conditions" title="Terms and Conditions" tabindex="1053" >Terms and Conditions</a></li></ul>
+</div>
+
+            </div>
+            <div class="row">
+                <ul id="Footer1_utility_nav" class="footer-utility-nav"><li><a href="https://www.mitalent.org/sitemap" class="utility_nav" tabindex="1054">Site Map</a></li><li><a href="https://www.mitalent.org/terms-and-conditions" class="utility_nav" tabindex="1055">Terms and Conditions</a></li><li><a href="https://www.mitalent.org/newsletters" class="utility_nav" tabindex="1056">Newsletters</a></li><li><a href="https://jobs.mitalent.org/CareerEvent.aspx?e=Start" class="utility_nav" tabindex="1057">Career Events</a></li><li><a href="https://www.mitalent.org/about-us" class="utility_nav" tabindex="1058">About Us</a></li></ul>
+            </div>
+            <div class="row">
+                <div class="copyright">
+                    <span id="Footer1_rightCopy"><p>&copy; Copyright, 2026 The Michigan Department of Labor &amp; Economic Opportunity - Workforce Development</p><p>P.O. Box 30805, Lansing, MI 48909</p><p>1-833-727-3495</p></span>
+                </div>
+            </div>
+
+
+        </div>
+    </footer>
+
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            var hostname = window.location.hostname;
+            var bannerText = "";
+
+            switch (hostname) {
+                case "localhost":
+                case "dev-mitalent.lara.state.mi.us":
+                case "mitalent.wda.state.mi.us":
+                case "dev-mitalent.leo.state.mi.us":
+                    bannerText = "DEV";
+                    break;
+                //case "beta.mitalent.org":
+                case "test-jobs.mitalent.org":
+                    bannerText = "TEST";
+                    //    bannerText = "";
+                    break;
+                case "training.mitalent.org":
+                case "training-jobs.mitalent.org":
+                    bannerText = "TRAINING";
+                    break;
+
+            }
+
+            if (bannerText != "") {
+                $('.brand-logo').append(
+                    $('<div />', {
+                        "class": 'banner-overlay',
+                        text: bannerText
+                    })
+                )
+                    ;
+            }
+        });
+    </script>
+
+
+
+
+    <div role="region" aria-label="scripts">
+        
+    </div>
+</body>
+</html>

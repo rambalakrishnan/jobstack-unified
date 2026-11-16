@@ -1,0 +1,23 @@
+# WI detail request (verbatim shape from wi/scripts/22_replay_details.py; login via wi/scripts/21_browser_login.py)
+# Evidence: wi/REPORT.md Addendum (3/3 replay verified, ~0.35 s, 71-74 KB each), DETAILS.md §3 (WI),
+# wi/samples/auth2_detail_004073143_20261026T234903Z.html (82,284 B browser capture, 48 Label_* ids),
+# wi/data/wi_storage_state.json (cookie names below)
+method: GET
+url: https://jobcenterofwisconsin.com/Presentation/JobSeekers/EnhancedJobs-det.aspx?OrderNumber=004073143
+timeout_s: 40
+follow_redirects: false  # a 302 to /Login.aspx means session expired: re-run browser login, resume (never a data error)
+headers:
+  User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+  Accept: text/html,application/xhtml+xml,*/*;q=0.9
+  Accept-Language: en-US,en;q=0.9
+cookies:  # harvested once by the headed-browser login, then replayed over plain httpx; no browser per fetch
+  .ADAuthCookie: <from login>        # success marker: set on landing /Default.aspx
+  ASP.NET_SessionId: <from login>
+  BIGipServerjobcenterofwisconsin.com: <from login>
+  cf_clearance: <from login>
+notes:
+  - Anonymous GET of this URL (or JobOrderDetail.aspx / JobOrder.aspx / PrintJobOrder.aspx variants) -> 302 /Login.aspx?ReturnUrl=... (4/4 tested; wi/samples/t1_detail_native_*, t1_detail_afterpost_*, DETAILS.md §3)
+  - Login itself is reCAPTCHA Enterprise-gated: plain httpx POST and headless Chromium fail with "You have failed the Turing test"; headed Thorium under Xvfb with --disable-blink-features=AutomationControlled passes (wi/scripts/20_login_detail.py, 21_browser_login.py)
+  - Login POST fields: ctl00$ContentPlaceHolder_MainBase$Logon_JCW$Login_VJC$UserName / $Password / $LoginButton="Login" (not "Log In") + __VIEWSTATE/__VIEWSTATEGENERATOR/__EVENTVALIDATION/__LASTFOCUS + both DropDownList_*Language (wi/REPORT.md Addendum)
+  - Response body differs by transport (browser 82,284 B vs httpx ~71-74 KB) but carries the same Label_* field contract (DETAILS.md §3; extraction.json detail_auth)
+  - Session lifetime UNKNOWN: re-login on any 302 (wi/REPORT.md Addendum) [uncertain: lifetime unmeasured]
